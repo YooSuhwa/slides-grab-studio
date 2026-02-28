@@ -3,16 +3,14 @@
 /**
  * build-viewer.js
  *
- * slides/slide-*.html 파일들을 하나의 viewer.html로 인라인 빌드합니다.
- * file:// 프로토콜에서도 작동하도록 모든 슬라이드를 단일 HTML에 포함합니다.
+ * Builds a single viewer.html from slides/slide-*.html files.
+ * Works with file:// protocol — all slides are inlined into one HTML.
  */
 
 import { readFileSync, writeFileSync, readdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { join } from 'path';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SLIDES_DIR = join(__dirname, '..', 'slides');
+const SLIDES_DIR = join(process.cwd(), 'slides');
 const OUTPUT = join(SLIDES_DIR, 'viewer.html');
 
 // 슬라이드 파일 목록 (숫자순 정렬)

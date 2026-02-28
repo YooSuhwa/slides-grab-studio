@@ -2,8 +2,8 @@
 
 import { mkdtemp, readdir, rm } from 'node:fs/promises';
 import os from 'node:os';
-import { basename, dirname, extname, join, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { basename, extname, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import { analyzeImage } from '../src/vlm/analyze.js';
 
@@ -13,8 +13,7 @@ const DEFAULT_MAX_ITERATIONS = 3;
 const SCREENSHOT_SIZE = { width: 1600, height: 900 };
 const SLIDE_FILE_PATTERN = /^slide-.*\.html$/i;
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SLIDES_DIR = join(__dirname, '..', 'slides');
+const SLIDES_DIR = join(process.cwd(), 'slides');
 
 function printUsage() {
   process.stdout.write(

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { readdir, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import { PDFDocument } from 'pdf-lib';
 
@@ -10,8 +10,7 @@ const DEFAULT_OUTPUT = 'slides.pdf';
 const SLIDE_FILE_PATTERN = /^slide-.*\.html$/i;
 const FALLBACK_SLIDE_SIZE = { width: 960, height: 540 };
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SLIDES_DIR = join(__dirname, '..', 'slides');
+const SLIDES_DIR = join(process.cwd(), 'slides');
 
 function printUsage() {
   process.stdout.write(

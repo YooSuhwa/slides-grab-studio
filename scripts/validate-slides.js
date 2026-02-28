@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { readdir } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 
 const FRAME_PT = { width: 720, height: 405 };
@@ -15,8 +15,7 @@ const SLIDE_FILE_PATTERN = /^slide-.*\.html$/i;
 const TEXT_SELECTOR = 'p,h1,h2,h3,h4,h5,h6,li';
 const TOLERANCE_PX = 0.5;
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SLIDES_DIR = join(__dirname, '..', 'slides');
+const SLIDES_DIR = join(process.cwd(), 'slides');
 
 function toSlideOrder(fileName) {
   const match = fileName.match(/\d+/);
