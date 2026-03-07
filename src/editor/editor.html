@@ -278,6 +278,7 @@
     }
 
     .tool-icon-btn {
+      position: relative;
       border: 1px solid #2c3847;
       background: #141c26;
       color: #d9e5f3;
@@ -851,8 +852,9 @@
     }
 
     .prompt-shell {
-      flex: 1;
-      min-width: 220px;
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
     }
 
     .context-chips {
@@ -917,7 +919,8 @@
 
     .prompt-input {
       flex: 1;
-      min-width: 220px;
+      width: 100%;
+      min-width: 0;
       height: 46px;
       border-radius: 12px;
       border: 1px solid #2e3948;
@@ -1226,6 +1229,59 @@
       white-space: nowrap;
     }
 
+    .selected-object-mini {
+      display: inline-flex;
+      align-items: center;
+      height: 34px;
+      max-width: 200px;
+      padding: 0 10px;
+      border-radius: 8px;
+      border: 1px solid #2f3c4d;
+      background: #111a24;
+      color: #9aa8b8;
+      font-size: 11px;
+      font-family: var(--mono);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .selected-object-mini .mini-tag {
+      color: #60a5fa;
+      font-weight: 700;
+      margin-right: 3px;
+    }
+
+    .toolbar-group-label {
+      color: var(--text-2);
+      font-size: 9px;
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+
+    .color-indicator {
+      position: absolute;
+      bottom: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 18px;
+      height: 3px;
+      border-radius: 1.5px;
+      pointer-events: none;
+    }
+
+    .select-empty-hint {
+      color: var(--text-2);
+      font-size: 12px;
+      font-family: var(--mono);
+      padding: 0 4px;
+      white-space: nowrap;
+    }
+
     @media (max-width: 1380px) {
       .slide-toolbox {
         width: calc(100% - 8px);
@@ -1290,67 +1346,102 @@
               </button>
             </div>
             <div class="select-toolbar" id="select-toolbar" hidden>
+              <span class="selected-object-mini" id="selected-object-mini" style="display:none">
+                <span class="mini-tag" id="mini-tag"></span>
+                <span id="mini-text"></span>
+              </span>
+              <span class="select-empty-hint" id="select-empty-hint">Click an object to select</span>
+              <div class="toolbar-divider" aria-hidden="true"></div>
+              <span class="toolbar-group-label">Edit</span>
               <button type="button" class="tool-icon-btn" id="select-action-text" title="Edit text">
                 <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M5 6h14M12 6v12M8 18h8"/>
+                  <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
                 </svg>
               </button>
               <button type="button" class="tool-icon-btn" id="select-action-text-color" title="Text color">
                 <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="m9 15 3-9 3 9M10.5 11h3"/>
-                  <path d="M6 19h12"/>
                 </svg>
+                <span class="color-indicator" id="text-color-indicator" style="background:#888"></span>
               </button>
               <button type="button" class="tool-icon-btn" id="select-action-bg-color" title="Background color">
                 <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M5 7h14v10H5z"/>
-                  <path d="M7 17h10"/>
+                  <path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2a2 2 0 0 0 2.8 0L19 11Z"/><path d="m5 2 5 5"/>
                 </svg>
+                <span class="color-indicator" id="bg-color-indicator" style="background:#888"></span>
               </button>
               <button type="button" class="tool-icon-btn" id="select-action-size" title="Font size">
                 <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M7 18 12 6l5 12M9.5 12h5"/>
+                  <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
                 </svg>
               </button>
               <div class="toolbar-divider" aria-hidden="true"></div>
-              <button type="button" class="tool-icon-btn style-toggle" id="toggle-bold" title="Bold">B</button>
-              <button type="button" class="tool-icon-btn style-toggle" id="toggle-italic" title="Italic">I</button>
-              <button type="button" class="tool-icon-btn style-toggle" id="toggle-underline" title="Underline">U</button>
-              <button type="button" class="tool-icon-btn style-toggle" id="toggle-strike" title="Strikethrough">S</button>
+              <span class="toolbar-group-label">Style</span>
+              <button type="button" class="tool-icon-btn style-toggle tight" id="toggle-bold" title="Bold (⌘B)">
+                <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M14 12a4 4 0 0 0 0-8H6v8"/><path d="M15 20a4 4 0 0 0 0-8H6v8"/>
+                </svg>
+              </button>
+              <button type="button" class="tool-icon-btn style-toggle tight" id="toggle-italic" title="Italic (⌘I)">
+                <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M19 4h-9M14 20H5M15 4 9 20"/>
+                </svg>
+              </button>
+              <button type="button" class="tool-icon-btn style-toggle tight" id="toggle-underline" title="Underline (⌘U)">
+                <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 4v6a6 6 0 0 0 12 0V4"/><path d="M4 20h16"/>
+                </svg>
+              </button>
+              <button type="button" class="tool-icon-btn style-toggle tight" id="toggle-strike" title="Strikethrough">
+                <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M16 4H9a3 3 0 0 0-2.83 4"/><path d="M14 12a4 4 0 0 1 0 8H6"/><path d="M4 12h16"/>
+                </svg>
+              </button>
               <div class="toolbar-divider" aria-hidden="true"></div>
-              <button type="button" class="tool-icon-btn align-btn" id="align-left" title="Align left">L</button>
-              <button type="button" class="tool-icon-btn align-btn" id="align-center" title="Align center">C</button>
-              <button type="button" class="tool-icon-btn align-btn" id="align-right" title="Align right">R</button>
+              <span class="toolbar-group-label">Align</span>
+              <button type="button" class="tool-icon-btn align-btn tight" id="align-left" title="Align left">
+                <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M21 6H3M15 12H3M17 18H3"/>
+                </svg>
+              </button>
+              <button type="button" class="tool-icon-btn align-btn tight" id="align-center" title="Align center">
+                <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M21 6H3M17 12H7M19 18H5"/>
+                </svg>
+              </button>
+              <button type="button" class="tool-icon-btn align-btn tight" id="align-right" title="Align right">
+                <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M21 6H3M21 12H9M21 18H7"/>
+                </svg>
+              </button>
             </div>
           </div>
-          <div class="tool-popover-layer" id="tool-popover-layer">
-            <section class="toolbar-popover" id="editor-popover-text" hidden>
+          <div class="tool-popovers tool-popover-layer" id="tool-popover-layer">
+            <section class="editor-popover" id="editor-popover-text" hidden>
               <label class="popover-field" for="popover-text-input">
                 <span class="popover-label">Text</span>
                 <input id="popover-text-input" class="popover-input" type="text" placeholder="Edit selected text">
               </label>
               <button type="button" class="popover-apply-btn" id="popover-apply-text">Apply</button>
             </section>
-            <section class="toolbar-popover" id="editor-popover-size" hidden>
+            <section class="editor-popover" id="editor-popover-size" hidden>
               <label class="popover-field" for="popover-size-input">
                 <span class="popover-label">Size</span>
                 <input id="popover-size-input" class="popover-input popover-number" type="number" min="8" max="180" step="1" value="24">
               </label>
               <button type="button" class="popover-apply-btn" id="popover-apply-size">Apply</button>
             </section>
-            <section class="toolbar-popover" id="editor-popover-text-color" hidden>
+            <section class="editor-popover" id="editor-popover-text-color" hidden>
               <label class="popover-field" for="popover-text-color-input">
                 <span class="popover-label">Text color</span>
                 <input id="popover-text-color-input" class="popover-color" type="color" value="#111111">
               </label>
-              <button type="button" class="popover-apply-btn" id="popover-apply-text-color">Apply</button>
             </section>
-            <section class="toolbar-popover" id="editor-popover-bg-color" hidden>
+            <section class="editor-popover" id="editor-popover-bg-color" hidden>
               <label class="popover-field" for="popover-bg-color-input">
                 <span class="popover-label">Background</span>
                 <input id="popover-bg-color-input" class="popover-color" type="color" value="#ffffff">
               </label>
-              <button type="button" class="popover-apply-btn" id="popover-apply-bg-color">Apply</button>
             </section>
           </div>
           <div class="hint" id="editor-hint">Drag on the slide to add red pending bboxes. Press Enter to run.</div>
@@ -1457,10 +1548,10 @@
     const popoverApplyText = $('#popover-apply-text');
     const popoverTextColor = $('#editor-popover-text-color');
     const popoverTextColorInput = $('#popover-text-color-input');
-    const popoverApplyTextColor = $('#popover-apply-text-color');
+
     const popoverBgColor = $('#editor-popover-bg-color');
     const popoverBgColorInput = $('#popover-bg-color-input');
-    const popoverApplyBgColor = $('#popover-apply-bg-color');
+
     const popoverSize = $('#editor-popover-size');
     const popoverSizeInput = $('#popover-size-input');
     const popoverApplySize = $('#popover-apply-size');
@@ -1474,6 +1565,12 @@
     const bboxCountEl = $('#bbox-count');
     const btnSend = $('#btn-send');
     const editorHint = $('#editor-hint');
+    const selectedObjectMini = $('#selected-object-mini');
+    const miniTag = $('#mini-tag');
+    const miniText = $('#mini-text');
+    const selectEmptyHint = $('#select-empty-hint');
+    const textColorIndicator = $('#text-color-indicator');
+    const bgColorIndicator = $('#bg-color-indicator');
 
     const statusDot = $('#status-dot');
     const statusConn = $('#status-connection');
@@ -2250,6 +2347,28 @@
         selectToolbar.hidden = toolMode !== TOOL_MODE_SELECT;
       }
 
+      if (selectedObjectMini && selectEmptyHint) {
+        if (selected) {
+          const tag = selected.tagName.toLowerCase();
+          const fullText = (selected.textContent || '').trim();
+          const preview = fullText.slice(0, 24);
+          miniTag.textContent = `<${tag}>`;
+          miniText.textContent = preview ? ` ${preview}${fullText.length > 24 ? '\u2026' : ''}` : '';
+          selectedObjectMini.style.display = '';
+          selectEmptyHint.style.display = 'none';
+        } else {
+          selectedObjectMini.style.display = 'none';
+          selectEmptyHint.style.display = toolMode === TOOL_MODE_SELECT ? '' : 'none';
+        }
+      }
+
+      if (textColorIndicator) {
+        textColorIndicator.style.background = snapshot?.textColor || '#888';
+      }
+      if (bgColorIndicator) {
+        bgColorIndicator.style.background = snapshot?.backgroundColor || '#888';
+      }
+
       setControlEnabled(selectActionText, capabilities.textEditable);
       setControlEnabled(selectActionTextColor, capabilities.textColorEditable);
       setControlEnabled(selectActionBgColor, capabilities.backgroundEditable);
@@ -2311,7 +2430,7 @@
       toolModeSelectBtn.setAttribute('aria-pressed', !isDraw ? 'true' : 'false');
       editorHint.textContent = isDraw
         ? 'Drag on the slide to add red pending bboxes. Press Enter or Cmd/Ctrl+Enter to run.'
-        : 'Click a slide object, then use the icon toolbar to edit text and style.';
+        : 'Click an object to edit. Shortcuts: \u2318B bold \u00b7 \u2318I italic \u00b7 \u2318U underline';
       hidePopover();
       renderBboxes();
       renderObjectSelection();
@@ -2909,20 +3028,36 @@
       hidePopover();
     });
 
-    popoverApplyTextColor.addEventListener('click', () => {
+    // Color popovers apply in real-time via input event (no Apply button)
+
+    popoverTextInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        event.stopPropagation();
+        popoverApplyText.click();
+      }
+    });
+
+    popoverSizeInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        event.stopPropagation();
+        popoverApplySize.click();
+      }
+    });
+
+    popoverTextColorInput.addEventListener('input', () => {
       if (selectActionTextColor.disabled) return;
       mutateSelectedObject((el) => {
         el.style.color = popoverTextColorInput.value;
-      }, 'Object text color updated and saved.');
-      hidePopover();
+      }, 'Text color updated.', { delay: 300 });
     });
 
-    popoverApplyBgColor.addEventListener('click', () => {
+    popoverBgColorInput.addEventListener('input', () => {
       if (selectActionBgColor.disabled) return;
       mutateSelectedObject((el) => {
         el.style.backgroundColor = popoverBgColorInput.value;
-      }, 'Object background color updated and saved.');
-      hidePopover();
+      }, 'Background color updated.', { delay: 300 });
     });
 
     toggleBold.addEventListener('click', () => {
@@ -2973,6 +3108,13 @@
 
     document.addEventListener('keydown', (event) => {
       const inPromptField = document.activeElement === promptInput;
+
+      if (toolMode === TOOL_MODE_SELECT && (event.ctrlKey || event.metaKey) && !inPromptField) {
+        const key = event.key.toLowerCase();
+        if (key === 'b') { event.preventDefault(); if (!toggleBold.disabled) toggleBold.click(); return; }
+        if (key === 'i') { event.preventDefault(); if (!toggleItalic.disabled) toggleItalic.click(); return; }
+        if (key === 'u') { event.preventDefault(); if (!toggleUnderline.disabled) toggleUnderline.click(); return; }
+      }
 
       if (
         ((event.ctrlKey || event.metaKey) && event.key === 'Enter')
