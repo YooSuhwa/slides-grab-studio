@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -59,7 +59,7 @@ async function waitForServerReady(port, child, outputRef) {
   throw new Error(`server did not become ready\n${outputRef.value}`);
 }
 
-test('supports multi-bbox selection and delete in chat composer flow', async () => {
+test('supports multi-bbox selection and delete in the redesigned bbox toolbar flow', { concurrency: false }, async () => {
   const workspace = await mkdtemp(join(os.tmpdir(), 'editor-ui-e2e-'));
   await writeSlides(workspace);
 
@@ -92,7 +92,9 @@ test('supports multi-bbox selection and delete in chat composer flow', async () 
 
     await page.waitForSelector('#draw-layer');
     await page.waitForTimeout(800);
-    assert.equal(await page.locator('#runs-section.collapsed').count(), 1, 'runs should be hidden by default');
+    assert.equal(await page.locator('.sidebar').count(), 0, 'sidebar should be removed in redesigned editor');
+    const promptTag = await page.$eval('#prompt-input', (el) => el.tagName);
+    assert.equal(promptTag, 'INPUT', 'bbox prompt should be a single-line input in the top toolbar');
 
     const drawLayer = await page.locator('#draw-layer').boundingBox();
     assert.ok(drawLayer, 'draw layer not found');
@@ -188,7 +190,7 @@ test('supports multi-bbox selection and delete in chat composer flow', async () 
   }
 });
 
-test('keeps chat and model state per slide session', async () => {
+test('keeps bbox prompt draft and model state per slide session', { concurrency: false }, async () => {
   const workspace = await mkdtemp(join(os.tmpdir(), 'editor-ui-session-e2e-'));
   await writeSlides(workspace);
 
@@ -222,37 +224,9 @@ test('keeps chat and model state per slide session', async () => {
     await page.waitForSelector('#draw-layer');
     await page.waitForTimeout(800);
 
-    const drawLayer = await page.locator('#draw-layer').boundingBox();
-    assert.ok(drawLayer, 'draw layer not found');
-
-    let runNum = 0;
-    await page.route('**/api/apply', async (route) => {
-      runNum += 1;
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          runId: `run-session-${runNum}`,
-          code: 0,
-          message: `ok-${runNum}`,
-        }),
-      });
-    });
-
     // slide-01
     await page.selectOption('#model-select', 'gpt-5.3-codex-spark');
-    await page.mouse.move(drawLayer.x + drawLayer.width * 0.08, drawLayer.y + drawLayer.height * 0.08);
-    await page.mouse.down();
-    await page.mouse.move(drawLayer.x + drawLayer.width * 0.40, drawLayer.y + drawLayer.height * 0.24, { steps: 6 });
-    await page.mouse.up();
     await page.fill('#prompt-input', 'slide-01 prompt');
-    await page.click('#btn-send');
-
-    await page.waitForFunction(() => {
-      const node = document.querySelector('#chat-messages');
-      return node && /slide-01 prompt/.test(node.textContent || '');
-    });
 
     // slide-02
     await page.click('#btn-next');
@@ -261,18 +235,7 @@ test('keeps chat and model state per slide session', async () => {
       return counter && /2\s*\/\s*2/.test(counter.textContent || '');
     });
     await page.selectOption('#model-select', 'gpt-5.3-codex');
-    await page.mouse.move(drawLayer.x + drawLayer.width * 0.14, drawLayer.y + drawLayer.height * 0.34);
-    await page.mouse.down();
-    await page.mouse.move(drawLayer.x + drawLayer.width * 0.52, drawLayer.y + drawLayer.height * 0.58, { steps: 6 });
-    await page.mouse.up();
     await page.fill('#prompt-input', 'slide-02 prompt');
-    await page.click('#btn-send');
-
-    await page.waitForFunction(() => {
-      const node = document.querySelector('#chat-messages');
-      const text = node?.textContent || '';
-      return /slide-02 prompt/.test(text) && !/slide-01 prompt/.test(text);
-    });
 
     // back to slide-01
     await page.click('#btn-prev');
@@ -283,11 +246,226 @@ test('keeps chat and model state per slide session', async () => {
 
     const restoredModel = await page.$eval('#model-select', (el) => el.value);
     assert.equal(restoredModel, 'gpt-5.3-codex-spark');
+    const restoredPrompt = await page.$eval('#prompt-input', (el) => el.value);
+    assert.equal(restoredPrompt, 'slide-01 prompt');
+
+    await page.click('#btn-next');
+    await page.waitForFunction(() => {
+      const counter = document.querySelector('#slide-counter');
+      return counter && /2\s*\/\s*2/.test(counter.textContent || '');
+    });
+    const slide2Model = await page.$eval('#model-select', (el) => el.value);
+    const slide2Prompt = await page.$eval('#prompt-input', (el) => el.value);
+    assert.equal(slide2Model, 'gpt-5.3-codex');
+    assert.equal(slide2Prompt, 'slide-02 prompt');
+  } finally {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+    server.kill('SIGTERM');
+    await sleep(400);
+    await rm(workspace, { recursive: true, force: true }).catch(() => {});
+  }
+});
+
+test('supports direct object selection through popovers and switching back to bbox mode', { concurrency: false }, async () => {
+  const workspace = await mkdtemp(join(os.tmpdir(), 'editor-ui-direct-edit-e2e-'));
+  await writeSlides(workspace);
+
+  const port = 3654;
+  const serverOutput = { value: '' };
+  const serverScriptPath = join(REPO_ROOT, 'scripts', 'editor-server.js');
+  const server = spawn(process.execPath, [serverScriptPath, '--port', String(port)], {
+    cwd: workspace,
+    env: {
+      ...process.env,
+      PPT_AGENT_PACKAGE_ROOT: REPO_ROOT,
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  server.stdout.on('data', (chunk) => {
+    serverOutput.value += chunk.toString();
+  });
+  server.stderr.on('data', (chunk) => {
+    serverOutput.value += chunk.toString();
+  });
+
+  let browser;
+  try {
+    await waitForServerReady(port, server, serverOutput);
+
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
+    await page.goto(`http://localhost:${port}/`, { waitUntil: 'domcontentloaded' });
+
+    await page.waitForSelector('#draw-layer');
+    await page.waitForSelector('#slide-iframe');
+    await page.waitForTimeout(800);
+
+    await page.click('#tool-mode-select');
+    await page.waitForFunction(() => {
+      const textBtn = document.querySelector('#select-action-text');
+      const sizeBtn = document.querySelector('#select-action-size');
+      return textBtn && sizeBtn && textBtn.hasAttribute('disabled') && sizeBtn.hasAttribute('disabled');
+    });
+    assert.equal(await page.locator('#selected-object-chip').count(), 0, 'selected object chip should be removed');
+
+    const drawLayer = await page.locator('#draw-layer').boundingBox();
+    assert.ok(drawLayer, 'draw layer not found');
+
+    await page.mouse.click(
+      drawLayer.x + drawLayer.width * 0.22,
+      drawLayer.y + drawLayer.height * 0.18,
+    );
 
     await page.waitForFunction(() => {
-      const node = document.querySelector('#chat-messages');
-      const text = node?.textContent || '';
-      return /slide-01 prompt/.test(text) && !/slide-02 prompt/.test(text);
+      const textBtn = document.querySelector('#select-action-text');
+      const colorBtn = document.querySelector('#select-action-text-color');
+      const sizeBtn = document.querySelector('#select-action-size');
+      return textBtn && colorBtn && sizeBtn
+        && !textBtn.hasAttribute('disabled')
+        && !colorBtn.hasAttribute('disabled')
+        && !sizeBtn.hasAttribute('disabled');
+    });
+
+    await page.click('#select-action-text');
+    await page.waitForSelector('#editor-popover-text:not([hidden])');
+    await page.fill('#popover-text-input', 'Quarterly Update');
+    await page.click('#popover-apply-text');
+
+    await page.click('#select-action-size');
+    await page.waitForSelector('#editor-popover-size:not([hidden])');
+    await page.fill('#popover-size-input', '64');
+    await page.click('#popover-apply-size');
+
+    await page.click('#select-action-text-color');
+    await page.waitForSelector('#editor-popover-text-color:not([hidden])');
+    await page.$eval('#popover-text-color-input', (el) => {
+      el.value = '#112233';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await page.click('#popover-apply-text-color');
+
+    await page.click('#select-action-bg-color');
+    await page.waitForSelector('#editor-popover-bg-color:not([hidden])');
+    await page.$eval('#popover-bg-color-input', (el) => {
+      el.value = '#fee2e2';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await page.click('#popover-apply-bg-color');
+
+    await page.click('#toggle-bold');
+    await page.click('#toggle-bold');
+    await page.click('#toggle-strike');
+    await page.click('#align-center');
+
+    await page.waitForFunction(() => {
+      const status = document.querySelector('#status-message');
+      return status && /saved|updated/i.test(status.textContent || '');
+    });
+
+    const frameHeading = page.frameLocator('#slide-iframe').locator('h1');
+    await assert.doesNotReject(async () => frameHeading.waitFor());
+    assert.equal(await frameHeading.textContent(), 'Quarterly Update');
+
+    const headingStyles = await frameHeading.evaluate((node) => {
+      const styles = window.getComputedStyle(node);
+      return {
+        color: styles.color,
+        backgroundColor: styles.backgroundColor,
+        fontWeight: styles.fontWeight,
+        textDecorationLine: styles.textDecorationLine,
+        textAlign: styles.textAlign,
+        fontSize: styles.fontSize,
+      };
+    });
+
+    assert.match(headingStyles.color, /17,\s*34,\s*51/);
+    assert.match(headingStyles.backgroundColor, /254,\s*226,\s*226/);
+    assert.ok(Number(headingStyles.fontWeight) >= 600 || /bold/i.test(headingStyles.fontWeight));
+    assert.match(headingStyles.textDecorationLine, /line-through/);
+    assert.equal(headingStyles.textAlign, 'center');
+    assert.equal(headingStyles.fontSize, '64px');
+
+    const savedHtml = await readFile(join(workspace, 'slides', 'slide-01.html'), 'utf8');
+    assert.match(savedHtml, /Quarterly Update/);
+    assert.match(savedHtml, /font-size:\s*64px/i);
+    assert.match(savedHtml, /text-align:\s*center/i);
+    assert.match(savedHtml, /line-through/i);
+    assert.match(savedHtml, /font-weight:\s*(700|bold)/i);
+    assert.match(savedHtml, /(rgb\(17,\s*34,\s*51\)|#112233)/i);
+    assert.match(savedHtml, /(rgb\(254,\s*226,\s*226\)|#fee2e2)/i);
+
+    await page.click('#tool-mode-draw');
+    await page.mouse.move(drawLayer.x + drawLayer.width * 0.08, drawLayer.y + drawLayer.height * 0.10);
+    await page.mouse.down();
+    await page.mouse.move(drawLayer.x + drawLayer.width * 0.40, drawLayer.y + drawLayer.height * 0.24, { steps: 6 });
+    await page.mouse.up();
+
+    await page.waitForFunction(() => {
+      const el = document.querySelector('#bbox-count');
+      return el && /1 pending/.test(el.textContent || '');
+    });
+  } finally {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+    server.kill('SIGTERM');
+    await sleep(400);
+    await rm(workspace, { recursive: true, force: true }).catch(() => {});
+  }
+});
+
+test('keeps the toolbox above the slide in a 16:9 viewport', { concurrency: false }, async () => {
+  const workspace = await mkdtemp(join(os.tmpdir(), 'editor-ui-toolbox-layout-e2e-'));
+  await writeSlides(workspace);
+
+  const port = 3655;
+  const serverOutput = { value: '' };
+  const serverScriptPath = join(REPO_ROOT, 'scripts', 'editor-server.js');
+  const server = spawn(process.execPath, [serverScriptPath, '--port', String(port)], {
+    cwd: workspace,
+    env: {
+      ...process.env,
+      PPT_AGENT_PACKAGE_ROOT: REPO_ROOT,
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  server.stdout.on('data', (chunk) => {
+    serverOutput.value += chunk.toString();
+  });
+  server.stderr.on('data', (chunk) => {
+    serverOutput.value += chunk.toString();
+  });
+
+  let browser;
+  try {
+    await waitForServerReady(port, server, serverOutput);
+
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage({ viewport: { width: 1496, height: 768 } });
+    await page.goto(`http://localhost:${port}/`, { waitUntil: 'domcontentloaded' });
+
+    await page.waitForSelector('#slide-toolbox');
+    await page.waitForSelector('#slide-wrapper');
+    await page.waitForTimeout(500);
+
+    assert.equal(await page.locator('.sidebar').count(), 0, 'sidebar should be removed');
+    const toolboxBox = await page.locator('#slide-toolbox').boundingBox();
+    const wrapperBox = await page.locator('#slide-wrapper').boundingBox();
+    assert.ok(toolboxBox, 'toolbox not found');
+    assert.ok(wrapperBox, 'slide wrapper not found');
+    assert.ok(toolboxBox.y + toolboxBox.height <= wrapperBox.y, 'toolbox should stay above the slide frame');
+
+    await page.click('#tool-mode-select');
+    await page.waitForFunction(() => {
+      const button = document.querySelector('#tool-mode-select');
+      const toolbar = document.querySelector('#select-toolbar');
+      return button && toolbar && button.classList.contains('active') && !toolbar.hasAttribute('hidden');
     });
   } finally {
     if (browser) {
