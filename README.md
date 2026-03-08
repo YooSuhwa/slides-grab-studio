@@ -1,8 +1,18 @@
-# slides-grab
+<h1 align="center">slides-grab</h1>
 
-Agent-first presentation framework for **Claude Code** and **Codex**.
+<p align="center">Select context for agents directly from AI-generated HTML slides</p>
 
-AI agents plan your slide outline, generate production-ready HTML slides, and export to PPTX/PDF — but the real differentiator is the **visual editor**: open it in your browser, draw bounding boxes on any element, type a prompt, and the agent rewrites only that region. No more re-generating the entire deck for a one-word fix.
+<p align="center">
+How? Just drag an area in the slides and ask the agent to edit it.<br>
+Simple things like text, size, or bold can still be edited manually, just like in the 2024 era.
+</p>
+
+<p align="center">
+The whole slides are HTML, the langauge (which is not) that outperformed by AI agents.<br>
+So the slides are beautiful, easily editable by AI agents, and can be converted to pdf and pptx.
+</p>
+
+---
 
 ## Quick Start
 
