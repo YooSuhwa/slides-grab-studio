@@ -2371,7 +2371,7 @@
       font-size: 24px;
       font-weight: 700;
       color: var(--text-0);
-      margin-bottom: 8px;
+      margin-bottom: 12px;
     }
 
     .creation-header p {
@@ -2382,9 +2382,9 @@
     /* ── Creation Tabs ── */
     .creation-tabs {
       display: flex;
-      gap: 4px;
+      gap: 6px;
       justify-content: center;
-      margin-top: 8px;
+      margin-top: 4px;
     }
     .creation-tab {
       background: rgba(255, 255, 255, 0.03);
@@ -2415,7 +2415,7 @@
     .import-dropzone {
       border: 2px dashed var(--border);
       border-radius: var(--radius-lg);
-      padding: 32px 24px;
+      padding: 36px 24px;
       text-align: center;
       cursor: pointer;
       transition: all var(--transition);
@@ -2434,7 +2434,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       color: var(--text-2);
     }
     .import-dropzone-content svg {
@@ -2495,7 +2495,7 @@
     .creation-input-area {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
     }
 
     .creation-input-area[hidden] {
@@ -2580,6 +2580,7 @@
       align-items: center;
       justify-content: flex-end;
       flex-wrap: wrap;
+      margin-top: 2px;
     }
 
     .creation-actions select {
@@ -3413,16 +3414,16 @@
         <div class="creation-content">
           <div id="creation-phase-input">
             <div class="creation-header">
-              <h2>New Presentation</h2>
+              <h2>새 프레젠테이션</h2>
               <div class="creation-tabs" role="tablist">
-                <button class="creation-tab active" id="tab-topic" data-tab="topic" role="tab" aria-selected="true" aria-controls="creation-tab-topic">Topic</button>
-                <button class="creation-tab" id="tab-import" data-tab="import" role="tab" aria-selected="false" aria-controls="creation-tab-import">Import MD</button>
+                <button class="creation-tab active" id="tab-topic" data-tab="topic" role="tab" aria-selected="true" aria-controls="creation-tab-topic">주제 입력</button>
+                <button class="creation-tab" id="tab-import" data-tab="import" role="tab" aria-selected="false" aria-controls="creation-tab-import">MD 가져오기</button>
               </div>
             </div>
             <!-- Topic tab (default) -->
             <div class="creation-input-area" id="creation-tab-topic" role="tabpanel" aria-labelledby="tab-topic">
-              <textarea id="creation-topic" placeholder="What is this presentation about?" rows="3"></textarea>
-              <textarea id="creation-requirements" placeholder="Additional requirements: style, language, constraints... (optional)" rows="2"></textarea>
+              <textarea id="creation-topic" placeholder="어떤 주제의 프레젠테이션인가요?" rows="3"></textarea>
+              <textarea id="creation-requirements" placeholder="추가 요구사항: 스타일, 언어, 제약조건 등 (선택)" rows="2"></textarea>
               <div class="creation-actions">
                 <select id="creation-slide-count">
                   <option value="4~8">4 ~ 8</option>
@@ -3430,7 +3431,7 @@
                   <option value="12~16">12 ~ 16</option>
                 </select>
                 <select id="creation-model"></select>
-                <button id="creation-generate">Plan Outline</button>
+                <button id="creation-generate">아웃라인 생성</button>
               </div>
             </div>
             <!-- Import MD tab -->
@@ -3439,8 +3440,8 @@
                 <input type="file" id="import-file-input" accept=".md,.markdown,.txt" hidden>
                 <div class="import-dropzone-content">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg>
-                  <p>Drop a <strong>.md</strong> file here or <button class="import-browse-btn" id="import-browse">browse</button></p>
-                  <p class="import-hint">Supports slide-structured or research-only markdown</p>
+                  <p><strong>.md</strong> 파일을 여기에 놓거나 <button class="import-browse-btn" id="import-browse">파일 선택</button></p>
+                  <p class="import-hint">슬라이드 구조 또는 리서치용 마크다운을 지원합니다</p>
                 </div>
               </div>
               <div class="import-file-info" id="import-file-info" hidden>
@@ -3449,7 +3450,7 @@
               </div>
               <div class="creation-actions">
                 <select id="import-slide-count">
-                  <option value="">Auto</option>
+                  <option value="">자동</option>
                   <option value="4~8">4 ~ 8</option>
                   <option value="8~12">8 ~ 12</option>
                   <option value="12~16">12 ~ 16</option>
@@ -3457,41 +3458,41 @@
                   <option value="20~30">20 ~ 30</option>
                 </select>
                 <select id="import-research-mode">
-                  <option value="none">No extra research</option>
-                  <option value="research">Add research</option>
+                  <option value="none">추가 리서치 없음</option>
+                  <option value="research">리서치 추가</option>
                 </select>
                 <select id="import-model"></select>
-                <button id="import-submit">Import &amp; Plan</button>
+                <button id="import-submit">가져오기 &amp; 아웃라인</button>
               </div>
             </div>
           </div>
           <div id="creation-phase-outline" hidden>
             <div class="outline-review">
               <div class="outline-header">
-                <button class="outline-back-btn" id="outline-back">&#9664; Back</button>
+                <button class="outline-back-btn" id="outline-back">&#9664; 뒤로</button>
                 <div class="outline-meta">
-                  <h2 id="outline-title">Outline Review</h2>
+                  <h2 id="outline-title">아웃라인 검토</h2>
                   <span class="outline-count" id="outline-count"></span>
                 </div>
               </div>
               <div class="outline-deck-row">
-                <label class="creation-label">Deck name</label>
+                <label class="creation-label">덱 이름</label>
                 <input id="outline-deck-name" type="text">
               </div>
               <div class="outline-slides" id="outline-slides"></div>
               <div class="outline-run-track" id="outline-run-track">
                 <img src="/asset/buddy_logo.png" class="outline-bunny-runner" alt="">
-                <span class="outline-run-status">working on it...</span>
+                <span class="outline-run-status">작업 중...</span>
               </div>
               <div class="creation-progress inline" id="outline-progress" hidden>
                 <div class="creation-log" id="outline-log"></div>
               </div>
               <div class="outline-feedback">
-                <textarea id="outline-feedback" placeholder="Describe what you'd like to change..." rows="2"></textarea>
+                <textarea id="outline-feedback" placeholder="수정하고 싶은 내용을 설명해 주세요..." rows="2"></textarea>
               </div>
               <div class="outline-actions">
-                <button id="outline-revise" class="outline-btn outline-btn-secondary">Revise</button>
-                <button id="outline-approve" class="outline-btn outline-btn-primary">Approve &amp; Generate</button>
+                <button id="outline-revise" class="outline-btn outline-btn-secondary">수정 요청</button>
+                <button id="outline-approve" class="outline-btn outline-btn-primary">승인 &amp; 생성</button>
               </div>
             </div>
           </div>

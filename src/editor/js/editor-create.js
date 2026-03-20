@@ -185,12 +185,12 @@ function preventUnload(e) {
 export async function submitGeneration() {
   const topic = creationTopic?.value?.trim();
   if (!topic) {
-    setStatus('Please enter a topic.');
+    setStatus('주제를 입력해 주세요.');
     return;
   }
 
   if (creationState.generating) {
-    setStatus('Already in progress.');
+    setStatus('이미 진행 중입니다.');
     return;
   }
 
@@ -203,8 +203,8 @@ export async function submitGeneration() {
   if (creationGenerate) creationGenerate.disabled = true;
   if (creationProgress) creationProgress.hidden = false;
   if (creationLog) creationLog.textContent = '';
-  showPlanLoading(true, 'Generating outline');
-  setStatus('Planning outline...');
+  showPlanLoading(true, '아웃라인 생성 중');
+  setStatus('아웃라인을 계획하고 있습니다...');
 
   try {
     const res = await fetch('/api/plan', {
@@ -227,7 +227,7 @@ export async function submitGeneration() {
     if (creationGenerate) creationGenerate.disabled = false;
     showPlanLoading(false);
     appendCreationLog(`[Error] ${err.message}\n`);
-    setStatus(`Plan failed: ${err.message}`);
+    setStatus(`아웃라인 생성 실패: ${err.message}`);
   }
 }
 
@@ -283,7 +283,7 @@ export function onGenerateFinished(payload) {
       if (creationGenerate) creationGenerate.disabled = false;
     }
     appendCreationLog(`\n[Failed] ${payload.message}\n`);
-    setStatus(`Generation failed: ${payload.message}`);
+    setStatus(`생성 실패: ${payload.message}`);
   }
 }
 
@@ -295,7 +295,7 @@ function showViewResultButton(slideCount, inOutline = false) {
 
   const btn = document.createElement('button');
   btn.id = 'creation-view-result';
-  btn.textContent = `View Result (${slideCount} slides)`;
+  btn.textContent = `결과 보기 (${slideCount}장)`;
   btn.className = 'creation-view-result-btn';
   btn.addEventListener('click', () => {
     refreshSlideList();
@@ -335,7 +335,7 @@ export async function refreshSlideList() {
       renderThumbnailStrip();
       await goToSlide(0);
       scaleSlide();
-      setStatus(`${state.slides.length} slides loaded. Switched to edit mode.`);
+      setStatus(`${state.slides.length}개 슬라이드 로드 완료. 편집 모드로 전환합니다.`);
     }
   } catch (err) {
     console.error('refreshSlideList error:', err);
@@ -358,12 +358,12 @@ if (creationTopic) {
 
   // Cycling placeholder examples
   const placeholders = [
-    'What is this presentation about?',
-    'Quarterly sales review for Q1 2026...',
-    'Technical architecture overview of our microservices...',
-    'Product launch strategy for mobile app...',
-    'Team onboarding guide for new engineers...',
-    'Annual company retrospective and goals...',
+    '어떤 주제의 프레젠테이션인가요?',
+    '2026년 1분기 매출 리뷰...',
+    '마이크로서비스 기술 아키텍처 개요...',
+    '모바일 앱 출시 전략...',
+    '신규 엔지니어 온보딩 가이드...',
+    '연간 회고 및 목표 설정...',
   ];
   let placeholderIdx = 0;
   _placeholderTimer = setInterval(() => {
@@ -426,23 +426,23 @@ function handleImportFile(file) {
 
   // File size check
   if (file.size > MAX_IMPORT_FILE_SIZE) {
-    setStatus('File too large (max 5MB).');
+    setStatus('파일이 너무 큽니다 (최대 5MB).');
     return;
   }
 
   // Extension check (important for drag-and-drop which ignores accept attribute)
   const ext = file.name.split('.').pop()?.toLowerCase();
   if (!ALLOWED_EXTENSIONS.includes(ext)) {
-    setStatus('Only .md, .markdown, .txt files are supported.');
+    setStatus('.md, .markdown, .txt 파일만 지원합니다.');
     return;
   }
 
   const reader = new FileReader();
-  reader.onerror = () => setStatus('Failed to read file.');
+  reader.onerror = () => setStatus('파일을 읽지 못했습니다.');
   reader.onload = () => {
     const text = typeof reader.result === 'string' ? reader.result.trim() : '';
     if (!text) {
-      setStatus('File is empty.');
+      setStatus('파일이 비어 있습니다.');
       return;
     }
     _importedContent = reader.result;
@@ -500,12 +500,12 @@ if (importFileClear) {
 export async function submitImport(content) {
   const mdContent = content || _importedContent;
   if (!mdContent) {
-    setStatus('Please select a markdown file first.');
+    setStatus('먼저 마크다운 파일을 선택해 주세요.');
     return;
   }
 
   if (creationState.generating) {
-    setStatus('Already in progress.');
+    setStatus('이미 진행 중입니다.');
     return;
   }
 
@@ -518,8 +518,8 @@ export async function submitImport(content) {
   if (importSubmit) importSubmit.disabled = true;
   if (creationProgress) creationProgress.hidden = false;
   if (creationLog) creationLog.textContent = '';
-  showPlanLoading(true, 'Importing markdown');
-  setStatus('Converting markdown to outline...');
+  showPlanLoading(true, '마크다운 가져오는 중');
+  setStatus('마크다운을 아웃라인으로 변환 중...');
 
   try {
     const res = await fetch('/api/import-md', {
@@ -542,7 +542,7 @@ export async function submitImport(content) {
     if (importSubmit) importSubmit.disabled = false;
     showPlanLoading(false);
     appendCreationLog(`[Error] ${err.message}\n`);
-    setStatus(`Import failed: ${err.message}`);
+    setStatus(`가져오기 실패: ${err.message}`);
   }
 }
 

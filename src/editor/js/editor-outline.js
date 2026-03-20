@@ -46,7 +46,7 @@ export function resetOutlineIndicators(result) {
 
   if (workingBtn && result) {
     const flashClass = result === 'success' ? 'done-success' : 'done-fail';
-    const flashText = result === 'success' ? 'Done' : 'Failed';
+    const flashText = result === 'success' ? '완료' : '실패';
     workingBtn.classList.remove('working');
     workingBtn.classList.add(flashClass);
     workingBtn.textContent = flashText;
@@ -54,8 +54,8 @@ export function resetOutlineIndicators(result) {
     setTimeout(() => {
       workingBtn.classList.remove(flashClass);
       // Restore original text
-      if (workingBtn === revBtn) workingBtn.textContent = 'Revise';
-      else workingBtn.textContent = 'Approve & Generate';
+      if (workingBtn === revBtn) workingBtn.textContent = '수정 요청';
+      else workingBtn.textContent = '승인 & 생성';
 
       // Re-enable & show both
       if (revBtn) { revBtn.disabled = false; revBtn.style.display = ''; }
@@ -65,8 +65,8 @@ export function resetOutlineIndicators(result) {
     // Silent reset — just restore
     if (workingBtn) {
       workingBtn.classList.remove('working');
-      if (workingBtn === revBtn) workingBtn.textContent = 'Revise';
-      else workingBtn.textContent = 'Approve & Generate';
+      if (workingBtn === revBtn) workingBtn.textContent = '수정 요청';
+      else workingBtn.textContent = '승인 & 생성';
     }
     if (revBtn) { revBtn.disabled = false; revBtn.style.display = ''; }
     if (appBtn) { appBtn.disabled = false; appBtn.style.display = ''; }
@@ -86,10 +86,10 @@ export function showOutlinePhase(outline, { isExistingDeck = false } = {}) {
   if (outlineDeckName) {
     outlineDeckName.value = outline.deckName || '';
     outlineDeckName.readOnly = isExistingDeck;
-    outlineDeckName.title = isExistingDeck ? 'Existing deck — name cannot be changed' : '';
+    outlineDeckName.title = isExistingDeck ? '기존 덱 — 이름 변경 불가' : '';
     outlineDeckName.style.opacity = isExistingDeck ? '0.6' : '';
   }
-  if (outlineCount) outlineCount.textContent = `${outline.slides?.length || 0} slides`;
+  if (outlineCount) outlineCount.textContent = `${outline.slides?.length || 0}장`;
 
   renderOutlineCards(outline.slides || []);
   updateFeedbackPlaceholder();
@@ -309,7 +309,7 @@ async function saveCardEdit(index) {
     editingIndex = -1;
     renderOutlineCards(currentOutline?.slides || []);
     updateFeedbackPlaceholder();
-    setStatus(`Slide ${index + 1} saved.`);
+    setStatus(`슬라이드 ${index + 1} 저장 완료.`);
   }
 }
 
@@ -376,7 +376,7 @@ async function saveOutlineToServer() {
     currentOutline.deckName = updated.deckName;
     return true;
   } catch (err) {
-    setStatus(`Save failed: ${err.message}`);
+    setStatus(`저장 실패: ${err.message}`);
     return false;
   }
 }
@@ -406,7 +406,7 @@ if (outlineBack) {
 if (outlineRevise) {
   outlineRevise.addEventListener('click', async () => {
     const feedback = outlineFeedback?.value?.trim();
-    if (!feedback) { setStatus('Please enter revision feedback.'); return; }
+    if (!feedback) { setStatus('수정 피드백을 입력해 주세요.'); return; }
     if (creationState.generating) return;
 
     if (editingIndex >= 0) { commitCurrentEdit(); await saveOutlineToServer(); }
@@ -417,9 +417,9 @@ if (outlineRevise) {
 
     // Button working state
     outlineRevise.classList.add('working');
-    outlineRevise.textContent = 'Revising...';
+    outlineRevise.textContent = '수정 중...';
     if (outlineApprove) outlineApprove.style.display = 'none';
-    showPlanLoading(true, 'Revising outline');
+    showPlanLoading(true, '아웃라인 수정 중');
 
     // Clear previous log
     const oLog = document.getElementById('outline-log');
@@ -449,7 +449,7 @@ if (outlineRevise) {
       resetOutlineIndicators('fail');
       showPlanLoading(false);
       appendCreationLog(`[Error] ${err.message}\n`);
-      setStatus(`Revision failed: ${err.message}`);
+      setStatus(`수정 실패: ${err.message}`);
     }
   });
 }
@@ -469,9 +469,9 @@ if (outlineApprove) {
 
     // Button working state
     outlineApprove.classList.add('working');
-    outlineApprove.textContent = 'Generating...';
+    outlineApprove.textContent = '생성 중...';
     if (outlineRevise) outlineRevise.style.display = 'none';
-    showPlanLoading(true, 'Generating slides');
+    showPlanLoading(true, '슬라이드 생성 중');
 
     // Clear previous log and show progress
     const oLog = document.getElementById('outline-log');
@@ -502,7 +502,7 @@ if (outlineApprove) {
       resetOutlineIndicators('fail');
       showPlanLoading(false);
       appendCreationLog(`[Error] ${err.message}\n`);
-      setStatus(`Generation failed: ${err.message}`);
+      setStatus(`생성 실패: ${err.message}`);
     }
   });
 }
@@ -528,7 +528,7 @@ export function onPlanFinished(payload) {
     appendCreationLog(`\n[Done] Outline ready.\n`);
     showOutlinePhase(payload.outline);
     if (outlineFeedback) outlineFeedback.value = '';
-    setStatus('Review the outline and provide feedback.');
+    setStatus('아웃라인을 검토하고 피드백을 입력하세요.');
   } else {
     resetOutlineIndicators('fail');
     appendCreationLog(`\n[Failed] ${payload.message}\n`);
@@ -536,7 +536,10 @@ export function onPlanFinished(payload) {
       creationGenerate.disabled = false;
       creationGenerate.style.display = '';
     }
-    setStatus(`Plan failed: ${payload.message}`);
+    // Also re-enable import submit button
+    const importSubmitBtn = document.getElementById('import-submit');
+    if (importSubmitBtn) importSubmitBtn.disabled = false;
+    setStatus(`계획 실패: ${payload.message}`);
   }
 }
 
@@ -545,7 +548,7 @@ export function onPlanFinished(payload) {
 export async function loadAndShowOutline() {
   try {
     const res = await fetch('/api/outline');
-    if (!res.ok) { setStatus('No outline found for this deck.'); return; }
+    if (!res.ok) { setStatus('이 덱에서 아웃라인을 찾을 수 없습니다.'); return; }
     const outline = await res.json();
     showCreationMode();
     await loadCreationModelOptions();
@@ -553,9 +556,9 @@ export async function loadAndShowOutline() {
     if (outlineFeedback) outlineFeedback.value = '';
     if (outlineRevise) outlineRevise.disabled = false;
     if (outlineApprove) outlineApprove.disabled = false;
-    setStatus('Review the outline and provide feedback.');
+    setStatus('아웃라인을 검토하고 피드백을 입력하세요.');
   } catch (err) {
-    setStatus(`Failed to load outline: ${err.message}`);
+    setStatus(`아웃라인 로드 실패: ${err.message}`);
   }
 }
 
