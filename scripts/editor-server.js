@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readdir, readFile, writeFile, mkdtemp, rm, mkdir, stat, rename } from 'node:fs/promises';
+import { readdir, readFile, writeFile, mkdtemp, rm, mkdir, stat, rename, copyFile, unlink } from 'node:fs/promises';
 import { watch as fsWatch } from 'node:fs';
 import { basename, dirname, join, resolve, relative, sep } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -79,7 +79,11 @@ function parseArgs(argv) {
     slidesDir: DEFAULT_SLIDES_DIR,
     help: false,
     createMode: false,
+    browseMode: false,
     deckName: '',
+    importFile: '',
+    importSlideCount: '',
+    importResearch: false,
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -91,6 +95,11 @@ function parseArgs(argv) {
 
     if (arg === '--create') {
       opts.createMode = true;
+      continue;
+    }
+
+    if (arg === '--browse') {
+      opts.browseMode = true;
       continue;
     }
 
@@ -127,6 +136,35 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (arg === '--import') {
+      opts.importFile = argv[i + 1] || '';
+      opts.createMode = true;
+      i += 1;
+      continue;
+    }
+
+    if (arg.startsWith('--import=')) {
+      opts.importFile = arg.slice('--import='.length);
+      opts.createMode = true;
+      continue;
+    }
+
+    if (arg === '--slide-count') {
+      opts.importSlideCount = argv[i + 1] || '';
+      i += 1;
+      continue;
+    }
+
+    if (arg.startsWith('--slide-count=')) {
+      opts.importSlideCount = arg.slice('--slide-count='.length);
+      continue;
+    }
+
+    if (arg === '--research') {
+      opts.importResearch = true;
+      continue;
+    }
+
     if (arg === '--codex-model') {
       // Backward compatibility: ignore legacy CLI option.
       i += 1;
@@ -140,8 +178,8 @@ function parseArgs(argv) {
     throw new Error('`--port` must be a positive integer.');
   }
 
-  // In create mode, slidesDir is determined later (after topic is submitted)
-  if (!opts.createMode) {
+  // In create/browse mode, slidesDir is determined later
+  if (!opts.createMode && !opts.browseMode) {
     if (typeof opts.slidesDir !== 'string' || opts.slidesDir.trim() === '') {
       throw new Error('`--slides-dir` must be a non-empty path.');
     }
@@ -219,6 +257,35 @@ function normalizeSlideFilename(rawSlide, source = '`slide`') {
     throw new Error(`Missing or invalid ${source}.`);
   }
   return slide;
+}
+
+/**
+ * Back up existing slide HTML files into a timestamped subdirectory.
+ * e.g. decks/my-deck/backup/2026-03-20_143052/slide-01.html ...
+ * Returns the backup directory path, or null if there was nothing to back up.
+ */
+async function backupSlides(deckDir) {
+  const slideFiles = await listSlideFiles(deckDir);
+  if (slideFiles.length === 0) return null;
+
+  const now = new Date();
+  const pad = (n, len = 2) => String(n).padStart(len, '0');
+  const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+
+  const backupDir = join(deckDir, 'backup', ts);
+  await mkdir(backupDir, { recursive: true });
+
+  await Promise.all(
+    slideFiles.map((f) => copyFile(join(deckDir, f), join(backupDir, f))),
+  );
+
+  // Remove originals so Claude generates all slides fresh
+  await Promise.all(
+    slideFiles.map((f) => unlink(join(deckDir, f))),
+  );
+
+  console.log(`Backed up ${slideFiles.length} slides → ${backupDir} (originals removed)`);
+  return backupDir;
 }
 
 function normalizeSlideHtml(rawHtml) {
@@ -577,11 +644,11 @@ function slugify(text) {
 
 async function startServer(opts) {
   await loadDeps();
-  let slidesDirectory = opts.createMode
-    ? ''  // will be set when user submits topic
+  let slidesDirectory = (opts.createMode || opts.browseMode)
+    ? ''  // will be set when user submits topic or selects a deck
     : resolve(process.cwd(), opts.slidesDir);
 
-  if (!opts.createMode) {
+  if (!opts.createMode && !opts.browseMode) {
     await mkdir(slidesDirectory, { recursive: true });
   }
 
@@ -595,10 +662,14 @@ async function startServer(opts) {
 
   const app = express();
   app.use(express.json({ limit: '5mb' }));
-  app.use('/js', express.static(join(PACKAGE_ROOT, 'src', 'editor', 'js')));
+  app.use('/js', express.static(join(PACKAGE_ROOT, 'src', 'editor', 'js'), {
+    etag: false, lastModified: false,
+    setHeaders: (res) => { res.setHeader('Cache-Control', 'no-store'); },
+  }));
   app.use('/asset', express.static(join(PACKAGE_ROOT, 'asset')));
 
   const editorHtmlPath = join(PACKAGE_ROOT, 'src', 'editor', 'editor.html');
+  const browserHtmlPath = join(PACKAGE_ROOT, 'src', 'editor', 'browser.html');
 
   function broadcastRunsSnapshot() {
     broadcastSSE('runsSnapshot', {
@@ -608,6 +679,16 @@ async function startServer(opts) {
   }
 
   app.get('/', async (_req, res) => {
+    try {
+      const targetPath = opts.browseMode ? browserHtmlPath : editorHtmlPath;
+      const html = await readFile(targetPath, 'utf-8');
+      res.type('html').send(html);
+    } catch (err) {
+      res.status(500).send(`Failed to load page: ${err.message}`);
+    }
+  });
+
+  app.get('/editor', async (_req, res) => {
     try {
       const html = await readFile(editorHtmlPath, 'utf-8');
       res.type('html').send(html);
@@ -644,8 +725,12 @@ async function startServer(opts) {
     }
     res.json({
       createMode: effectiveCreateMode,
-      deckName: opts.deckName || '',
+      browseMode: opts.browseMode || false,
+      deckName: opts.deckName || (slidesDirectory ? basename(slidesDirectory) : ''),
       slidesDir: slidesDirectory ? toPosixPath(relative(process.cwd(), slidesDirectory) || slidesDirectory) : '',
+      importFile: opts.importFile || null,
+      importSlideCount: opts.importSlideCount || null,
+      importResearch: opts.importResearch || false,
     });
   });
 
@@ -658,6 +743,124 @@ async function startServer(opts) {
       res.json(files);
     } catch (err) {
       res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── Deck browser APIs ──
+
+  app.get('/api/decks', async (_req, res) => {
+    try {
+      const decksRoot = resolve(process.cwd(), 'decks');
+      let entries;
+      try {
+        entries = await readdir(decksRoot, { withFileTypes: true });
+      } catch {
+        return res.json([]);
+      }
+      const decks = [];
+      for (const entry of entries) {
+        if (!entry.isDirectory() || entry.name.startsWith('_') || entry.name.startsWith('.')) continue;
+        const deckPath = join(decksRoot, entry.name);
+        try {
+          const slideFiles = await listSlideFiles(deckPath);
+          const deckStat = await stat(deckPath);
+          let hasOutline = false;
+          try { await stat(join(deckPath, 'slide-outline.md')); hasOutline = true; } catch { /* no outline */ }
+          decks.push({
+            name: entry.name,
+            slideCount: slideFiles.length,
+            lastModified: deckStat.mtime.toISOString(),
+            hasOutline,
+            firstSlide: slideFiles[0] || null,
+          });
+        } catch { /* skip unreadable dirs */ }
+      }
+      decks.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
+      res.json(decks);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/decks/new', (_req, res) => {
+    if (watcher) { try { watcher.close(); } catch { /* ignore */ } watcher = null; }
+    slidesDirectory = null;
+    opts.deckName = '';
+    opts.createMode = true;
+    res.json({ ok: true });
+  });
+
+  app.post('/api/decks/switch', async (req, res) => {
+    const { deckName } = req.body ?? {};
+    if (typeof deckName !== 'string' || !deckName.trim()) {
+      return res.status(400).json({ error: 'Missing deckName.' });
+    }
+    const sanitized = deckName.trim();
+    const newDir = resolve(process.cwd(), 'decks', sanitized);
+    try {
+      await stat(newDir);
+    } catch {
+      return res.status(404).json({ error: 'Deck not found.' });
+    }
+    slidesDirectory = newDir;
+    opts.deckName = sanitized;
+    opts.createMode = false;
+    setupFileWatcher(slidesDirectory);
+    res.json({
+      deckName: sanitized,
+      slidesDir: toPosixPath(relative(process.cwd(), slidesDirectory) || slidesDirectory),
+    });
+  });
+
+  app.get('/api/decks/:name/thumbnail', async (req, res) => {
+    const deckName = req.params.name;
+    const deckPath = resolve(process.cwd(), 'decks', deckName);
+    try {
+      await stat(deckPath);
+    } catch {
+      return res.status(404).json({ error: 'Deck not found.' });
+    }
+    try {
+      const slideFiles = await listSlideFiles(deckPath);
+      if (slideFiles.length === 0) {
+        return res.status(404).json({ error: 'No slides in deck.' });
+      }
+      const firstSlide = slideFiles[0];
+      const thumbPath = join(deckPath, '.thumb.png');
+
+      // Check cache: thumb exists and is newer than first slide
+      let useCache = false;
+      try {
+        const thumbStat = await stat(thumbPath);
+        const slideStat = await stat(join(deckPath, firstSlide));
+        if (thumbStat.mtime >= slideStat.mtime) useCache = true;
+      } catch { /* no cache */ }
+
+      if (useCache) {
+        const thumbBuf = await readFile(thumbPath);
+        res.type('image/png').send(thumbBuf);
+        return;
+      }
+
+      // Generate thumbnail using file:// URL (no race condition with slidesDirectory)
+      const tmpPath = await mkdtemp(join(tmpdir(), 'thumb-'));
+      const screenshotPath = join(tmpPath, 'thumb.png');
+
+      await withScreenshotPage(async (page) => {
+        await screenshotMod.captureSlideScreenshot(
+          page, firstSlide, screenshotPath, deckPath, { useHttp: false },
+        );
+      });
+
+      const thumbBuf = await readFile(screenshotPath);
+      // Cache to deck folder
+      try { await writeFile(thumbPath, thumbBuf); } catch { /* ignore cache write failure */ }
+      // Clean up temp
+      try { await rm(tmpPath, { recursive: true }); } catch { /* ignore */ }
+
+      res.type('image/png').send(thumbBuf);
+    } catch (err) {
+      res.status(500).json({ error: `Thumbnail generation failed: ${err.message}` });
     }
   });
 
@@ -953,9 +1156,208 @@ async function startServer(opts) {
     }
   });
 
-  // ── POST /api/plan — Outline Planning ─────────────────────────────
+  // ── POST /api/import-md — Import freeform MD and convert to outline ─
+  // ── GET /api/import-file — Serve import file content for CLI mode ──
+  app.get('/api/import-file', async (_req, res) => {
+    if (!opts.importFile) {
+      return res.status(404).json({ error: 'No import file specified.' });
+    }
+    try {
+      const absPath = resolve(process.cwd(), opts.importFile);
+      let raw = await readFile(absPath, 'utf-8');
+      // Strip UTF-8 BOM if present
+      if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);
+      res.json({ content: raw, fileName: basename(absPath) });
+    } catch (err) {
+      res.status(404).json({ error: `Cannot read import file: ${err.message}` });
+    }
+  });
+
+  // ── POST /api/import-md — Convert freeform MD to slide outline ─────
   const generateRunStore = createRunStore();
   let activeGenerate = false;
+
+  app.post('/api/import-md', async (req, res) => {
+    const { content: mdContent, filePath, model, slideCount, researchMode } = req.body ?? {};
+
+    // Read MD content from body or file
+    let rawMd = '';
+    if (typeof mdContent === 'string' && mdContent.trim()) {
+      rawMd = mdContent;
+    } else if (typeof filePath === 'string' && filePath.trim()) {
+      try {
+        const absPath = resolve(process.cwd(), filePath.trim());
+        rawMd = await readFile(absPath, 'utf-8');
+        if (rawMd.charCodeAt(0) === 0xFEFF) rawMd = rawMd.slice(1);
+      } catch (err) {
+        return res.status(400).json({ error: `Cannot read file: ${err.message}` });
+      }
+    } else {
+      return res.status(400).json({ error: 'Provide `content` or `filePath`.' });
+    }
+
+    if (!rawMd.trim()) {
+      return res.status(400).json({ error: 'Markdown content is empty.' });
+    }
+    if (rawMd.length > 500_000) {
+      return res.status(400).json({ error: 'Content too large (max 500KB).' });
+    }
+
+    if (activeGenerate) {
+      return res.status(409).json({ error: 'A generation is already in progress.' });
+    }
+
+    const selectedModel = typeof model === 'string' && CLAUDE_MODELS.includes(model.trim())
+      ? model.trim()
+      : CLAUDE_MODELS[0];
+
+    const runId = randomRunId();
+    activeGenerate = true;
+
+    broadcastSSE('planStarted', { runId, topic: '(MD Import)' });
+    broadcastSSE('progress', { runId, phase: 'plan', step: 'Converting markdown to slide outline' });
+    res.json({ runId, topic: '(MD Import)', model: selectedModel });
+
+    (async () => {
+      try {
+        const slideCountLabel = typeof slideCount === 'string' && slideCount.trim()
+          ? slideCount.trim()
+          : '';
+        const useResearch = researchMode === 'research';
+
+        const promptLines = [
+          '아래 마크다운 문서를 분석하여 프레젠테이션 아웃라인으로 변환하세요.',
+          '',
+          '--- 원본 마크다운 ---',
+          rawMd,
+          '--- 원본 마크다운 끝 ---',
+          '',
+          '분석 규칙:',
+          '1. 문서에 슬라이드 구분(### 슬라이드 N, ## Slide N 등)이 있으면 그 구조를 그대로 따르세요.',
+          '2. 슬라이드 구분이 없으면 내용을 분석하여 논리적 단위로 슬라이드를 구성하세요.',
+          '3. **구성:** 섹션이 있으면 슬라이드의 시각적 내용으로 사용하세요.',
+          '4. **발표 내용:** 섹션이 있으면 presenter-note로 보존하세요.',
+          '5. 각 슬라이드에 가장 적합한 type을 배정하세요.',
+        ];
+
+        if (useResearch) {
+          promptLines.push('6. 웹 리서치를 추가로 수행하여 내용을 보강하세요. 최신 데이터, 통계, 사례를 추가할 수 있습니다.');
+        } else {
+          promptLines.push('6. 원본 마크다운의 내용만 사용하세요. 추가 리서치는 하지 마세요.');
+        }
+
+        if (slideCountLabel) {
+          promptLines.push(`7. 목표 슬라이드 수: ${slideCountLabel}장`);
+        }
+
+        promptLines.push('');
+        promptLines.push('다음을 수행하세요:');
+        promptLines.push('');
+        promptLines.push('1. 주제에서 핵심 키워드 2~3개를 뽑아 영어 소문자 kebab-case 폴더명을 결정하세요.');
+        promptLines.push('   예: "AX 전환 발표" → ax-transformation');
+        promptLines.push('');
+        promptLines.push('2. 해당 폴더에 slide-outline.md를 생성하세요. (HTML 슬라이드는 생성하지 마세요)');
+        promptLines.push('   mkdir -p decks/<name> && 아웃라인 파일만 작성');
+        promptLines.push('');
+        promptLines.push('아웃라인 형식:');
+        promptLines.push('```');
+        promptLines.push('# 발표 제목');
+        promptLines.push('');
+        promptLines.push('## Meta');
+        promptLines.push('- deck-name: <kebab-case-name>');
+        promptLines.push('- slide-count: N');
+        promptLines.push('');
+        promptLines.push('## Slides');
+        promptLines.push('### Slide 1');
+        promptLines.push('- type: cover');
+        promptLines.push('- title: 제목');
+        promptLines.push('- content: 부제 또는 설명');
+        promptLines.push('- presenter-note: 발표 내용 (있는 경우)');
+        promptLines.push('');
+        promptLines.push('### Slide 2');
+        promptLines.push('- type: contents');
+        promptLines.push('- title: 목차');
+        promptLines.push('- content: 목차 항목들');
+        promptLines.push('...');
+        promptLines.push('```');
+        promptLines.push('');
+        promptLines.push('type은 다음 중 하나: cover, contents, section-divider, content, two-columns, split-layout, image-text, image-description, chart, statistics, key-metrics, timeline, funnel, matrix, quote, quotes-grid, highlight, principles, diagram, team, simple-list, big-metric, closing');
+        promptLines.push('');
+        promptLines.push('중요: slide-outline.md 파일만 생성하세요. HTML 파일은 생성하지 마세요.');
+
+        const fullPrompt = promptLines.join('\n');
+
+        broadcastSSE('progress', { runId, phase: 'plan', step: 'Converting with AI' });
+
+        const result = await spawnClaudeEdit({
+          prompt: fullPrompt,
+          imagePath: null,
+          model: selectedModel,
+          cwd: process.cwd(),
+          onLog: (stream, chunk) => {
+            broadcastSSE('planLog', { runId, stream, chunk });
+          },
+        });
+
+        const success = result.code === 0;
+
+        let outline = null;
+        let detectedDeckName = '';
+
+        if (success) {
+          broadcastSSE('progress', { runId, phase: 'plan', step: 'Parsing generated outline' });
+        }
+
+        if (success) {
+          try {
+            const decksRoot = resolve(process.cwd(), 'decks');
+            const dirs = await readdir(decksRoot, { withFileTypes: true });
+            let bestDir = '';
+            let bestMtime = 0;
+
+            for (const d of dirs) {
+              if (!d.isDirectory()) continue;
+              const outlinePath = join(decksRoot, d.name, 'slide-outline.md');
+              try {
+                const s = await stat(outlinePath);
+                if (s.mtimeMs > bestMtime) {
+                  bestMtime = s.mtimeMs;
+                  bestDir = d.name;
+                }
+              } catch { /* no outline */ }
+            }
+
+            if (bestDir) {
+              detectedDeckName = bestDir;
+              const outlinePath = join(decksRoot, bestDir, 'slide-outline.md');
+              const outlineContent = await readFile(outlinePath, 'utf-8');
+              outline = parseOutline(outlineContent, bestDir);
+
+              slidesDirectory = join(decksRoot, bestDir);
+              setupFileWatcher(slidesDirectory);
+            }
+          } catch (err) {
+            console.error('Failed to parse imported outline:', err);
+          }
+        }
+
+        broadcastSSE('planFinished', {
+          runId,
+          success,
+          message: success ? 'Outline ready.' : `Import failed (exit code ${result.code}).`,
+          outline,
+          deckName: detectedDeckName,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        broadcastSSE('planFinished', { runId, success: false, message, outline: null });
+      } finally {
+        activeGenerate = false;
+      }
+    })();
+  });
+
+  // ── POST /api/plan — Outline Planning ─────────────────────────────
 
   app.post('/api/plan', async (req, res) => {
     const { topic, requirements, model, slideCount: slideCountRange } = req.body ?? {};
@@ -976,6 +1378,7 @@ async function startServer(opts) {
     activeGenerate = true;
 
     broadcastSSE('planStarted', { runId, topic: topic.trim() });
+    broadcastSSE('progress', { runId, phase: 'plan', step: 'Analyzing topic and structuring outline' });
     res.json({ runId, topic: topic.trim(), model: selectedModel });
 
     (async () => {
@@ -1027,6 +1430,8 @@ async function startServer(opts) {
 
         const fullPrompt = promptLines.join('\n');
 
+        broadcastSSE('progress', { runId, phase: 'plan', step: 'Generating outline with AI' });
+
         const result = await spawnClaudeEdit({
           prompt: fullPrompt,
           imagePath: null,
@@ -1041,6 +1446,10 @@ async function startServer(opts) {
 
         let outline = null;
         let detectedDeckName = '';
+
+        if (success) {
+          broadcastSSE('progress', { runId, phase: 'plan', step: 'Parsing generated outline' });
+        }
 
         if (success) {
           try {
@@ -1115,6 +1524,7 @@ async function startServer(opts) {
       ? `Revise Slide ${targetSlide}: ${feedback.trim().slice(0, 40)}`
       : `Revise: ${feedback.trim().slice(0, 50)}`;
     broadcastSSE('planStarted', { runId, topic: targetLabel });
+    broadcastSSE('progress', { runId, phase: 'revise', step: 'Applying revision feedback' });
     res.json({ runId });
 
     (async () => {
@@ -1194,18 +1604,21 @@ async function startServer(opts) {
       return res.status(409).json({ error: 'A generation is already in progress.' });
     }
 
-    // Rename deck directory if user changed the name in outline review
+    // Rename deck directory if user changed the name in outline review (new decks only)
     if (fromOutline && slidesDirectory && typeof deckName === 'string' && deckName.trim()) {
-      const currentName = basename(slidesDirectory);
-      const newName = deckName.trim().replace(/[<>:"/\\|?*]/g, '-');
-      if (newName !== currentName) {
-        const newPath = resolve(dirname(slidesDirectory), newName);
-        try {
-          await rename(slidesDirectory, newPath);
-          slidesDirectory = newPath;
-          setupFileWatcher(slidesDirectory);
-        } catch (err) {
-          console.error('Failed to rename deck directory:', err);
+      const existingSlides = await listSlideFiles(slidesDirectory).catch(() => []);
+      if (existingSlides.length === 0) {
+        const currentName = basename(slidesDirectory);
+        const newName = deckName.trim().replace(/[<>:"/\\|?*]/g, '-');
+        if (newName !== currentName) {
+          const newPath = resolve(dirname(slidesDirectory), newName);
+          try {
+            await rename(slidesDirectory, newPath);
+            slidesDirectory = newPath;
+            setupFileWatcher(slidesDirectory);
+          } catch (err) {
+            console.error('Failed to rename deck directory:', err);
+          }
         }
       }
     }
@@ -1241,6 +1654,7 @@ async function startServer(opts) {
       ? toPosixPath(relative(process.cwd(), slidesDirectory) || slidesDirectory)
       : '';
     broadcastSSE('generateStarted', { runId, topic: (topic || '').trim(), deckPath: resolvedDeckPath });
+    broadcastSSE('progress', { runId, phase: 'generate', step: 'Preparing slide templates' });
 
     res.json({ runId, topic: (topic || '').trim(), model: selectedModel, deckPath: resolvedDeckPath });
 
@@ -1252,6 +1666,16 @@ async function startServer(opts) {
         let fullPrompt;
 
         if (fromOutline && slidesDirectory) {
+          // Back up existing slides before regeneration
+          try {
+            const backupPath = await backupSlides(slidesDirectory);
+            if (backupPath) {
+              broadcastSSE('progress', { runId, phase: 'generate', step: 'Backed up existing slides' });
+            }
+          } catch (err) {
+            console.error('Slide backup failed:', err);
+          }
+
           // Generate from approved outline — skip outline creation
           const outlinePath = join(slidesDirectory, 'slide-outline.md');
           let outlineContent = '';
@@ -1262,7 +1686,8 @@ async function startServer(opts) {
           const promptLines = [
             `작업 디렉토리: ${slidesDir}`,
             '',
-            '아래 승인된 아웃라인 기반으로 HTML 슬라이드를 생성하세요.',
+            '아래 승인된 아웃라인 기반으로 HTML 슬라이드를 새로 생성하세요.',
+            '기존 슬라이드는 백업 후 삭제되었으므로, 모든 슬라이드를 빠짐없이 새로 만들어야 합니다.',
             '',
             '--- 아웃라인 ---',
             outlineContent,
@@ -1275,6 +1700,7 @@ async function startServer(opts) {
             '   - 폰트: Pretendard CDN (link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css")',
             '   - 텍스트는 p, h1-h6, ul, ol, li 태그만 사용',
             '   - slides-grab show-template <name> 으로 템플릿 확인 후 활용',
+            '   - backup/ 폴더는 절대 수정하지 마세요 (이전 슬라이드 백업)',
             '   - 각 슬라이드는 독립적인 완전한 HTML 파일이어야 합니다',
             '',
             '2. 승인 대기 없이 전체 슬라이드를 한번에 생성하세요.',
@@ -1347,6 +1773,8 @@ async function startServer(opts) {
           fullPrompt = promptLines.join('\n');
         }
 
+        broadcastSSE('progress', { runId, phase: 'generate', step: 'Building slides with AI' });
+
         const result = await spawnClaudeEdit({
           prompt: fullPrompt,
           imagePath: null,
@@ -1359,6 +1787,10 @@ async function startServer(opts) {
         });
 
         const success = result.code === 0;
+
+        if (success) {
+          broadcastSSE('progress', { runId, phase: 'generate', step: 'Finalizing slides' });
+        }
 
         // If slidesDirectory is still unset, detect the folder Claude created
         if (!slidesDirectory && success) {
@@ -1904,9 +2336,10 @@ async function startServer(opts) {
   }
 
   const server = app.listen(opts.port, () => {
+    const mode = opts.browseMode ? 'BROWSE' : opts.createMode ? 'CREATE' : 'EDIT';
     process.stdout.write('\n  slides-grab editor\n');
     process.stdout.write('  ─────────────────────────────────────\n');
-    process.stdout.write(`  Mode:        ${opts.createMode ? 'CREATE' : 'EDIT'}\n`);
+    process.stdout.write(`  Mode:        ${mode}\n`);
     process.stdout.write(`  Local:       http://localhost:${opts.port}\n`);
     process.stdout.write(`  Models:      ${ALL_MODELS.join(', ')}\n`);
     process.stdout.write(`  Slides:      ${slidesDirectory || '(will be created)'}\n`);

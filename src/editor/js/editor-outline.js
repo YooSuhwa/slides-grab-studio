@@ -2,7 +2,8 @@
 
 import { creationState } from './editor-state.js';
 import { setStatus } from './editor-utils.js';
-import { appendCreationLog, showCreationMode, loadCreationModelOptions } from './editor-create.js';
+import { appendCreationLog, showCreationMode, loadCreationModelOptions, showPlanLoading, updatePlanLoadingStep } from './editor-create.js';
+import { btnReviewOutline } from './editor-dom.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -28,11 +29,12 @@ let editingIndex = -1;
  * @param {'success'|'fail'} [result] — omit to just reset silently
  */
 export function resetOutlineIndicators(result) {
-  // Hide bunny track
+  // Hide bunny track + overlay
   const review = document.querySelector('.outline-review');
   if (review) review.classList.remove('generating');
   const oProgress = document.getElementById('outline-progress');
   if (oProgress) oProgress.hidden = true;
+  showPlanLoading(false);
 
   // Flash + restore buttons
   const revBtn = outlineRevise;
@@ -71,7 +73,7 @@ export function resetOutlineIndicators(result) {
   }
 }
 
-export function showOutlinePhase(outline) {
+export function showOutlinePhase(outline, { isExistingDeck = false } = {}) {
   currentOutline = outline;
   editingIndex = -1;
 
@@ -81,7 +83,12 @@ export function showOutlinePhase(outline) {
   const oProgress = document.getElementById('outline-progress');
   if (oProgress) oProgress.hidden = true;
 
-  if (outlineDeckName) outlineDeckName.value = outline.deckName || '';
+  if (outlineDeckName) {
+    outlineDeckName.value = outline.deckName || '';
+    outlineDeckName.readOnly = isExistingDeck;
+    outlineDeckName.title = isExistingDeck ? '기존 덱 — 이름 변경 불가' : '';
+    outlineDeckName.style.opacity = isExistingDeck ? '0.6' : '';
+  }
   if (outlineCount) outlineCount.textContent = `${outline.slides?.length || 0} slides`;
 
   renderOutlineCards(outline.slides || []);
@@ -173,6 +180,7 @@ function renderOutlineCards(slides) {
     const card = document.createElement('div');
     card.className = 'outline-card' + (i === editingIndex ? ' editing' : '');
     card.dataset.index = i;
+    card.dataset.type = (slide.type || 'content').toLowerCase();
 
     const isEditing = i === editingIndex;
     const cleanTitle = (slide.title || '').replace(/<[^>]*>/g, '').replace(/\*\*(.*?)\*\*/g, '$1');
@@ -301,7 +309,7 @@ async function saveCardEdit(index) {
     editingIndex = -1;
     renderOutlineCards(currentOutline?.slides || []);
     updateFeedbackPlaceholder();
-    setStatus(`Slide ${index + 1} saved.`);
+    setStatus(`슬라이드 ${index + 1} 저장 완료.`);
   }
 }
 
@@ -368,7 +376,7 @@ async function saveOutlineToServer() {
     currentOutline.deckName = updated.deckName;
     return true;
   } catch (err) {
-    setStatus(`Save failed: ${err.message}`);
+    setStatus(`저장 실패: ${err.message}`);
     return false;
   }
 }
@@ -398,7 +406,7 @@ if (outlineBack) {
 if (outlineRevise) {
   outlineRevise.addEventListener('click', async () => {
     const feedback = outlineFeedback?.value?.trim();
-    if (!feedback) { setStatus('Please enter revision feedback.'); return; }
+    if (!feedback) { setStatus('수정 피드백을 입력해 주세요.'); return; }
     if (creationState.generating) return;
 
     if (editingIndex >= 0) { commitCurrentEdit(); await saveOutlineToServer(); }
@@ -411,6 +419,7 @@ if (outlineRevise) {
     outlineRevise.classList.add('working');
     outlineRevise.textContent = 'Revising...';
     if (outlineApprove) outlineApprove.style.display = 'none';
+    showPlanLoading(true, '아웃라인 수정 중');
 
     // Clear previous log
     const oLog = document.getElementById('outline-log');
@@ -438,8 +447,9 @@ if (outlineRevise) {
     } catch (err) {
       creationState.generating = false;
       resetOutlineIndicators('fail');
+      showPlanLoading(false);
       appendCreationLog(`[Error] ${err.message}\n`);
-      setStatus(`Revision failed: ${err.message}`);
+      setStatus(`수정 실패: ${err.message}`);
     }
   });
 }
@@ -461,6 +471,7 @@ if (outlineApprove) {
     outlineApprove.classList.add('working');
     outlineApprove.textContent = 'Generating...';
     if (outlineRevise) outlineRevise.style.display = 'none';
+    showPlanLoading(true, '슬라이드 생성 중');
 
     // Clear previous log and show progress
     const oLog = document.getElementById('outline-log');
@@ -489,8 +500,9 @@ if (outlineApprove) {
     } catch (err) {
       creationState.generating = false;
       resetOutlineIndicators('fail');
+      showPlanLoading(false);
       appendCreationLog(`[Error] ${err.message}\n`);
-      setStatus(`Generation failed: ${err.message}`);
+      setStatus(`생성 실패: ${err.message}`);
     }
   });
 }
@@ -509,13 +521,14 @@ export function onPlanLog(payload) {
 
 export function onPlanFinished(payload) {
   creationState.generating = false;
+  showPlanLoading(false);
 
   if (payload.success && payload.outline) {
     resetOutlineIndicators('success');
     appendCreationLog(`\n[Done] Outline ready.\n`);
     showOutlinePhase(payload.outline);
     if (outlineFeedback) outlineFeedback.value = '';
-    setStatus('Review the outline and provide feedback.');
+    setStatus('아웃라인을 검토하고 피드백을 입력하세요.');
   } else {
     resetOutlineIndicators('fail');
     appendCreationLog(`\n[Failed] ${payload.message}\n`);
@@ -523,7 +536,10 @@ export function onPlanFinished(payload) {
       creationGenerate.disabled = false;
       creationGenerate.style.display = '';
     }
-    setStatus(`Plan failed: ${payload.message}`);
+    // Also re-enable import submit button
+    const importSubmitBtn = document.getElementById('import-submit');
+    if (importSubmitBtn) importSubmitBtn.disabled = false;
+    setStatus(`계획 실패: ${payload.message}`);
   }
 }
 
@@ -532,21 +548,20 @@ export function onPlanFinished(payload) {
 export async function loadAndShowOutline() {
   try {
     const res = await fetch('/api/outline');
-    if (!res.ok) { setStatus('No outline found for this deck.'); return; }
+    if (!res.ok) { setStatus('이 덱에서 아웃라인을 찾을 수 없습니다.'); return; }
     const outline = await res.json();
     showCreationMode();
     await loadCreationModelOptions();
-    showOutlinePhase(outline);
+    showOutlinePhase(outline, { isExistingDeck: true });
     if (outlineFeedback) outlineFeedback.value = '';
     if (outlineRevise) outlineRevise.disabled = false;
     if (outlineApprove) outlineApprove.disabled = false;
-    setStatus('Review the outline and provide feedback.');
+    setStatus('아웃라인을 검토하고 피드백을 입력하세요.');
   } catch (err) {
-    setStatus(`Failed to load outline: ${err.message}`);
+    setStatus(`아웃라인 로드 실패: ${err.message}`);
   }
 }
 
-const btnReviewOutline = $('#btn-review-outline');
 if (btnReviewOutline) {
   btnReviewOutline.addEventListener('click', loadAndShowOutline);
 }

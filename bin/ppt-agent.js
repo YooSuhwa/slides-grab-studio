@@ -153,6 +153,35 @@ program
   });
 
 program
+  .command('import')
+  .description('Import a markdown file and convert to presentation slides')
+  .argument('<md-file>', 'Path to the markdown file')
+  .option('--port <number>', 'Server port')
+  .option('--deck-name <name>', 'Deck folder name under decks/ (auto-generated if omitted)')
+  .option('--slide-count <range>', 'Target slide count range (e.g., "25~30")')
+  .option('--research', 'Enable additional web research to enrich content')
+  .action(async (mdFile, options = {}) => {
+    const args = ['--import', mdFile];
+    if (options.deckName) args.push('--deck-name', options.deckName);
+    if (options.port) args.push('--port', String(options.port));
+    if (options.slideCount) args.push('--slide-count', options.slideCount);
+    if (options.research) args.push('--research');
+    await runCommand('scripts/editor-server.js', args);
+  });
+
+program
+  .command('browse')
+  .description('Open deck browser to view and manage all decks')
+  .option('--port <number>', 'Server port')
+  .action(async (options = {}) => {
+    const args = ['--browse'];
+    if (options.port) {
+      args.push('--port', String(options.port));
+    }
+    await runCommand('scripts/editor-server.js', args);
+  });
+
+program
   .command('split')
   .description('Split a multi-slide HTML file into individual slide-*.html files')
   .requiredOption('--input <path>', 'Source HTML file containing multiple slides')

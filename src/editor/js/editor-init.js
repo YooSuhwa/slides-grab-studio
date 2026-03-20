@@ -9,6 +9,9 @@ import {
   popoverTextInput, popoverApplyText, popoverTextColorInput, popoverBgColorInput,
   popoverSizeInput, popoverApplySize, toolModeDrawBtn, toolModeSelectBtn,
   btnNewDeck,
+  slideStrip, btnExportToggle, exportDropdown, btnReviewOutline,
+  slideSkeleton, bboxEmptyGuide, shortcutsModal, shortcutsClose, btnShortcuts,
+  sidebarToggle, editorSidebar, btnSendLabel,
 } from './editor-dom.js';
 import {
   currentSlideFile, getSlideState, normalizeModelName, setStatus,
@@ -33,8 +36,9 @@ import { connectSSE, loadRunsInitial } from './editor-sse.js';
 import { openExportModal } from './editor-svg-export.js';
 import { openPdfExportModal } from './editor-pdf-export.js';
 import './editor-figma-export.js';
-import { showCreationMode, hideCreationMode, loadCreationModelOptions, checkCreateMode } from './editor-create.js';
+import { showCreationMode, hideCreationMode, loadCreationModelOptions, checkCreateMode, loadImportModelOptions, switchToImportTab, submitImport } from './editor-create.js';
 import { showOutlinePhase } from './editor-outline.js';
+import { renderThumbnailStrip, updateActiveThumbnail } from './editor-thumbnails.js';
 
 // Late-binding: connect bbox changes to updateSendState
 onBboxChange(updateSendState);
@@ -235,11 +239,23 @@ document.addEventListener('keydown', (event) => {
   }
 
   if (event.key === 'Escape') {
+    // Close shortcuts modal if open
+    if (shortcutsModal && !shortcutsModal.hidden) {
+      shortcutsModal.hidden = true;
+      return;
+    }
     if (document.activeElement) document.activeElement.blur();
     return;
   }
 
   if (inPromptField) return;
+
+  // ? key for shortcuts
+  if (event.key === '?' && !event.ctrlKey && !event.metaKey) {
+    event.preventDefault();
+    toggleShortcutsModal();
+    return;
+  }
 
   if (event.key === 'ArrowLeft') {
     event.preventDefault();
@@ -252,6 +268,83 @@ document.addEventListener('keydown', (event) => {
 
 // Resize
 window.addEventListener('resize', scaleSlide);
+
+// Thumbnail strip click
+if (slideStrip) {
+  slideStrip.addEventListener('click', (event) => {
+    const thumb = event.target.closest('.slide-thumb');
+    if (!thumb) return;
+    const idx = parseInt(thumb.dataset.index, 10);
+    if (!isNaN(idx)) void goToSlide(idx);
+  });
+}
+
+// Export dropdown toggle
+if (btnExportToggle && exportDropdown) {
+  btnExportToggle.addEventListener('click', (event) => {
+    event.stopPropagation();
+    const isOpen = exportDropdown.classList.toggle('open');
+    btnExportToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  });
+  document.addEventListener('click', (event) => {
+    if (event.target.closest('.export-dropdown-wrapper')) return;
+    exportDropdown.classList.remove('open');
+    btnExportToggle.setAttribute('aria-expanded', 'false');
+  });
+}
+
+// Keyboard shortcuts modal
+function toggleShortcutsModal() {
+  if (!shortcutsModal) return;
+  const isHidden = shortcutsModal.hidden;
+  shortcutsModal.hidden = !isHidden;
+}
+if (btnShortcuts) btnShortcuts.addEventListener('click', toggleShortcutsModal);
+if (shortcutsClose) shortcutsClose.addEventListener('click', () => { if (shortcutsModal) shortcutsModal.hidden = true; });
+if (shortcutsModal) {
+  shortcutsModal.addEventListener('click', (event) => {
+    if (event.target === shortcutsModal) shortcutsModal.hidden = true;
+  });
+}
+
+// Sidebar toggle
+if (sidebarToggle && editorSidebar) {
+  const savedState = localStorage.getItem('sidebar-collapsed');
+  if (savedState === 'true') editorSidebar.classList.add('collapsed');
+
+  sidebarToggle.addEventListener('click', () => {
+    const isCollapsed = editorSidebar.classList.toggle('collapsed');
+    sidebarToggle.textContent = isCollapsed ? '\u25b8' : '\u25c2';
+    localStorage.setItem('sidebar-collapsed', isCollapsed ? 'true' : 'false');
+    // Recalculate slide scale after sidebar transition completes
+    editorSidebar.addEventListener('transitionend', scaleSlide, { once: true });
+  });
+}
+
+// Prompt textarea auto-grow
+if (promptInput) {
+  const sidebarTextarea = document.querySelector('.sidebar-textarea');
+  if (sidebarTextarea) {
+    sidebarTextarea.addEventListener('input', () => {
+      sidebarTextarea.style.height = 'auto';
+      sidebarTextarea.style.height = Math.min(sidebarTextarea.scrollHeight, 200) + 'px';
+    });
+  }
+}
+
+// Run button dynamic label
+function updateRunButtonLabel() {
+  if (!btnSendLabel) return;
+  const model = normalizeModelName(modelSelect?.value || '');
+  if (model.startsWith('claude-')) {
+    btnSendLabel.textContent = 'Run Claude';
+  } else if (model.startsWith('gpt-')) {
+    btnSendLabel.textContent = 'Run Codex';
+  } else {
+    btnSendLabel.textContent = 'Run';
+  }
+}
+modelSelect?.addEventListener('change', updateRunButtonLabel);
 
 // Iframe load — detect content size and adapt wrapper/iframe dimensions
 slideIframe.addEventListener('load', () => {
@@ -282,6 +375,9 @@ slideIframe.addEventListener('load', () => {
 
   scaleSlide();
 
+  // Hide loading skeleton
+  if (slideSkeleton) slideSkeleton.classList.remove('visible');
+
   const slide = currentSlideFile();
   if (slide) {
     const ss = getSlideState(slide);
@@ -301,41 +397,137 @@ async function init() {
   setStatus('Loading slide list...');
 
   try {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // If ?deck= param exists, switch to that deck first (from browse page)
+    const deckParam = urlParams.get('deck');
+    if (deckParam) {
+      const switchRes = await fetch('/api/decks/switch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deckName: deckParam }),
+      });
+      if (!switchRes.ok) {
+        const err = await switchRes.json().catch(() => ({}));
+        throw new Error(`Failed to switch deck: ${err.error || switchRes.statusText}`);
+      }
+    }
+
+    // Handle ?create=1 query param (from browser "New Deck" button)
+    const forceCreate = urlParams.get('create') === '1';
+
+    // Reset server state for new deck creation
+    if (forceCreate) {
+      await fetch('/api/decks/new', { method: 'POST' }).catch(() => {});
+    }
+
+    // Detect browse mode: show back button and deck name in nav bar
+    const configRes = await fetch('/api/editor-config');
+    const config = configRes.ok ? await configRes.json() : {};
+    if (config.browseMode) {
+      const backBtn = document.getElementById('btn-back-browser');
+      const deckNameEl = document.getElementById('nav-deck-name');
+      if (backBtn) backBtn.style.display = '';
+      if (deckNameEl) {
+        if (forceCreate) {
+          deckNameEl.textContent = '';
+          deckNameEl.style.display = 'none';
+        } else if (config.deckName) {
+          deckNameEl.textContent = config.deckName;
+          deckNameEl.style.display = '';
+        }
+      }
+    }
+
     const res = await fetch('/api/slides');
     if (!res.ok) {
       throw new Error(`Failed to fetch slide list: ${res.status}`);
     }
 
     state.slides = await res.json();
-
-    // Enter creation mode if: server is in create mode, or no slides exist
+    // Enter creation mode if: server is in create mode, or no slides exist, or ?create=1
     const isCreateMode = await checkCreateMode();
-    if (isCreateMode || state.slides.length === 0) {
+    if (forceCreate || isCreateMode || state.slides.length === 0) {
       showCreationMode();
       await loadCreationModelOptions();
+      await loadImportModelOptions();
       connectSSE();
 
-      // Auto-load outline if one exists in the deck
+      // Auto-load outline if one exists in the deck (skip for explicit new deck)
+      if (!forceCreate) {
+        try {
+          const outlineRes = await fetch('/api/outline');
+          if (outlineRes.ok) {
+            const outline = await outlineRes.json();
+            showOutlinePhase(outline, { isExistingDeck: state.slides.length > 0 });
+            setStatus('Outline loaded. Review and provide feedback.');
+            return;
+          }
+        } catch { /* no outline */ }
+      }
+
+      // Check if CLI --import mode: auto-switch to import tab and trigger
       try {
-        const outlineRes = await fetch('/api/outline');
-        if (outlineRes.ok) {
-          const outline = await outlineRes.json();
-          showOutlinePhase(outline);
-          setStatus('Outline loaded. Review and provide feedback.');
-          return;
+        const cfgRes = await fetch('/api/editor-config');
+        if (cfgRes.ok) {
+          const cfg = await cfgRes.json();
+          if (cfg.importFile) {
+            switchToImportTab();
+            // Fetch import file content from server
+            const fileRes = await fetch('/api/import-file');
+            if (fileRes.ok) {
+              const { content: importContent, fileName } = await fileRes.json();
+              // Set slide count / research mode from CLI flags
+              const importSlideCountEl = document.getElementById('import-slide-count');
+              const importResearchEl = document.getElementById('import-research-mode');
+              if (cfg.importSlideCount && importSlideCountEl) {
+                importSlideCountEl.value = cfg.importSlideCount;
+              }
+              if (cfg.importResearch && importResearchEl) {
+                importResearchEl.value = 'research';
+              }
+              // Show file info
+              const dropzone = document.getElementById('import-dropzone');
+              const fileInfo = document.getElementById('import-file-info');
+              const fileNameEl = document.getElementById('import-file-name');
+              if (dropzone) dropzone.hidden = true;
+              if (fileInfo) fileInfo.hidden = false;
+              if (fileNameEl) fileNameEl.textContent = fileName;
+              // Auto-submit
+              submitImport(importContent);
+              return;
+            }
+          }
         }
-      } catch { /* no outline */ }
+      } catch { /* no import mode */ }
 
       setStatus('Enter a topic to generate slides.');
       return;
     }
 
+    // Check if outline exists and enable/disable button accordingly
+    const btnOutline = document.getElementById('btn-review-outline');
+    if (btnOutline) {
+      try {
+        const outlineCheck = await fetch('/api/outline');
+        btnOutline.disabled = !outlineCheck.ok;
+      } catch {
+        btnOutline.disabled = true;
+      }
+    }
+
     await loadModelOptions();
     updateToolModeUI();
+    renderThumbnailStrip();
     await goToSlide(0);
     scaleSlide();
     await loadRunsInitial();
     connectSSE();
+    updateRunButtonLabel();
+    // Editor-mode button states (same logic in editor-create.js hideCreationMode)
+    if (btnNewDeck) btnNewDeck.disabled = true;
+    if (btnReviewOutline) btnReviewOutline.classList.add('nav-emphasis');
+    if (btnExportToggle) btnExportToggle.classList.add('nav-emphasis');
 
     setStatus(`Ready. Model: ${state.selectedModel}. Draw red pending bboxes, run Codex, then review green bboxes.`);
   } catch (error) {

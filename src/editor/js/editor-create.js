@@ -5,13 +5,80 @@ import {
   creationPanel, creationTopic, creationRequirements, creationModel,
   creationGenerate, creationLog, creationProgress,
   creationDeckName, creationSlideCount,
-  slidePanel, editorSidebar, slideCounter, btnNewDeck,
+  slidePanel, editorSidebar, slideCounter, btnNewDeck, slideStrip,
+  btnPrev, btnNext, btnExportToggle, btnReviewOutline,
+  tabTopic, tabImport, tabTopicPanel, tabImportPanel,
+  importDropzone, importFileInput, importBrowse, importFileInfo,
+  importFileName, importFileClear, importSlideCount, importResearchMode,
+  importModel, importSubmit,
 } from './editor-dom.js';
 import { setStatus, loadModelOptions } from './editor-utils.js';
 import { goToSlide } from './editor-navigation.js';
 import { updateToolModeUI } from './editor-select.js';
 import { scaleSlide } from './editor-bbox.js';
 import { resetOutlineIndicators } from './editor-outline.js';
+import { renderThumbnailStrip } from './editor-thumbnails.js';
+
+let _planLoadingTimer = null;
+let _planLoadingStart = 0;
+
+export function showPlanLoading(visible, label) {
+  const el = document.getElementById('plan-loading');
+  if (!el) return;
+  el.classList.toggle('active', visible);
+
+  if (visible) {
+    if (label) {
+      const labelEl = document.getElementById('plan-loading-label');
+      if (labelEl) labelEl.textContent = label;
+    }
+    const stepEl = document.getElementById('plan-loading-step');
+    if (stepEl) stepEl.textContent = '';
+
+    // Start timer
+    _planLoadingStart = Date.now();
+    const timerEl = document.getElementById('plan-loading-timer');
+    if (timerEl) timerEl.textContent = '0:00';
+    clearInterval(_planLoadingTimer);
+    _planLoadingTimer = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - _planLoadingStart) / 1000);
+      const m = Math.floor(elapsed / 60);
+      const s = String(elapsed % 60).padStart(2, '0');
+      if (timerEl) timerEl.textContent = `${m}:${s}`;
+    }, 1000);
+  } else {
+    clearInterval(_planLoadingTimer);
+    _planLoadingTimer = null;
+  }
+}
+
+export function updatePlanLoadingStep(step) {
+  const el = document.getElementById('plan-loading-step');
+  if (el) el.textContent = step;
+}
+
+/**
+ * Feed raw log chunks into the overlay step area.
+ * Extracts the last meaningful line to show activity.
+ */
+let _lastLogLine = '';
+export function feedPlanLoadingLog(chunk) {
+  if (!chunk || typeof chunk !== 'string') return;
+  const el = document.getElementById('plan-loading-step');
+  if (!el) return;
+
+  // Split chunk into lines, find the last non-empty one
+  const lines = chunk.split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length === 0) return;
+
+  const line = lines[lines.length - 1];
+  // Skip duplicate or very short lines
+  if (line === _lastLogLine || line.length < 3) return;
+  _lastLogLine = line;
+
+  // Truncate for display
+  el.textContent = line.length > 70 ? line.slice(0, 67) + '...' : line;
+}
 
 export function showCreationMode() {
   creationState.active = true;
@@ -19,6 +86,7 @@ export function showCreationMode() {
   if (slidePanel) slidePanel.style.display = 'none';
   if (editorSidebar) editorSidebar.style.display = 'none';
   if (btnNewDeck) btnNewDeck.style.display = 'none';
+  if (slideStrip) slideStrip.style.display = 'none';
   slideCounter.textContent = '0 / 0';
 
   // Reset to input phase
@@ -26,6 +94,7 @@ export function showCreationMode() {
   const phaseOutline = document.getElementById('creation-phase-outline');
   if (phaseInput) phaseInput.hidden = false;
   if (phaseOutline) phaseOutline.hidden = true;
+  showPlanLoading(false);
 
   if (creationGenerate) {
     creationGenerate.disabled = false;
@@ -37,14 +106,35 @@ export function showCreationMode() {
   if (outlineLog) outlineLog.textContent = '';
   const oldBtn = document.getElementById('creation-view-result');
   if (oldBtn) oldBtn.remove();
+
+  // Disable nav buttons irrelevant in creation mode
+  if (btnPrev) btnPrev.disabled = true;
+  if (btnNext) btnNext.disabled = true;
+  if (btnReviewOutline) btnReviewOutline.disabled = true;
+  if (btnExportToggle) btnExportToggle.disabled = true;
+  // Remove editor-mode emphasis during creation
+  if (btnReviewOutline) btnReviewOutline.classList.remove('nav-emphasis');
+  if (btnExportToggle) btnExportToggle.classList.remove('nav-emphasis');
 }
 
 export function hideCreationMode() {
   creationState.active = false;
+  if (_placeholderTimer) { clearInterval(_placeholderTimer); _placeholderTimer = null; }
   if (creationPanel) creationPanel.classList.remove('active');
   if (slidePanel) slidePanel.style.display = '';
   if (editorSidebar) editorSidebar.style.display = '';
   if (btnNewDeck) btnNewDeck.style.display = '';
+  if (slideStrip) slideStrip.style.display = '';
+
+  // Re-enable nav buttons (Prev/Next state will be corrected by goToSlide)
+  if (btnPrev) btnPrev.disabled = false;
+  if (btnNext) btnNext.disabled = false;
+  if (btnReviewOutline) btnReviewOutline.disabled = false;
+  if (btnExportToggle) btnExportToggle.disabled = false;
+  // Editor-mode button states (same logic in editor-init.js init)
+  if (btnNewDeck) btnNewDeck.disabled = true;
+  if (btnReviewOutline) btnReviewOutline.classList.add('nav-emphasis');
+  if (btnExportToggle) btnExportToggle.classList.add('nav-emphasis');
 }
 
 export function isCreationMode() {
@@ -87,15 +177,20 @@ export async function checkCreateMode() {
   }
 }
 
+function preventUnload(e) {
+  e.preventDefault();
+  e.returnValue = '';
+}
+
 export async function submitGeneration() {
   const topic = creationTopic?.value?.trim();
   if (!topic) {
-    setStatus('Please enter a topic.');
+    setStatus('주제를 입력해 주세요.');
     return;
   }
 
   if (creationState.generating) {
-    setStatus('Already in progress.');
+    setStatus('이미 진행 중입니다.');
     return;
   }
 
@@ -104,10 +199,12 @@ export async function submitGeneration() {
   const slideCount = creationSlideCount?.value || '8~12';
 
   creationState.generating = true;
+  window.addEventListener('beforeunload', preventUnload);
   if (creationGenerate) creationGenerate.disabled = true;
   if (creationProgress) creationProgress.hidden = false;
   if (creationLog) creationLog.textContent = '';
-  setStatus('Planning outline...');
+  showPlanLoading(true, '아웃라인 생성 중');
+  setStatus('아웃라인을 계획하고 있습니다...');
 
   try {
     const res = await fetch('/api/plan', {
@@ -126,9 +223,11 @@ export async function submitGeneration() {
     appendCreationLog(`[Plan] Topic: ${data.topic} | Model: ${data.model}\n`);
   } catch (err) {
     creationState.generating = false;
+    window.removeEventListener('beforeunload', preventUnload);
     if (creationGenerate) creationGenerate.disabled = false;
+    showPlanLoading(false);
     appendCreationLog(`[Error] ${err.message}\n`);
-    setStatus(`Plan failed: ${err.message}`);
+    setStatus(`아웃라인 생성 실패: ${err.message}`);
   }
 }
 
@@ -148,11 +247,6 @@ export function appendCreationLog(text) {
   logEl.textContent += text;
   logEl.scrollTop = logEl.scrollHeight;
 
-  // Shrink outline slides when progress is visible
-  if (inOutline) {
-    const review = document.querySelector('.outline-review');
-    if (review) review.classList.add('generating');
-  }
 }
 
 export function onGenerateStarted(payload) {
@@ -167,6 +261,8 @@ export function onGenerateLog(payload) {
 
 export function onGenerateFinished(payload) {
   creationState.generating = false;
+  window.removeEventListener('beforeunload', preventUnload);
+  showPlanLoading(false);
 
   const outlinePhase = document.getElementById('creation-phase-outline');
   const inOutline = outlinePhase && !outlinePhase.hidden;
@@ -187,7 +283,7 @@ export function onGenerateFinished(payload) {
       if (creationGenerate) creationGenerate.disabled = false;
     }
     appendCreationLog(`\n[Failed] ${payload.message}\n`);
-    setStatus(`Generation failed: ${payload.message}`);
+    setStatus(`생성 실패: ${payload.message}`);
   }
 }
 
@@ -227,11 +323,19 @@ export async function refreshSlideList() {
 
     if (state.slides.length > 0) {
       hideCreationMode();
+      // Check outline existence to enable/disable Outline button
+      try {
+        const outlineCheck = await fetch('/api/outline');
+        if (btnReviewOutline) btnReviewOutline.disabled = !outlineCheck.ok;
+      } catch {
+        if (btnReviewOutline) btnReviewOutline.disabled = true;
+      }
       await loadModelOptions();
       updateToolModeUI();
+      renderThumbnailStrip();
       await goToSlide(0);
       scaleSlide();
-      setStatus(`${state.slides.length} slides loaded. Switched to edit mode.`);
+      setStatus(`${state.slides.length}개 슬라이드 로드 완료. 편집 모드로 전환합니다.`);
     }
   } catch (err) {
     console.error('refreshSlideList error:', err);
@@ -251,4 +355,217 @@ if (creationTopic) {
       submitGeneration();
     }
   });
+
+  // Cycling placeholder examples
+  const placeholders = [
+    '어떤 주제의 프레젠테이션인가요?',
+    '2026년 1분기 매출 리뷰...',
+    '마이크로서비스 기술 아키텍처 개요...',
+    '모바일 앱 출시 전략...',
+    '신규 엔지니어 온보딩 가이드...',
+    '연간 회고 및 목표 설정...',
+  ];
+  let placeholderIdx = 0;
+  _placeholderTimer = setInterval(() => {
+    if (creationTopic.value || document.activeElement === creationTopic) return;
+    placeholderIdx = (placeholderIdx + 1) % placeholders.length;
+    creationTopic.placeholder = placeholders[placeholderIdx];
+  }, 3000);
+}
+
+var _placeholderTimer = null;
+
+// ── Import MD Tab Logic ──────────────────────────────────────────────
+
+let _importedContent = '';
+
+function switchTab(tab) {
+  const isTopic = tab === 'topic';
+  if (tabTopic) {
+    tabTopic.classList.toggle('active', isTopic);
+    tabTopic.setAttribute('aria-selected', String(isTopic));
+  }
+  if (tabImport) {
+    tabImport.classList.toggle('active', !isTopic);
+    tabImport.setAttribute('aria-selected', String(!isTopic));
+  }
+  if (tabTopicPanel) tabTopicPanel.hidden = !isTopic;
+  if (tabImportPanel) tabImportPanel.hidden = isTopic;
+}
+
+export function switchToImportTab() {
+  switchTab('import');
+}
+
+if (tabTopic) {
+  tabTopic.addEventListener('click', () => switchTab('topic'));
+}
+if (tabImport) {
+  tabImport.addEventListener('click', () => switchTab('import'));
+}
+
+function showImportedFile(name) {
+  if (importDropzone) importDropzone.hidden = true;
+  if (importFileInfo) importFileInfo.hidden = false;
+  if (importFileName) importFileName.textContent = name;
+}
+
+function clearImportedFile() {
+  _importedContent = '';
+  if (importDropzone) importDropzone.hidden = false;
+  if (importFileInfo) importFileInfo.hidden = true;
+  if (importFileName) importFileName.textContent = '';
+  if (importFileInput) importFileInput.value = '';
+}
+
+const MAX_IMPORT_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_EXTENSIONS = ['md', 'markdown', 'txt'];
+
+function handleImportFile(file) {
+  if (!file) return;
+
+  // File size check
+  if (file.size > MAX_IMPORT_FILE_SIZE) {
+    setStatus('파일이 너무 큽니다 (최대 5MB).');
+    return;
+  }
+
+  // Extension check (important for drag-and-drop which ignores accept attribute)
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    setStatus('.md, .markdown, .txt 파일만 지원합니다.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onerror = () => setStatus('파일을 읽지 못했습니다.');
+  reader.onload = () => {
+    const text = typeof reader.result === 'string' ? reader.result.trim() : '';
+    if (!text) {
+      setStatus('파일이 비어 있습니다.');
+      return;
+    }
+    _importedContent = reader.result;
+    showImportedFile(file.name);
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+// Browse button
+if (importBrowse) {
+  importBrowse.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    importFileInput?.click();
+  });
+}
+
+// File input change
+if (importFileInput) {
+  importFileInput.addEventListener('change', () => {
+    const file = importFileInput.files?.[0];
+    if (file) handleImportFile(file);
+  });
+}
+
+// Click on dropzone
+if (importDropzone) {
+  importDropzone.addEventListener('click', (e) => {
+    if (e.target === importBrowse) return;
+    importFileInput?.click();
+  });
+
+  // Drag-and-drop
+  importDropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    importDropzone.classList.add('dragover');
+  });
+  importDropzone.addEventListener('dragleave', () => {
+    importDropzone.classList.remove('dragover');
+  });
+  importDropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    importDropzone.classList.remove('dragover');
+    const file = e.dataTransfer?.files?.[0];
+    if (file) handleImportFile(file);
+  });
+}
+
+// Clear button
+if (importFileClear) {
+  importFileClear.addEventListener('click', clearImportedFile);
+}
+
+// Submit import
+export async function submitImport(content) {
+  const mdContent = content || _importedContent;
+  if (!mdContent) {
+    setStatus('먼저 마크다운 파일을 선택해 주세요.');
+    return;
+  }
+
+  if (creationState.generating) {
+    setStatus('이미 진행 중입니다.');
+    return;
+  }
+
+  const model = importModel?.value || 'claude-sonnet-4-6';
+  const slideCount = importSlideCount?.value || '';
+  const researchMode = importResearchMode?.value || 'none';
+
+  creationState.generating = true;
+  window.addEventListener('beforeunload', preventUnload);
+  if (importSubmit) importSubmit.disabled = true;
+  if (creationProgress) creationProgress.hidden = false;
+  if (creationLog) creationLog.textContent = '';
+  showPlanLoading(true, '마크다운 가져오는 중');
+  setStatus('마크다운을 아웃라인으로 변환 중...');
+
+  try {
+    const res = await fetch('/api/import-md', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: mdContent, model, slideCount, researchMode }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    creationState.runId = data.runId;
+    appendCreationLog(`[Import] Model: ${data.model}\n`);
+  } catch (err) {
+    creationState.generating = false;
+    window.removeEventListener('beforeunload', preventUnload);
+    if (importSubmit) importSubmit.disabled = false;
+    showPlanLoading(false);
+    appendCreationLog(`[Error] ${err.message}\n`);
+    setStatus(`가져오기 실패: ${err.message}`);
+  }
+}
+
+if (importSubmit) {
+  importSubmit.addEventListener('click', () => submitImport());
+}
+
+// Populate import model select from the same source as creation model
+export async function loadImportModelOptions() {
+  try {
+    const res = await fetch('/api/models');
+    if (!res.ok) return;
+    const payload = await res.json();
+    const models = Array.isArray(payload.models) ? payload.models : [];
+    const claudeModels = models.filter((m) => m.startsWith('claude-'));
+    if (importModel) {
+      importModel.innerHTML = claudeModels
+        .map((m) => `<option value="${m}">${m}</option>`)
+        .join('');
+    }
+  } catch {
+    if (importModel) {
+      importModel.innerHTML = '<option value="claude-sonnet-4-6">claude-sonnet-4-6</option>';
+    }
+  }
 }
