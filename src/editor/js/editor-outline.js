@@ -3,6 +3,7 @@
 import { creationState } from './editor-state.js';
 import { setStatus } from './editor-utils.js';
 import { appendCreationLog, showCreationMode, loadCreationModelOptions, showPlanLoading, updatePlanLoadingStep } from './editor-create.js';
+import { btnReviewOutline } from './editor-dom.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -72,7 +73,7 @@ export function resetOutlineIndicators(result) {
   }
 }
 
-export function showOutlinePhase(outline) {
+export function showOutlinePhase(outline, { isExistingDeck = false } = {}) {
   currentOutline = outline;
   editingIndex = -1;
 
@@ -82,7 +83,12 @@ export function showOutlinePhase(outline) {
   const oProgress = document.getElementById('outline-progress');
   if (oProgress) oProgress.hidden = true;
 
-  if (outlineDeckName) outlineDeckName.value = outline.deckName || '';
+  if (outlineDeckName) {
+    outlineDeckName.value = outline.deckName || '';
+    outlineDeckName.readOnly = isExistingDeck;
+    outlineDeckName.title = isExistingDeck ? 'Existing deck — name cannot be changed' : '';
+    outlineDeckName.style.opacity = isExistingDeck ? '0.6' : '';
+  }
   if (outlineCount) outlineCount.textContent = `${outline.slides?.length || 0} slides`;
 
   renderOutlineCards(outline.slides || []);
@@ -543,7 +549,7 @@ export async function loadAndShowOutline() {
     const outline = await res.json();
     showCreationMode();
     await loadCreationModelOptions();
-    showOutlinePhase(outline);
+    showOutlinePhase(outline, { isExistingDeck: true });
     if (outlineFeedback) outlineFeedback.value = '';
     if (outlineRevise) outlineRevise.disabled = false;
     if (outlineApprove) outlineApprove.disabled = false;
@@ -553,7 +559,6 @@ export async function loadAndShowOutline() {
   }
 }
 
-const btnReviewOutline = $('#btn-review-outline');
 if (btnReviewOutline) {
   btnReviewOutline.addEventListener('click', loadAndShowOutline);
 }

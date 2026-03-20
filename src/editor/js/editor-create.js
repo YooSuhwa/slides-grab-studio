@@ -6,6 +6,7 @@ import {
   creationGenerate, creationLog, creationProgress,
   creationDeckName, creationSlideCount,
   slidePanel, editorSidebar, slideCounter, btnNewDeck, slideStrip,
+  btnPrev, btnNext, btnExportToggle, btnReviewOutline,
 } from './editor-dom.js';
 import { setStatus, loadModelOptions } from './editor-utils.js';
 import { goToSlide } from './editor-navigation.js';
@@ -101,6 +102,12 @@ export function showCreationMode() {
   if (outlineLog) outlineLog.textContent = '';
   const oldBtn = document.getElementById('creation-view-result');
   if (oldBtn) oldBtn.remove();
+
+  // Disable nav buttons irrelevant in creation mode
+  if (btnPrev) btnPrev.disabled = true;
+  if (btnNext) btnNext.disabled = true;
+  if (btnReviewOutline) btnReviewOutline.disabled = true;
+  if (btnExportToggle) btnExportToggle.disabled = true;
 }
 
 export function hideCreationMode() {
@@ -111,6 +118,12 @@ export function hideCreationMode() {
   if (editorSidebar) editorSidebar.style.display = '';
   if (btnNewDeck) btnNewDeck.style.display = '';
   if (slideStrip) slideStrip.style.display = '';
+
+  // Re-enable nav buttons (Prev/Next state will be corrected by goToSlide)
+  if (btnPrev) btnPrev.disabled = false;
+  if (btnNext) btnNext.disabled = false;
+  if (btnReviewOutline) btnReviewOutline.disabled = false;
+  if (btnExportToggle) btnExportToggle.disabled = false;
 }
 
 export function isCreationMode() {
