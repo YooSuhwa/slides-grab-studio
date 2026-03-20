@@ -106,3 +106,19 @@ export const btnSendLabel = $('#btn-send-label');
 // Slide running overlay
 export const slideRunningOverlay = $('#slide-running-overlay');
 export const slideRunningText = $('#slide-running-text');
+
+// Import MD tab
+export const tabTopic = $('#tab-topic');
+export const tabImport = $('#tab-import');
+export const tabTopicPanel = $('#creation-tab-topic');
+export const tabImportPanel = $('#creation-tab-import');
+export const importDropzone = $('#import-dropzone');
+export const importFileInput = $('#import-file-input');
+export const importBrowse = $('#import-browse');
+export const importFileInfo = $('#import-file-info');
+export const importFileName = $('#import-file-name');
+export const importFileClear = $('#import-file-clear');
+export const importSlideCount = $('#import-slide-count');
+export const importResearchMode = $('#import-research-mode');
+export const importModel = $('#import-model');
+export const importSubmit = $('#import-submit');

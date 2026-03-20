@@ -36,16 +36,9 @@ import { connectSSE, loadRunsInitial } from './editor-sse.js';
 import { openExportModal } from './editor-svg-export.js';
 import { openPdfExportModal } from './editor-pdf-export.js';
 import './editor-figma-export.js';
-import { showCreationMode, hideCreationMode, loadCreationModelOptions, checkCreateMode } from './editor-create.js';
+import { showCreationMode, hideCreationMode, loadCreationModelOptions, checkCreateMode, loadImportModelOptions, switchToImportTab, submitImport } from './editor-create.js';
 import { showOutlinePhase } from './editor-outline.js';
 import { renderThumbnailStrip, updateActiveThumbnail } from './editor-thumbnails.js';
-
-/** Apply editor-mode button states: disable +New, emphasize Outline/Export */
-function setEditorModeButtons() {
-  if (btnNewDeck) btnNewDeck.disabled = true;
-  if (btnReviewOutline) btnReviewOutline.classList.add('nav-emphasis');
-  if (btnExportToggle) btnExportToggle.classList.add('nav-emphasis');
-}
 
 // Late-binding: connect bbox changes to updateSendState
 onBboxChange(updateSendState);
@@ -457,6 +450,7 @@ async function init() {
     if (forceCreate || isCreateMode || state.slides.length === 0) {
       showCreationMode();
       await loadCreationModelOptions();
+      await loadImportModelOptions();
       connectSSE();
 
       // Auto-load outline if one exists in the deck (skip for explicit new deck)
@@ -471,6 +465,41 @@ async function init() {
           }
         } catch { /* no outline */ }
       }
+
+      // Check if CLI --import mode: auto-switch to import tab and trigger
+      try {
+        const cfgRes = await fetch('/api/editor-config');
+        if (cfgRes.ok) {
+          const cfg = await cfgRes.json();
+          if (cfg.importFile) {
+            switchToImportTab();
+            // Fetch import file content from server
+            const fileRes = await fetch('/api/import-file');
+            if (fileRes.ok) {
+              const { content: importContent, fileName } = await fileRes.json();
+              // Set slide count / research mode from CLI flags
+              const importSlideCountEl = document.getElementById('import-slide-count');
+              const importResearchEl = document.getElementById('import-research-mode');
+              if (cfg.importSlideCount && importSlideCountEl) {
+                importSlideCountEl.value = cfg.importSlideCount;
+              }
+              if (cfg.importResearch && importResearchEl) {
+                importResearchEl.value = 'research';
+              }
+              // Show file info
+              const dropzone = document.getElementById('import-dropzone');
+              const fileInfo = document.getElementById('import-file-info');
+              const fileNameEl = document.getElementById('import-file-name');
+              if (dropzone) dropzone.hidden = true;
+              if (fileInfo) fileInfo.hidden = false;
+              if (fileNameEl) fileNameEl.textContent = fileName;
+              // Auto-submit
+              submitImport(importContent);
+              return;
+            }
+          }
+        }
+      } catch { /* no import mode */ }
 
       setStatus('Enter a topic to generate slides.');
       return;
@@ -495,7 +524,10 @@ async function init() {
     await loadRunsInitial();
     connectSSE();
     updateRunButtonLabel();
-    setEditorModeButtons();
+    // Editor-mode button states (same logic in editor-create.js hideCreationMode)
+    if (btnNewDeck) btnNewDeck.disabled = true;
+    if (btnReviewOutline) btnReviewOutline.classList.add('nav-emphasis');
+    if (btnExportToggle) btnExportToggle.classList.add('nav-emphasis');
 
     setStatus(`Ready. Model: ${state.selectedModel}. Draw red pending bboxes, run Codex, then review green bboxes.`);
   } catch (error) {
