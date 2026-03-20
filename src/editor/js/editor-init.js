@@ -9,7 +9,7 @@ import {
   popoverTextInput, popoverApplyText, popoverTextColorInput, popoverBgColorInput,
   popoverSizeInput, popoverApplySize, toolModeDrawBtn, toolModeSelectBtn,
   btnNewDeck,
-  slideStrip, btnExportToggle, exportDropdown,
+  slideStrip, btnExportToggle, exportDropdown, btnReviewOutline,
   slideSkeleton, bboxEmptyGuide, shortcutsModal, shortcutsClose, btnShortcuts,
   sidebarToggle, editorSidebar, btnSendLabel,
 } from './editor-dom.js';
@@ -39,6 +39,13 @@ import './editor-figma-export.js';
 import { showCreationMode, hideCreationMode, loadCreationModelOptions, checkCreateMode } from './editor-create.js';
 import { showOutlinePhase } from './editor-outline.js';
 import { renderThumbnailStrip, updateActiveThumbnail } from './editor-thumbnails.js';
+
+/** Apply editor-mode button states: disable +New, emphasize Outline/Export */
+function setEditorModeButtons() {
+  if (btnNewDeck) btnNewDeck.disabled = true;
+  if (btnReviewOutline) btnReviewOutline.classList.add('nav-emphasis');
+  if (btnExportToggle) btnExportToggle.classList.add('nav-emphasis');
+}
 
 // Late-binding: connect bbox changes to updateSendState
 onBboxChange(updateSendState);
@@ -488,6 +495,7 @@ async function init() {
     await loadRunsInitial();
     connectSSE();
     updateRunButtonLabel();
+    setEditorModeButtons();
 
     setStatus(`Ready. Model: ${state.selectedModel}. Draw red pending bboxes, run Codex, then review green bboxes.`);
   } catch (error) {

@@ -1,11 +1,22 @@
 // editor-send.js — API submission (applyChanges), updateSendState
 
 import { state, runsById, activeRunBySlide, pendingRequestBySlide } from './editor-state.js';
-import { slideStatusChip, btnSend, btnClearBboxes, promptInput, modelSelect } from './editor-dom.js';
+import { slideStatusChip, btnSend, btnClearBboxes, promptInput, modelSelect, slideRunningOverlay, slideRunningText } from './editor-dom.js';
 import { currentSlideFile, getSlideState, getLatestRunForSlide, normalizeBoxStatus, normalizeModelName, setStatus } from './editor-utils.js';
 import { addChatMessage, renderRunsList } from './editor-chat.js';
 import { renderBboxes, extractTargetsForBox } from './editor-bbox.js';
 import { flushDirectSaveForSlide } from './editor-direct-edit.js';
+
+function showSlideRunning(label) {
+  if (slideRunningOverlay) slideRunningOverlay.classList.add('active');
+  if (slideRunningText) slideRunningText.textContent = label || 'Running...';
+  if (btnSend) btnSend.classList.add('is-running');
+}
+
+function hideSlideRunning() {
+  if (slideRunningOverlay) slideRunningOverlay.classList.remove('active');
+  if (btnSend) btnSend.classList.remove('is-running');
+}
 
 export function updateSlideStatusChip() {
   const slide = currentSlideFile();
@@ -84,6 +95,7 @@ export async function applyChanges() {
   promptInput.value = '';
   updateSendState();
   const engineLabel = model.startsWith('claude-') ? 'Claude' : 'Codex';
+  showSlideRunning(`Running ${engineLabel}...`);
   setStatus(`Submitting ${slide} to ${engineLabel}...`);
 
   try {
@@ -152,6 +164,7 @@ export async function applyChanges() {
     setStatus(`Error: ${error.message}`);
   } finally {
     pendingRequestBySlide.delete(slide);
+    hideSlideRunning();
     updateSendState();
   }
 }

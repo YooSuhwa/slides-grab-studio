@@ -2548,6 +2548,90 @@
     .btn-new-deck:hover {
       background: var(--accent-2) !important;
     }
+    .btn-new-deck:disabled {
+      background: var(--surface-3) !important;
+      color: var(--text-2) !important;
+      border-color: var(--border-strong) !important;
+      opacity: 0.4;
+    }
+
+    /* ── Editor-mode emphasized nav buttons ── */
+    .nav-bar-btn.ghost.nav-emphasis {
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      color: var(--accent-2);
+    }
+    .nav-bar-btn.ghost.nav-emphasis:hover {
+      background: rgba(59, 130, 246, 0.22);
+      border-color: rgba(59, 130, 246, 0.5);
+      color: #fff;
+    }
+    .nav-bar-btn.ghost.nav-emphasis:disabled {
+      background: transparent;
+      border: none;
+      color: var(--text-1);
+    }
+
+    /* ── Slide running overlay ── */
+    .slide-running-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 25;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(3, 7, 17, 0.45);
+      backdrop-filter: blur(1px);
+      border-radius: inherit;
+      pointer-events: all;
+    }
+    .slide-running-overlay.active {
+      display: flex;
+    }
+    .slide-running-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+    }
+    .slide-running-spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(59, 130, 246, 0.25);
+      border-top-color: var(--accent-2);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .slide-running-text {
+      color: var(--accent-2);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── Run button loading state ── */
+    .sidebar-btn-primary.is-running {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+    .sidebar-btn-primary.is-running .btn-send-icon { display: none; }
+    .sidebar-btn-primary.is-running .btn-send-spinner { display: block; }
+    .btn-send-spinner {
+      display: none;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
 
     /* ── Outline Review ── */
     .outline-review {
@@ -3251,6 +3335,12 @@
         <div class="slide-stage" id="slide-stage">
           <div class="slide-wrapper" id="slide-wrapper">
             <div class="slide-skeleton" id="slide-skeleton"></div>
+            <div class="slide-running-overlay" id="slide-running-overlay">
+              <div class="slide-running-indicator">
+                <div class="slide-running-spinner"></div>
+                <span class="slide-running-text" id="slide-running-text">Running...</span>
+              </div>
+            </div>
             <div class="bbox-empty-guide" id="bbox-empty-guide">
               <span class="bbox-empty-guide-text">Drag on the slide to add edit regions</span>
             </div>
@@ -3300,6 +3390,7 @@
               </select>
             </div>
             <button class="sidebar-btn sidebar-btn-primary" id="btn-send" title="Run (Ctrl+Enter)">
+              <div class="btn-send-spinner"></div>
               <svg class="btn-send-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.4 11.2 19.6 4.4c.8-.3 1.7.5 1.4 1.4l-6.8 16.2c-.3.8-1.4.9-1.9.1L9.2 16l-6.1-3.1c-.8-.5-.7-1.6.3-1.7Zm5.1 3.6 3.2 1.6 4.9-11.7-11.7 4.9 3.6 1.8 6.2-3.7c.4-.2.8.1.6.6l-6.8 6.5Z"/></svg>
               <span id="btn-send-label">Run</span>
             </button>

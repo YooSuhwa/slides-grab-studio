@@ -108,6 +108,9 @@ export function showCreationMode() {
   if (btnNext) btnNext.disabled = true;
   if (btnReviewOutline) btnReviewOutline.disabled = true;
   if (btnExportToggle) btnExportToggle.disabled = true;
+  // Remove editor-mode emphasis during creation
+  if (btnReviewOutline) btnReviewOutline.classList.remove('nav-emphasis');
+  if (btnExportToggle) btnExportToggle.classList.remove('nav-emphasis');
 }
 
 export function hideCreationMode() {
@@ -124,6 +127,10 @@ export function hideCreationMode() {
   if (btnNext) btnNext.disabled = false;
   if (btnReviewOutline) btnReviewOutline.disabled = false;
   if (btnExportToggle) btnExportToggle.disabled = false;
+  // Restore editor-mode emphasis: disable +New, highlight Outline/Export
+  if (btnNewDeck) btnNewDeck.disabled = true;
+  if (btnReviewOutline) btnReviewOutline.classList.add('nav-emphasis');
+  if (btnExportToggle) btnExportToggle.classList.add('nav-emphasis');
 }
 
 export function isCreationMode() {

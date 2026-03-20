@@ -102,3 +102,7 @@ export const sidebarToggle = $('#sidebar-toggle');
 
 // Run button label
 export const btnSendLabel = $('#btn-send-label');
+
+// Slide running overlay
+export const slideRunningOverlay = $('#slide-running-overlay');
+export const slideRunningText = $('#slide-running-text');
