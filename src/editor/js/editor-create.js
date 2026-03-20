@@ -295,7 +295,7 @@ function showViewResultButton(slideCount, inOutline = false) {
 
   const btn = document.createElement('button');
   btn.id = 'creation-view-result';
-  btn.textContent = `결과 보기 (${slideCount}장)`;
+  btn.textContent = `View Result (${slideCount} slides)`;
   btn.className = 'creation-view-result-btn';
   btn.addEventListener('click', () => {
     refreshSlideList();

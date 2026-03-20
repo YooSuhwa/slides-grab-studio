@@ -2385,6 +2385,7 @@
       gap: 6px;
       justify-content: center;
       margin-top: 4px;
+      margin-bottom: 10px;
     }
     .creation-tab {
       background: rgba(255, 255, 255, 0.03);
@@ -3414,10 +3415,10 @@
         <div class="creation-content">
           <div id="creation-phase-input">
             <div class="creation-header">
-              <h2>새 프레젠테이션</h2>
+              <h2>New Presentation</h2>
               <div class="creation-tabs" role="tablist">
-                <button class="creation-tab active" id="tab-topic" data-tab="topic" role="tab" aria-selected="true" aria-controls="creation-tab-topic">주제 입력</button>
-                <button class="creation-tab" id="tab-import" data-tab="import" role="tab" aria-selected="false" aria-controls="creation-tab-import">MD 가져오기</button>
+                <button class="creation-tab active" id="tab-topic" data-tab="topic" role="tab" aria-selected="true" aria-controls="creation-tab-topic">Topic</button>
+                <button class="creation-tab" id="tab-import" data-tab="import" role="tab" aria-selected="false" aria-controls="creation-tab-import">Import MD</button>
               </div>
             </div>
             <!-- Topic tab (default) -->
@@ -3431,7 +3432,7 @@
                   <option value="12~16">12 ~ 16</option>
                 </select>
                 <select id="creation-model"></select>
-                <button id="creation-generate">아웃라인 생성</button>
+                <button id="creation-generate">Plan Outline</button>
               </div>
             </div>
             <!-- Import MD tab -->
@@ -3450,7 +3451,7 @@
               </div>
               <div class="creation-actions">
                 <select id="import-slide-count">
-                  <option value="">자동</option>
+                  <option value="">Auto</option>
                   <option value="4~8">4 ~ 8</option>
                   <option value="8~12">8 ~ 12</option>
                   <option value="12~16">12 ~ 16</option>
@@ -3458,31 +3459,31 @@
                   <option value="20~30">20 ~ 30</option>
                 </select>
                 <select id="import-research-mode">
-                  <option value="none">추가 리서치 없음</option>
-                  <option value="research">리서치 추가</option>
+                  <option value="none">No extra research</option>
+                  <option value="research">Add research</option>
                 </select>
                 <select id="import-model"></select>
-                <button id="import-submit">가져오기 &amp; 아웃라인</button>
+                <button id="import-submit">Import &amp; Plan</button>
               </div>
             </div>
           </div>
           <div id="creation-phase-outline" hidden>
             <div class="outline-review">
               <div class="outline-header">
-                <button class="outline-back-btn" id="outline-back">&#9664; 뒤로</button>
+                <button class="outline-back-btn" id="outline-back">&#9664; Back</button>
                 <div class="outline-meta">
-                  <h2 id="outline-title">아웃라인 검토</h2>
+                  <h2 id="outline-title">Outline Review</h2>
                   <span class="outline-count" id="outline-count"></span>
                 </div>
               </div>
               <div class="outline-deck-row">
-                <label class="creation-label">덱 이름</label>
+                <label class="creation-label">Deck name</label>
                 <input id="outline-deck-name" type="text">
               </div>
               <div class="outline-slides" id="outline-slides"></div>
               <div class="outline-run-track" id="outline-run-track">
                 <img src="/asset/buddy_logo.png" class="outline-bunny-runner" alt="">
-                <span class="outline-run-status">작업 중...</span>
+                <span class="outline-run-status">working on it...</span>
               </div>
               <div class="creation-progress inline" id="outline-progress" hidden>
                 <div class="creation-log" id="outline-log"></div>
@@ -3491,8 +3492,8 @@
                 <textarea id="outline-feedback" placeholder="수정하고 싶은 내용을 설명해 주세요..." rows="2"></textarea>
               </div>
               <div class="outline-actions">
-                <button id="outline-revise" class="outline-btn outline-btn-secondary">수정 요청</button>
-                <button id="outline-approve" class="outline-btn outline-btn-primary">승인 &amp; 생성</button>
+                <button id="outline-revise" class="outline-btn outline-btn-secondary">Revise</button>
+                <button id="outline-approve" class="outline-btn outline-btn-primary">Approve &amp; Generate</button>
               </div>
             </div>
           </div>

@@ -46,7 +46,7 @@ export function resetOutlineIndicators(result) {
 
   if (workingBtn && result) {
     const flashClass = result === 'success' ? 'done-success' : 'done-fail';
-    const flashText = result === 'success' ? '완료' : '실패';
+    const flashText = result === 'success' ? 'Done' : 'Failed';
     workingBtn.classList.remove('working');
     workingBtn.classList.add(flashClass);
     workingBtn.textContent = flashText;
@@ -54,8 +54,8 @@ export function resetOutlineIndicators(result) {
     setTimeout(() => {
       workingBtn.classList.remove(flashClass);
       // Restore original text
-      if (workingBtn === revBtn) workingBtn.textContent = '수정 요청';
-      else workingBtn.textContent = '승인 & 생성';
+      if (workingBtn === revBtn) workingBtn.textContent = 'Revise';
+      else workingBtn.textContent = 'Approve & Generate';
 
       // Re-enable & show both
       if (revBtn) { revBtn.disabled = false; revBtn.style.display = ''; }
@@ -65,8 +65,8 @@ export function resetOutlineIndicators(result) {
     // Silent reset — just restore
     if (workingBtn) {
       workingBtn.classList.remove('working');
-      if (workingBtn === revBtn) workingBtn.textContent = '수정 요청';
-      else workingBtn.textContent = '승인 & 생성';
+      if (workingBtn === revBtn) workingBtn.textContent = 'Revise';
+      else workingBtn.textContent = 'Approve & Generate';
     }
     if (revBtn) { revBtn.disabled = false; revBtn.style.display = ''; }
     if (appBtn) { appBtn.disabled = false; appBtn.style.display = ''; }
@@ -89,7 +89,7 @@ export function showOutlinePhase(outline, { isExistingDeck = false } = {}) {
     outlineDeckName.title = isExistingDeck ? '기존 덱 — 이름 변경 불가' : '';
     outlineDeckName.style.opacity = isExistingDeck ? '0.6' : '';
   }
-  if (outlineCount) outlineCount.textContent = `${outline.slides?.length || 0}장`;
+  if (outlineCount) outlineCount.textContent = `${outline.slides?.length || 0} slides`;
 
   renderOutlineCards(outline.slides || []);
   updateFeedbackPlaceholder();
@@ -417,7 +417,7 @@ if (outlineRevise) {
 
     // Button working state
     outlineRevise.classList.add('working');
-    outlineRevise.textContent = '수정 중...';
+    outlineRevise.textContent = 'Revising...';
     if (outlineApprove) outlineApprove.style.display = 'none';
     showPlanLoading(true, '아웃라인 수정 중');
 
@@ -469,7 +469,7 @@ if (outlineApprove) {
 
     // Button working state
     outlineApprove.classList.add('working');
-    outlineApprove.textContent = '생성 중...';
+    outlineApprove.textContent = 'Generating...';
     if (outlineRevise) outlineRevise.style.display = 'none';
     showPlanLoading(true, '슬라이드 생성 중');
 
