@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readdir, readFile, writeFile, mkdtemp, rm, mkdir, stat, rename } from 'node:fs/promises';
+import { readdir, readFile, writeFile, mkdtemp, rm, mkdir, stat, rename, copyFile } from 'node:fs/promises';
 import { watch as fsWatch } from 'node:fs';
 import { basename, dirname, join, resolve, relative, sep } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -225,6 +225,30 @@ function normalizeSlideFilename(rawSlide, source = '`slide`') {
     throw new Error(`Missing or invalid ${source}.`);
   }
   return slide;
+}
+
+/**
+ * Back up existing slide HTML files into a timestamped subdirectory.
+ * e.g. decks/my-deck/backup/2026-03-20_143052/slide-01.html ...
+ * Returns the backup directory path, or null if there was nothing to back up.
+ */
+async function backupSlides(deckDir) {
+  const slideFiles = await listSlideFiles(deckDir);
+  if (slideFiles.length === 0) return null;
+
+  const now = new Date();
+  const pad = (n, len = 2) => String(n).padStart(len, '0');
+  const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+
+  const backupDir = join(deckDir, 'backup', ts);
+  await mkdir(backupDir, { recursive: true });
+
+  await Promise.all(
+    slideFiles.map((f) => copyFile(join(deckDir, f), join(backupDir, f))),
+  );
+
+  console.log(`Backed up ${slideFiles.length} slides → ${backupDir}`);
+  return backupDir;
 }
 
 function normalizeSlideHtml(rawHtml) {
@@ -716,6 +740,14 @@ async function startServer(opts) {
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
+  });
+
+  app.post('/api/decks/new', (_req, res) => {
+    if (watcher) { try { watcher.close(); } catch { /* ignore */ } watcher = null; }
+    slidesDirectory = null;
+    opts.deckName = '';
+    opts.createMode = true;
+    res.json({ ok: true });
   });
 
   app.post('/api/decks/switch', async (req, res) => {
@@ -1333,18 +1365,21 @@ async function startServer(opts) {
       return res.status(409).json({ error: 'A generation is already in progress.' });
     }
 
-    // Rename deck directory if user changed the name in outline review
+    // Rename deck directory if user changed the name in outline review (new decks only)
     if (fromOutline && slidesDirectory && typeof deckName === 'string' && deckName.trim()) {
-      const currentName = basename(slidesDirectory);
-      const newName = deckName.trim().replace(/[<>:"/\\|?*]/g, '-');
-      if (newName !== currentName) {
-        const newPath = resolve(dirname(slidesDirectory), newName);
-        try {
-          await rename(slidesDirectory, newPath);
-          slidesDirectory = newPath;
-          setupFileWatcher(slidesDirectory);
-        } catch (err) {
-          console.error('Failed to rename deck directory:', err);
+      const existingSlides = await listSlideFiles(slidesDirectory).catch(() => []);
+      if (existingSlides.length === 0) {
+        const currentName = basename(slidesDirectory);
+        const newName = deckName.trim().replace(/[<>:"/\\|?*]/g, '-');
+        if (newName !== currentName) {
+          const newPath = resolve(dirname(slidesDirectory), newName);
+          try {
+            await rename(slidesDirectory, newPath);
+            slidesDirectory = newPath;
+            setupFileWatcher(slidesDirectory);
+          } catch (err) {
+            console.error('Failed to rename deck directory:', err);
+          }
         }
       }
     }
@@ -1392,6 +1427,16 @@ async function startServer(opts) {
         let fullPrompt;
 
         if (fromOutline && slidesDirectory) {
+          // Back up existing slides before regeneration
+          try {
+            const backupPath = await backupSlides(slidesDirectory);
+            if (backupPath) {
+              broadcastSSE('progress', { runId, phase: 'generate', step: 'Backed up existing slides' });
+            }
+          } catch (err) {
+            console.error('Slide backup failed:', err);
+          }
+
           // Generate from approved outline — skip outline creation
           const outlinePath = join(slidesDirectory, 'slide-outline.md');
           let outlineContent = '';
@@ -1415,6 +1460,7 @@ async function startServer(opts) {
             '   - 폰트: Pretendard CDN (link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css")',
             '   - 텍스트는 p, h1-h6, ul, ol, li 태그만 사용',
             '   - slides-grab show-template <name> 으로 템플릿 확인 후 활용',
+            '   - backup/ 폴더는 절대 수정하지 마세요 (이전 슬라이드 백업)',
             '   - 각 슬라이드는 독립적인 완전한 HTML 파일이어야 합니다',
             '',
             '2. 승인 대기 없이 전체 슬라이드를 한번에 생성하세요.',
