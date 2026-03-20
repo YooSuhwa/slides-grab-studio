@@ -81,6 +81,9 @@ function parseArgs(argv) {
     createMode: false,
     browseMode: false,
     deckName: '',
+    importFile: '',
+    importSlideCount: '',
+    importResearch: false,
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -130,6 +133,35 @@ function parseArgs(argv) {
 
     if (arg.startsWith('--slides-dir=')) {
       opts.slidesDir = arg.slice('--slides-dir='.length);
+      continue;
+    }
+
+    if (arg === '--import') {
+      opts.importFile = argv[i + 1] || '';
+      opts.createMode = true;
+      i += 1;
+      continue;
+    }
+
+    if (arg.startsWith('--import=')) {
+      opts.importFile = arg.slice('--import='.length);
+      opts.createMode = true;
+      continue;
+    }
+
+    if (arg === '--slide-count') {
+      opts.importSlideCount = argv[i + 1] || '';
+      i += 1;
+      continue;
+    }
+
+    if (arg.startsWith('--slide-count=')) {
+      opts.importSlideCount = arg.slice('--slide-count='.length);
+      continue;
+    }
+
+    if (arg === '--research') {
+      opts.importResearch = true;
       continue;
     }
 
@@ -696,6 +728,9 @@ async function startServer(opts) {
       browseMode: opts.browseMode || false,
       deckName: opts.deckName || (slidesDirectory ? basename(slidesDirectory) : ''),
       slidesDir: slidesDirectory ? toPosixPath(relative(process.cwd(), slidesDirectory) || slidesDirectory) : '',
+      importFile: opts.importFile || null,
+      importSlideCount: opts.importSlideCount || null,
+      importResearch: opts.importResearch || false,
     });
   });
 
@@ -1121,9 +1156,208 @@ async function startServer(opts) {
     }
   });
 
-  // ── POST /api/plan — Outline Planning ─────────────────────────────
+  // ── POST /api/import-md — Import freeform MD and convert to outline ─
+  // ── GET /api/import-file — Serve import file content for CLI mode ──
+  app.get('/api/import-file', async (_req, res) => {
+    if (!opts.importFile) {
+      return res.status(404).json({ error: 'No import file specified.' });
+    }
+    try {
+      const absPath = resolve(process.cwd(), opts.importFile);
+      let raw = await readFile(absPath, 'utf-8');
+      // Strip UTF-8 BOM if present
+      if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);
+      res.json({ content: raw, fileName: basename(absPath) });
+    } catch (err) {
+      res.status(404).json({ error: `Cannot read import file: ${err.message}` });
+    }
+  });
+
+  // ── POST /api/import-md — Convert freeform MD to slide outline ─────
   const generateRunStore = createRunStore();
   let activeGenerate = false;
+
+  app.post('/api/import-md', async (req, res) => {
+    const { content: mdContent, filePath, model, slideCount, researchMode } = req.body ?? {};
+
+    // Read MD content from body or file
+    let rawMd = '';
+    if (typeof mdContent === 'string' && mdContent.trim()) {
+      rawMd = mdContent;
+    } else if (typeof filePath === 'string' && filePath.trim()) {
+      try {
+        const absPath = resolve(process.cwd(), filePath.trim());
+        rawMd = await readFile(absPath, 'utf-8');
+        if (rawMd.charCodeAt(0) === 0xFEFF) rawMd = rawMd.slice(1);
+      } catch (err) {
+        return res.status(400).json({ error: `Cannot read file: ${err.message}` });
+      }
+    } else {
+      return res.status(400).json({ error: 'Provide `content` or `filePath`.' });
+    }
+
+    if (!rawMd.trim()) {
+      return res.status(400).json({ error: 'Markdown content is empty.' });
+    }
+    if (rawMd.length > 500_000) {
+      return res.status(400).json({ error: 'Content too large (max 500KB).' });
+    }
+
+    if (activeGenerate) {
+      return res.status(409).json({ error: 'A generation is already in progress.' });
+    }
+
+    const selectedModel = typeof model === 'string' && CLAUDE_MODELS.includes(model.trim())
+      ? model.trim()
+      : CLAUDE_MODELS[0];
+
+    const runId = randomRunId();
+    activeGenerate = true;
+
+    broadcastSSE('planStarted', { runId, topic: '(MD Import)' });
+    broadcastSSE('progress', { runId, phase: 'plan', step: 'Converting markdown to slide outline' });
+    res.json({ runId, topic: '(MD Import)', model: selectedModel });
+
+    (async () => {
+      try {
+        const slideCountLabel = typeof slideCount === 'string' && slideCount.trim()
+          ? slideCount.trim()
+          : '';
+        const useResearch = researchMode === 'research';
+
+        const promptLines = [
+          '아래 마크다운 문서를 분석하여 프레젠테이션 아웃라인으로 변환하세요.',
+          '',
+          '--- 원본 마크다운 ---',
+          rawMd,
+          '--- 원본 마크다운 끝 ---',
+          '',
+          '분석 규칙:',
+          '1. 문서에 슬라이드 구분(### 슬라이드 N, ## Slide N 등)이 있으면 그 구조를 그대로 따르세요.',
+          '2. 슬라이드 구분이 없으면 내용을 분석하여 논리적 단위로 슬라이드를 구성하세요.',
+          '3. **구성:** 섹션이 있으면 슬라이드의 시각적 내용으로 사용하세요.',
+          '4. **발표 내용:** 섹션이 있으면 presenter-note로 보존하세요.',
+          '5. 각 슬라이드에 가장 적합한 type을 배정하세요.',
+        ];
+
+        if (useResearch) {
+          promptLines.push('6. 웹 리서치를 추가로 수행하여 내용을 보강하세요. 최신 데이터, 통계, 사례를 추가할 수 있습니다.');
+        } else {
+          promptLines.push('6. 원본 마크다운의 내용만 사용하세요. 추가 리서치는 하지 마세요.');
+        }
+
+        if (slideCountLabel) {
+          promptLines.push(`7. 목표 슬라이드 수: ${slideCountLabel}장`);
+        }
+
+        promptLines.push('');
+        promptLines.push('다음을 수행하세요:');
+        promptLines.push('');
+        promptLines.push('1. 주제에서 핵심 키워드 2~3개를 뽑아 영어 소문자 kebab-case 폴더명을 결정하세요.');
+        promptLines.push('   예: "AX 전환 발표" → ax-transformation');
+        promptLines.push('');
+        promptLines.push('2. 해당 폴더에 slide-outline.md를 생성하세요. (HTML 슬라이드는 생성하지 마세요)');
+        promptLines.push('   mkdir -p decks/<name> && 아웃라인 파일만 작성');
+        promptLines.push('');
+        promptLines.push('아웃라인 형식:');
+        promptLines.push('```');
+        promptLines.push('# 발표 제목');
+        promptLines.push('');
+        promptLines.push('## Meta');
+        promptLines.push('- deck-name: <kebab-case-name>');
+        promptLines.push('- slide-count: N');
+        promptLines.push('');
+        promptLines.push('## Slides');
+        promptLines.push('### Slide 1');
+        promptLines.push('- type: cover');
+        promptLines.push('- title: 제목');
+        promptLines.push('- content: 부제 또는 설명');
+        promptLines.push('- presenter-note: 발표 내용 (있는 경우)');
+        promptLines.push('');
+        promptLines.push('### Slide 2');
+        promptLines.push('- type: contents');
+        promptLines.push('- title: 목차');
+        promptLines.push('- content: 목차 항목들');
+        promptLines.push('...');
+        promptLines.push('```');
+        promptLines.push('');
+        promptLines.push('type은 다음 중 하나: cover, contents, section-divider, content, two-columns, split-layout, image-text, image-description, chart, statistics, key-metrics, timeline, funnel, matrix, quote, quotes-grid, highlight, principles, diagram, team, simple-list, big-metric, closing');
+        promptLines.push('');
+        promptLines.push('중요: slide-outline.md 파일만 생성하세요. HTML 파일은 생성하지 마세요.');
+
+        const fullPrompt = promptLines.join('\n');
+
+        broadcastSSE('progress', { runId, phase: 'plan', step: 'Converting with AI' });
+
+        const result = await spawnClaudeEdit({
+          prompt: fullPrompt,
+          imagePath: null,
+          model: selectedModel,
+          cwd: process.cwd(),
+          onLog: (stream, chunk) => {
+            broadcastSSE('planLog', { runId, stream, chunk });
+          },
+        });
+
+        const success = result.code === 0;
+
+        let outline = null;
+        let detectedDeckName = '';
+
+        if (success) {
+          broadcastSSE('progress', { runId, phase: 'plan', step: 'Parsing generated outline' });
+        }
+
+        if (success) {
+          try {
+            const decksRoot = resolve(process.cwd(), 'decks');
+            const dirs = await readdir(decksRoot, { withFileTypes: true });
+            let bestDir = '';
+            let bestMtime = 0;
+
+            for (const d of dirs) {
+              if (!d.isDirectory()) continue;
+              const outlinePath = join(decksRoot, d.name, 'slide-outline.md');
+              try {
+                const s = await stat(outlinePath);
+                if (s.mtimeMs > bestMtime) {
+                  bestMtime = s.mtimeMs;
+                  bestDir = d.name;
+                }
+              } catch { /* no outline */ }
+            }
+
+            if (bestDir) {
+              detectedDeckName = bestDir;
+              const outlinePath = join(decksRoot, bestDir, 'slide-outline.md');
+              const outlineContent = await readFile(outlinePath, 'utf-8');
+              outline = parseOutline(outlineContent, bestDir);
+
+              slidesDirectory = join(decksRoot, bestDir);
+              setupFileWatcher(slidesDirectory);
+            }
+          } catch (err) {
+            console.error('Failed to parse imported outline:', err);
+          }
+        }
+
+        broadcastSSE('planFinished', {
+          runId,
+          success,
+          message: success ? 'Outline ready.' : `Import failed (exit code ${result.code}).`,
+          outline,
+          deckName: detectedDeckName,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        broadcastSSE('planFinished', { runId, success: false, message, outline: null });
+      } finally {
+        activeGenerate = false;
+      }
+    })();
+  });
+
+  // ── POST /api/plan — Outline Planning ─────────────────────────────
 
   app.post('/api/plan', async (req, res) => {
     const { topic, requirements, model, slideCount: slideCountRange } = req.body ?? {};

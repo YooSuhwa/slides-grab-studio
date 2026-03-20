@@ -7,6 +7,10 @@ import {
   creationDeckName, creationSlideCount,
   slidePanel, editorSidebar, slideCounter, btnNewDeck, slideStrip,
   btnPrev, btnNext, btnExportToggle, btnReviewOutline,
+  tabTopic, tabImport, tabTopicPanel, tabImportPanel,
+  importDropzone, importFileInput, importBrowse, importFileInfo,
+  importFileName, importFileClear, importSlideCount, importResearchMode,
+  importModel, importSubmit,
 } from './editor-dom.js';
 import { setStatus, loadModelOptions } from './editor-utils.js';
 import { goToSlide } from './editor-navigation.js';
@@ -127,7 +131,7 @@ export function hideCreationMode() {
   if (btnNext) btnNext.disabled = false;
   if (btnReviewOutline) btnReviewOutline.disabled = false;
   if (btnExportToggle) btnExportToggle.disabled = false;
-  // Restore editor-mode emphasis: disable +New, highlight Outline/Export
+  // Editor-mode button states (same logic in editor-init.js init)
   if (btnNewDeck) btnNewDeck.disabled = true;
   if (btnReviewOutline) btnReviewOutline.classList.add('nav-emphasis');
   if (btnExportToggle) btnExportToggle.classList.add('nav-emphasis');
@@ -173,6 +177,11 @@ export async function checkCreateMode() {
   }
 }
 
+function preventUnload(e) {
+  e.preventDefault();
+  e.returnValue = '';
+}
+
 export async function submitGeneration() {
   const topic = creationTopic?.value?.trim();
   if (!topic) {
@@ -190,6 +199,7 @@ export async function submitGeneration() {
   const slideCount = creationSlideCount?.value || '8~12';
 
   creationState.generating = true;
+  window.addEventListener('beforeunload', preventUnload);
   if (creationGenerate) creationGenerate.disabled = true;
   if (creationProgress) creationProgress.hidden = false;
   if (creationLog) creationLog.textContent = '';
@@ -213,6 +223,7 @@ export async function submitGeneration() {
     appendCreationLog(`[Plan] Topic: ${data.topic} | Model: ${data.model}\n`);
   } catch (err) {
     creationState.generating = false;
+    window.removeEventListener('beforeunload', preventUnload);
     if (creationGenerate) creationGenerate.disabled = false;
     showPlanLoading(false);
     appendCreationLog(`[Error] ${err.message}\n`);
@@ -250,6 +261,7 @@ export function onGenerateLog(payload) {
 
 export function onGenerateFinished(payload) {
   creationState.generating = false;
+  window.removeEventListener('beforeunload', preventUnload);
   showPlanLoading(false);
 
   const outlinePhase = document.getElementById('creation-phase-outline');
@@ -362,3 +374,198 @@ if (creationTopic) {
 }
 
 var _placeholderTimer = null;
+
+// ── Import MD Tab Logic ──────────────────────────────────────────────
+
+let _importedContent = '';
+
+function switchTab(tab) {
+  const isTopic = tab === 'topic';
+  if (tabTopic) {
+    tabTopic.classList.toggle('active', isTopic);
+    tabTopic.setAttribute('aria-selected', String(isTopic));
+  }
+  if (tabImport) {
+    tabImport.classList.toggle('active', !isTopic);
+    tabImport.setAttribute('aria-selected', String(!isTopic));
+  }
+  if (tabTopicPanel) tabTopicPanel.hidden = !isTopic;
+  if (tabImportPanel) tabImportPanel.hidden = isTopic;
+}
+
+export function switchToImportTab() {
+  switchTab('import');
+}
+
+if (tabTopic) {
+  tabTopic.addEventListener('click', () => switchTab('topic'));
+}
+if (tabImport) {
+  tabImport.addEventListener('click', () => switchTab('import'));
+}
+
+function showImportedFile(name) {
+  if (importDropzone) importDropzone.hidden = true;
+  if (importFileInfo) importFileInfo.hidden = false;
+  if (importFileName) importFileName.textContent = name;
+}
+
+function clearImportedFile() {
+  _importedContent = '';
+  if (importDropzone) importDropzone.hidden = false;
+  if (importFileInfo) importFileInfo.hidden = true;
+  if (importFileName) importFileName.textContent = '';
+  if (importFileInput) importFileInput.value = '';
+}
+
+const MAX_IMPORT_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_EXTENSIONS = ['md', 'markdown', 'txt'];
+
+function handleImportFile(file) {
+  if (!file) return;
+
+  // File size check
+  if (file.size > MAX_IMPORT_FILE_SIZE) {
+    setStatus('File too large (max 5MB).');
+    return;
+  }
+
+  // Extension check (important for drag-and-drop which ignores accept attribute)
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    setStatus('Only .md, .markdown, .txt files are supported.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onerror = () => setStatus('Failed to read file.');
+  reader.onload = () => {
+    const text = typeof reader.result === 'string' ? reader.result.trim() : '';
+    if (!text) {
+      setStatus('File is empty.');
+      return;
+    }
+    _importedContent = reader.result;
+    showImportedFile(file.name);
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+// Browse button
+if (importBrowse) {
+  importBrowse.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    importFileInput?.click();
+  });
+}
+
+// File input change
+if (importFileInput) {
+  importFileInput.addEventListener('change', () => {
+    const file = importFileInput.files?.[0];
+    if (file) handleImportFile(file);
+  });
+}
+
+// Click on dropzone
+if (importDropzone) {
+  importDropzone.addEventListener('click', (e) => {
+    if (e.target === importBrowse) return;
+    importFileInput?.click();
+  });
+
+  // Drag-and-drop
+  importDropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    importDropzone.classList.add('dragover');
+  });
+  importDropzone.addEventListener('dragleave', () => {
+    importDropzone.classList.remove('dragover');
+  });
+  importDropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    importDropzone.classList.remove('dragover');
+    const file = e.dataTransfer?.files?.[0];
+    if (file) handleImportFile(file);
+  });
+}
+
+// Clear button
+if (importFileClear) {
+  importFileClear.addEventListener('click', clearImportedFile);
+}
+
+// Submit import
+export async function submitImport(content) {
+  const mdContent = content || _importedContent;
+  if (!mdContent) {
+    setStatus('Please select a markdown file first.');
+    return;
+  }
+
+  if (creationState.generating) {
+    setStatus('Already in progress.');
+    return;
+  }
+
+  const model = importModel?.value || 'claude-sonnet-4-6';
+  const slideCount = importSlideCount?.value || '';
+  const researchMode = importResearchMode?.value || 'none';
+
+  creationState.generating = true;
+  window.addEventListener('beforeunload', preventUnload);
+  if (importSubmit) importSubmit.disabled = true;
+  if (creationProgress) creationProgress.hidden = false;
+  if (creationLog) creationLog.textContent = '';
+  showPlanLoading(true, 'Importing markdown');
+  setStatus('Converting markdown to outline...');
+
+  try {
+    const res = await fetch('/api/import-md', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: mdContent, model, slideCount, researchMode }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    creationState.runId = data.runId;
+    appendCreationLog(`[Import] Model: ${data.model}\n`);
+  } catch (err) {
+    creationState.generating = false;
+    window.removeEventListener('beforeunload', preventUnload);
+    if (importSubmit) importSubmit.disabled = false;
+    showPlanLoading(false);
+    appendCreationLog(`[Error] ${err.message}\n`);
+    setStatus(`Import failed: ${err.message}`);
+  }
+}
+
+if (importSubmit) {
+  importSubmit.addEventListener('click', () => submitImport());
+}
+
+// Populate import model select from the same source as creation model
+export async function loadImportModelOptions() {
+  try {
+    const res = await fetch('/api/models');
+    if (!res.ok) return;
+    const payload = await res.json();
+    const models = Array.isArray(payload.models) ? payload.models : [];
+    const claudeModels = models.filter((m) => m.startsWith('claude-'));
+    if (importModel) {
+      importModel.innerHTML = claudeModels
+        .map((m) => `<option value="${m}">${m}</option>`)
+        .join('');
+    }
+  } catch {
+    if (importModel) {
+      importModel.innerHTML = '<option value="claude-sonnet-4-6">claude-sonnet-4-6</option>';
+    }
+  }
+}
