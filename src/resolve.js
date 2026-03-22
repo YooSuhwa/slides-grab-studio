@@ -69,12 +69,26 @@ function readJsonSafe(filePath) {
 }
 
 /**
+ * Validate and normalize a pack ID from user input.
+ * Returns trimmed kebab-case ID or empty string if invalid.
+ * @param {*} value
+ * @returns {string}
+ */
+export function normalizePackId(value) {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  // Only allow kebab-case alphanumeric IDs (prevent path traversal)
+  if (!trimmed || !/^[a-z0-9][a-z0-9\-]*$/.test(trimmed)) return '';
+  return trimmed;
+}
+
+/**
  * Resolve a pack by its ID.
  * @param {string} packId
  * @returns {{ path: string, meta: object, source: 'local' | 'package' } | null}
  */
 export function resolvePack(packId) {
-  if (!packId) return null;
+  if (!packId || !/^[a-z0-9][a-z0-9\-]*$/.test(packId)) return null;
 
   const localPath = join(getCwd(), 'packs', packId);
   if (existsSync(localPath)) {
@@ -124,13 +138,18 @@ export function listPacks() {
     .map(id => {
       const pack = resolvePack(id);
       if (!pack) return null;
+      // Read templates directly from resolved pack path to avoid re-resolving
+      const templatesDir = join(pack.path, 'templates');
+      const templates = existsSync(templatesDir)
+        ? readdirSync(templatesDir).filter(f => f.endsWith('.html')).map(f => f.replace('.html', '')).sort()
+        : [];
       return {
         id: pack.meta.id || id,
         name: pack.meta.name || id,
         description: pack.meta.description || '',
         colors: pack.meta.colors || {},
         tags: pack.meta.tags || [],
-        templates: listPackTemplates(id),
+        templates,
       };
     })
     .filter(Boolean);

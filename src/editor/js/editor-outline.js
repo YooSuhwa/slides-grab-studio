@@ -4,7 +4,7 @@ import { creationState } from './editor-state.js';
 import { setStatus } from './editor-utils.js';
 import { appendCreationLog, showCreationMode, loadCreationModelOptions, showPlanLoading, updatePlanLoadingStep } from './editor-create.js';
 import { btnReviewOutline } from './editor-dom.js';
-import { getSelectedPack } from './editor-pack.js';
+import { getSelectedPack, setSelectedPack } from './editor-pack.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -100,7 +100,7 @@ export function showOutlinePhase(outline, { isExistingDeck = false } = {}) {
 
   // Sync pack selection from outline if present
   if (outline.pack) {
-    import('./editor-pack.js').then(m => m.setSelectedPack(outline.pack));
+    setSelectedPack(outline.pack);
   }
 
   renderOutlineCards(outline.slides || []);

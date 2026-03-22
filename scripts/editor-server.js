@@ -21,7 +21,7 @@ import {
   writeAnnotatedScreenshot,
 } from '../src/editor/codex-edit.js';
 
-import { listTemplates, listPacks, resolvePack, listPackTemplates } from '../src/resolve.js';
+import { listTemplates, listPacks, resolvePack, listPackTemplates, normalizePackId } from '../src/resolve.js';
 
 import { mergePdfBuffers } from './html2pdf.js';
 import { PDFDocument } from 'pdf-lib';
@@ -345,22 +345,22 @@ function parseOutline(content, deckName) {
   const lines = content.split('\n');
   const outline = { title: '', deckName: deckName || '', pack: '', slides: [], rawHeader: '', rawFooter: '' };
 
+  // Extract title, deck-name, and pack in a single pass
   for (const line of lines) {
-    const h1 = line.match(/^#\s+(.+)/);
-    if (h1) { outline.title = h1[1].trim().replace(/<[^>]*>/g, ''); break; }
-  }
-
-  for (const line of lines) {
+    if (!outline.title) {
+      const h1 = line.match(/^#\s+(.+)/);
+      if (h1) { outline.title = h1[1].trim().replace(/<[^>]*>/g, ''); }
+    }
     const plain = line.replace(/\*\*(.*?)\*\*/g, '$1');
-    const dm = plain.match(/^-\s*deck-name:\s*(.+)/i);
-    if (dm) { outline.deckName = dm[1].trim(); break; }
-  }
-
-  // Parse pack meta field
-  for (const line of lines) {
-    const plain = line.replace(/\*\*(.*?)\*\*/g, '$1');
-    const pm = plain.match(/^-\s*pack:\s*(.+)/i);
-    if (pm) { outline.pack = pm[1].trim(); break; }
+    if (!outline.deckName || outline.deckName === deckName) {
+      const dm = plain.match(/^-\s*deck-name:\s*(.+)/i);
+      if (dm) { outline.deckName = dm[1].trim(); }
+    }
+    if (!outline.pack) {
+      const pm = plain.match(/^-\s*pack:\s*(.+)/i);
+      if (pm) { outline.pack = pm[1].trim(); }
+    }
+    if (outline.title && outline.deckName !== (deckName || '') && outline.pack) break;
   }
 
   // Find ### Slide boundaries and H1/H2 footer boundary
@@ -1250,24 +1250,32 @@ async function startServer(opts) {
     if (!pack) return res.status(404).send('Pack not found');
 
     const previewPath = join(pack.path, 'preview.png');
-    if (existsSync(previewPath)) {
-      return res.sendFile(previewPath);
-    }
+    // Try sendFile directly; on error, fall back to generated SVG
+    res.sendFile(previewPath, (err) => {
+      if (!err) return;
 
-    // Fallback: generate a gradient preview based on pack colors
-    const colors = pack.meta.colors || {};
-    const bg = colors['bg-primary'] || '#333';
-    const accent = colors.accent || '#666';
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="280" height="158" viewBox="0 0 280 158">
+      // Fallback: generate a gradient preview based on pack colors
+      // Sanitize color values to prevent SVG injection
+      const safeColor = (v, fallback) => {
+        const s = typeof v === 'string' ? v.trim() : '';
+        return /^#[0-9a-fA-F]{3,8}$/.test(s) ? s : fallback;
+      };
+      const colors = pack.meta.colors || {};
+      const bg = safeColor(colors['bg-primary'], '#333');
+      const accent = safeColor(colors.accent, '#666');
+      const text1 = safeColor(colors['text-primary'], '#fff');
+      const text2 = safeColor(colors['text-secondary'], '#aaa');
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="280" height="158" viewBox="0 0 280 158">
       <rect width="280" height="158" fill="${bg}" rx="4"/>
       <rect x="20" y="20" width="160" height="12" rx="2" fill="${accent}" opacity="0.9"/>
-      <rect x="20" y="42" width="120" height="8" rx="2" fill="${colors['text-primary'] || '#fff'}" opacity="0.4"/>
-      <rect x="20" y="58" width="100" height="8" rx="2" fill="${colors['text-secondary'] || '#aaa'}" opacity="0.3"/>
+      <rect x="20" y="42" width="120" height="8" rx="2" fill="${text1}" opacity="0.4"/>
+      <rect x="20" y="58" width="100" height="8" rx="2" fill="${text2}" opacity="0.3"/>
       <rect x="20" y="90" width="240" height="1" fill="${accent}" opacity="0.2"/>
-      <rect x="20" y="110" width="80" height="6" rx="1" fill="${colors['text-secondary'] || '#aaa'}" opacity="0.25"/>
-      <rect x="20" y="124" width="60" height="6" rx="1" fill="${colors['text-secondary'] || '#aaa'}" opacity="0.15"/>
+      <rect x="20" y="110" width="80" height="6" rx="1" fill="${text2}" opacity="0.25"/>
+      <rect x="20" y="124" width="60" height="6" rx="1" fill="${text2}" opacity="0.15"/>
     </svg>`;
-    res.type('image/svg+xml').send(svg);
+      res.type('image/svg+xml').send(svg);
+    });
   });
 
   // ── GET /api/outline — Load existing outline ───────────────────────
@@ -1411,7 +1419,7 @@ async function startServer(opts) {
         promptLines.push('```');
         promptLines.push('# 발표 제목');
         promptLines.push('');
-        const importPackId = typeof reqImportPackId === 'string' && reqImportPackId.trim() ? reqImportPackId.trim() : '';
+        const importPackId = normalizePackId(reqImportPackId);
         promptLines.push('## Meta');
         promptLines.push('- deck-name: <kebab-case-name>');
         promptLines.push('- slide-count: N');
@@ -1538,7 +1546,7 @@ async function startServer(opts) {
         const countLabel = typeof slideCountRange === 'string' && slideCountRange.trim()
           ? slideCountRange.trim()
           : '8~12';
-        const selectedPackId = typeof reqPackId === 'string' && reqPackId.trim() ? reqPackId.trim() : '';
+        const selectedPackId = normalizePackId(reqPackId);
 
         const promptLines = [
           `주제: ${topic.trim()}`,
@@ -1839,11 +1847,9 @@ async function startServer(opts) {
             outlineContent = await readFile(outlinePath, 'utf-8');
           } catch { /* no outline file */ }
 
-          // Detect pack from request or outline
-          const outlineParsed = parseOutline(outlineContent, '');
-          const genPackId = (typeof reqGenPackId === 'string' && reqGenPackId.trim())
-            ? reqGenPackId.trim()
-            : (outlineParsed.pack || '');
+          // Detect pack from request or outline (simple regex instead of full parse)
+          const outlinePackMatch = outlineContent.match(/^-\s*pack:\s*(.+)/im);
+          const genPackId = normalizePackId(reqGenPackId) || normalizePackId(outlinePackMatch?.[1]);
           const packTemplateList = genPackId ? listPackTemplates(genPackId) : [];
 
           const promptLines = [
@@ -1895,7 +1901,7 @@ async function startServer(opts) {
           const countLabel = typeof slideCountRange === 'string' && slideCountRange.trim()
             ? slideCountRange.trim()
             : '8~12';
-          const genPackId2 = typeof reqGenPackId === 'string' && reqGenPackId.trim() ? reqGenPackId.trim() : '';
+          const genPackId2 = normalizePackId(reqGenPackId);
           const packTemplateList2 = genPackId2 ? listPackTemplates(genPackId2) : [];
 
           const hasDeckDir = !!slidesDir;

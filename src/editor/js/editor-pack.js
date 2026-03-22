@@ -36,6 +36,12 @@ export function setSelectedPack(packId) {
   updatePackSelection();
 }
 
+/** Sanitize a CSS color value to prevent injection. */
+function safeColor(v, fallback) {
+  const s = typeof v === 'string' ? v.trim() : '';
+  return /^#[0-9a-fA-F]{3,8}$/.test(s) ? s : fallback;
+}
+
 function renderPackGrid() {
   const grid = document.getElementById('pack-grid');
   if (!grid) return;
@@ -49,24 +55,44 @@ function renderPackGrid() {
     card.type = 'button';
 
     const colors = pack.colors || {};
-    const bg = colors['bg-primary'] || '#333';
-    const accent = colors.accent || '#666';
-    const textPrimary = colors['text-primary'] || '#fff';
+    const bg = safeColor(colors['bg-primary'], '#333');
+    const accent = safeColor(colors.accent, '#666');
+    const textPrimary = safeColor(colors['text-primary'], '#fff');
 
-    card.innerHTML = `
-      <div class="pack-preview">
-        <img src="/api/packs/${pack.id}/preview" loading="lazy" alt="${pack.name}"
-          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-        <div class="pack-preview-fallback" style="display:none;background:${bg}">
-          <div class="pack-preview-accent" style="background:${accent}"></div>
-          <div class="pack-preview-lines">
-            <div style="background:${textPrimary};opacity:0.5;width:60%;height:3px;border-radius:1px"></div>
-            <div style="background:${textPrimary};opacity:0.25;width:40%;height:2px;border-radius:1px;margin-top:4px"></div>
-          </div>
-        </div>
-      </div>
-      <span class="pack-name">${pack.name}</span>
-    `;
+    // Build DOM safely instead of innerHTML
+    const preview = document.createElement('div');
+    preview.className = 'pack-preview';
+
+    const img = document.createElement('img');
+    img.src = `/api/packs/${encodeURIComponent(pack.id)}/preview`;
+    img.loading = 'lazy';
+    img.alt = pack.name || '';
+    img.addEventListener('error', () => {
+      img.style.display = 'none';
+      fallbackEl.style.display = 'flex';
+    });
+
+    const fallbackEl = document.createElement('div');
+    fallbackEl.className = 'pack-preview-fallback';
+    fallbackEl.style.cssText = `display:none;background:${bg}`;
+    const accentBar = document.createElement('div');
+    accentBar.className = 'pack-preview-accent';
+    accentBar.style.background = accent;
+    const linesEl = document.createElement('div');
+    linesEl.className = 'pack-preview-lines';
+    const line1 = document.createElement('div');
+    line1.style.cssText = `background:${textPrimary};opacity:0.5;width:60%;height:3px;border-radius:1px`;
+    const line2 = document.createElement('div');
+    line2.style.cssText = `background:${textPrimary};opacity:0.25;width:40%;height:2px;border-radius:1px;margin-top:4px`;
+    linesEl.append(line1, line2);
+    fallbackEl.append(accentBar, linesEl);
+    preview.append(img, fallbackEl);
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'pack-name';
+    nameSpan.textContent = pack.name || pack.id;
+
+    card.append(preview, nameSpan);
 
     card.addEventListener('click', () => {
       selectedPackId = pack.id;
