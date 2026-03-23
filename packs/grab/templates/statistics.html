@@ -4,6 +4,15 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg-primary: #0f0f0f;
+    --bg-secondary: #1a1a1a;
+    --bg-elevated: #252525;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --accent: #ffffff;
+    --border: #333333;
+  }
     body {
       width: 720pt;
       height: 405pt;
@@ -24,10 +33,10 @@
 
   <!-- 통계 카드 그리드 -->
   <div style="flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24pt;">
-    <div style="background: #1a1a1a; border-radius: 12pt; padding: 28pt; display: flex; flex-direction: column; justify-content: space-between;">
+    <div style="background: var(--bg-secondary); border-radius: 12pt; padding: 28pt; display: flex; flex-direction: column; justify-content: space-between;">
       <p style="font-size: 10pt; color: #888; text-transform: uppercase; letter-spacing: 0.05em;">Revenue Growth</p>
       <div>
-        <p style="font-size: 48pt; font-weight: 600; color: #ffffff; letter-spacing: -0.02em;">85%</p>
+        <p style="font-size: 48pt; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em;">85%</p>
         <p style="font-size: 11pt; color: #666; margin-top: 8pt;">Year over year</p>
       </div>
     </div>
