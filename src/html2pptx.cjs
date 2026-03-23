@@ -26,7 +26,9 @@
  */
 
 const { chromium } = require('playwright');
+const os = require('os');
 const path = require('path');
+const { fileURLToPath, pathToFileURL } = require('url');
 const sharp = require('sharp');
 
 const PT_PER_PX = 0.75;
@@ -302,7 +304,7 @@ function validateTextBoxPosition(slideData, bodyDimensions) {
 async function addBackground(slideData, targetSlide, tmpDir) {
   if (slideData.background.type === 'image' && slideData.background.path) {
     let imagePath = slideData.background.path.startsWith('file://')
-      ? slideData.background.path.replace('file://', '')
+      ? fileURLToPath(slideData.background.path)
       : slideData.background.path;
     targetSlide.background = { path: imagePath };
   } else if (slideData.background.type === 'color' && slideData.background.value) {
@@ -323,7 +325,7 @@ function addElements(slideData, targetSlide, pres) {
           h: el.position.h
         });
       } else {
-        let imagePath = el.src.startsWith('file://') ? el.src.replace('file://', '') : el.src;
+        let imagePath = el.src.startsWith('file://') ? fileURLToPath(el.src) : el.src;
         targetSlide.addImage({
           path: imagePath,
           x: el.position.x,
@@ -1086,7 +1088,7 @@ async function extractSlideData(page) {
 
 async function html2pptx(htmlFile, pres, options = {}) {
   const {
-    tmpDir = process.env.TMPDIR || '/tmp',
+    tmpDir = os.tmpdir(),
     slide = null
   } = options;
 
@@ -1101,9 +1103,8 @@ async function html2pptx(htmlFile, pres, options = {}) {
 
     try {
       const page = await browser.newPage();
-      page.on('console', (msg) => {
-        // Log the message text to your test runner's console
-        console.log(`Browser console: ${msg.text()}`);
+      page.on('console', () => {
+        // Suppress browser console output in production
       });
 
       await page.goto(`file://${filePath}`);

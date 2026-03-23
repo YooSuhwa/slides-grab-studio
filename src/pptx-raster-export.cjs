@@ -1,5 +1,6 @@
 const PptxGenJS = require('pptxgenjs');
 const { chromium } = require('playwright');
+const os = require('os');
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
@@ -168,7 +169,7 @@ async function convertSlide(htmlFile, pres, browser, options = {}) {
     .png()
     .toBuffer();
 
-  const tmpPath = path.join(process.env.TMPDIR || '/tmp', `slide-${Date.now()}-${Math.random().toString(36).slice(2)}.png`);
+  const tmpPath = path.join(os.tmpdir(), `slide-${Date.now()}-${Math.random().toString(36).slice(2)}.png`);
   fs.writeFileSync(tmpPath, resized);
 
   const slide = pres.addSlide();
