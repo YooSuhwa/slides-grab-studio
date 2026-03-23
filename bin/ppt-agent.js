@@ -263,11 +263,9 @@ program
     }
     console.log('Available template packs:\n');
     for (const p of packs) {
-      const colors = Object.entries(p.colors).map(([k, v]) => `${k}: ${v}`).join(', ');
-      console.log(`  ${p.id.padEnd(18)} ${p.name.padEnd(16)} ${p.templates.length} templates`);
-      console.log(`  ${''.padEnd(18)} ${p.description}`);
-      console.log(`  ${''.padEnd(18)} ${colors}`);
-      console.log();
+      const accent = p.colors.accent || '';
+      const bg = p.colors['bg-primary'] || '';
+      console.log(`  ${p.id.padEnd(18)} ${p.name.padEnd(16)} ${p.templates.length} templates  (bg: ${bg}, accent: ${accent})`);
     }
     console.log(`Total: ${packs.length} packs`);
   });
@@ -277,9 +275,9 @@ program
   .description('Show details and templates of a specific pack')
   .argument('<id>', 'Pack ID (e.g. "midnight", "corporate")')
   .action(async (id) => {
-    const { resolvePack, listPackTemplates, listTemplates } = await import('../src/resolve.js');
-    const pack = resolvePack(id);
-    if (!pack) {
+    const { getPackInfo, listPackTemplates, listTemplates } = await import('../src/resolve.js');
+    const info = getPackInfo(id);
+    if (!info) {
       console.error(`Pack "${id}" not found.`);
       process.exitCode = 1;
       return;
@@ -287,12 +285,10 @@ program
     const ownTemplates = listPackTemplates(id);
     const allTemplates = listTemplates().map(t => t.name);
 
-    console.log(`Pack: ${pack.meta.name} (${id})`);
-    console.log(`Description: ${pack.meta.description}`);
-    console.log(`Tags: ${(pack.meta.tags || []).join(', ')}`);
+    console.log(`Pack: ${info.name} (${id})`);
     console.log(`Colors:`);
-    for (const [key, val] of Object.entries(pack.meta.colors || {})) {
-      console.log(`  ${key}: ${val}`);
+    for (const [key, val] of Object.entries(info.colors)) {
+      console.log(`  --${key}: ${val}`);
     }
     console.log(`\nOwn templates (${ownTemplates.length}):`);
     for (const t of ownTemplates) {

@@ -21,7 +21,7 @@ import {
   writeAnnotatedScreenshot,
 } from '../src/editor/codex-edit.js';
 
-import { listTemplates, listPacks, resolvePack, listPackTemplates, normalizePackId } from '../src/resolve.js';
+import { listTemplates, listPacks, resolvePack, listPackTemplates, normalizePackId, getPackInfo } from '../src/resolve.js';
 
 import { mergePdfBuffers } from './html2pdf.js';
 import { PDFDocument } from 'pdf-lib';
@@ -1260,7 +1260,8 @@ async function startServer(opts) {
         const s = typeof v === 'string' ? v.trim() : '';
         return /^#[0-9a-fA-F]{3,8}$/.test(s) ? s : fallback;
       };
-      const colors = pack.meta.colors || {};
+      const info = getPackInfo(req.params.id);
+      const colors = info?.colors || {};
       const bg = safeColor(colors['bg-primary'], '#333');
       const accent = safeColor(colors.accent, '#666');
       const text1 = safeColor(colors['text-primary'], '#fff');

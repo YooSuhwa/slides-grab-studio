@@ -69,6 +69,29 @@ function readJsonSafe(filePath) {
 }
 
 /**
+ * Parse CSS variables from a theme.css file content.
+ * @param {string} css
+ * @returns {Record<string, string>}
+ */
+function parseThemeColors(css) {
+  const colors = {};
+  const re = /--([a-z\-]+)\s*:\s*([^;/]+)/g;
+  let m;
+  while ((m = re.exec(css)) !== null) {
+    colors[m[1]] = m[2].trim();
+  }
+  return colors;
+}
+
+/**
+ * Derive a display name from a pack ID.
+ * "figma-default" → "Figma Default", "midnight" → "Midnight"
+ */
+function packIdToName(id) {
+  return id.replace(/(^|-)([a-z])/g, (_, sep, ch) => (sep ? ' ' : '') + ch.toUpperCase());
+}
+
+/**
  * Validate and normalize a pack ID from user input.
  * Returns trimmed kebab-case ID or empty string if invalid.
  * @param {*} value
@@ -83,26 +106,42 @@ export function normalizePackId(value) {
 }
 
 /**
- * Resolve a pack by its ID.
+ * Resolve a pack by its ID. A valid pack must have a theme.css file.
  * @param {string} packId
- * @returns {{ path: string, meta: object, source: 'local' | 'package' } | null}
+ * @returns {{ path: string, source: 'local' | 'package' } | null}
  */
 export function resolvePack(packId) {
   if (!packId || !/^[a-z0-9][a-z0-9\-]*$/.test(packId)) return null;
 
   const localPath = join(getCwd(), 'packs', packId);
-  if (existsSync(localPath)) {
-    const meta = readJsonSafe(join(localPath, 'meta.json'));
-    if (meta) return { path: localPath, meta, source: 'local' };
+  if (existsSync(join(localPath, 'theme.css'))) {
+    return { path: localPath, source: 'local' };
   }
 
   const pkgPath = join(PACKAGE_ROOT, 'packs', packId);
-  if (existsSync(pkgPath)) {
-    const meta = readJsonSafe(join(pkgPath, 'meta.json'));
-    if (meta) return { path: pkgPath, meta, source: 'package' };
+  if (existsSync(join(pkgPath, 'theme.css'))) {
+    return { path: pkgPath, source: 'package' };
   }
 
   return null;
+}
+
+/**
+ * Get pack info (name, colors) derived from theme.css.
+ * @param {string} packId
+ * @returns {{ id: string, name: string, colors: Record<string, string> } | null}
+ */
+export function getPackInfo(packId) {
+  const pack = resolvePack(packId);
+  if (!pack) return null;
+
+  const themePath = join(pack.path, 'theme.css');
+  let colors = {};
+  try {
+    colors = parseThemeColors(readFileSync(themePath, 'utf-8'));
+  } catch { /* no theme */ }
+
+  return { id: packId, name: packIdToName(packId), colors };
 }
 
 /**
@@ -124,8 +163,8 @@ export function listPackTemplates(packId) {
 }
 
 /**
- * List all available packs with metadata.
- * @returns {Array<{ id: string, name: string, description: string, colors: object, tags: string[], templates: string[] }>}
+ * List all available packs with info derived from theme.css.
+ * @returns {Array<{ id: string, name: string, colors: Record<string, string>, templates: string[] }>}
  */
 export function listPacks() {
   const packsDir = findPacksDir();
@@ -138,17 +177,15 @@ export function listPacks() {
     .map(id => {
       const pack = resolvePack(id);
       if (!pack) return null;
-      // Read templates directly from resolved pack path to avoid re-resolving
+      const info = getPackInfo(id);
       const templatesDir = join(pack.path, 'templates');
       const templates = existsSync(templatesDir)
         ? readdirSync(templatesDir).filter(f => f.endsWith('.html')).map(f => f.replace('.html', '')).sort()
         : [];
       return {
-        id: pack.meta.id || id,
-        name: pack.meta.name || id,
-        description: pack.meta.description || '',
-        colors: pack.meta.colors || {},
-        tags: pack.meta.tags || [],
+        id,
+        name: info?.name || id,
+        colors: info?.colors || {},
         templates,
       };
     })
