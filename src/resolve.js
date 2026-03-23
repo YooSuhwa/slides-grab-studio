@@ -197,11 +197,45 @@ export function resolveTemplate(name, packId) {
 }
 
 /**
- * Resolve a theme file. Local first, then package fallback.
- * @param {string} name — theme name without extension (e.g. "modern-dark")
+ * Resolve a pack's theme.css file.
+ * @param {string} packId — pack ID (e.g. "midnight")
+ * @returns {{ path: string, source: 'local' | 'package', pack: string } | null}
+ */
+export function resolvePackTheme(packId) {
+  const effectivePackId = packId || DEFAULT_PACK;
+  const pack = resolvePack(effectivePackId);
+  if (pack) {
+    const themePath = join(pack.path, 'theme.css');
+    if (existsSync(themePath)) {
+      return { path: themePath, source: pack.source, pack: effectivePackId };
+    }
+  }
+
+  // Fallback to figma-default pack's theme
+  if (effectivePackId !== DEFAULT_PACK) {
+    const defaultPack = resolvePack(DEFAULT_PACK);
+    if (defaultPack) {
+      const fallbackPath = join(defaultPack.path, 'theme.css');
+      if (existsSync(fallbackPath)) {
+        return { path: fallbackPath, source: defaultPack.source, pack: DEFAULT_PACK };
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Resolve a theme file. Checks pack theme.css first, then legacy themes/ dir.
+ * @param {string} name — theme/pack name without extension (e.g. "midnight", "figma-default")
  * @returns {{ path: string, source: 'local' | 'package' } | null}
  */
 export function resolveTheme(name) {
+  // Try as pack theme first
+  const packTheme = resolvePackTheme(name);
+  if (packTheme) return { path: packTheme.path, source: packTheme.source };
+
+  // Legacy fallback: themes/ directory
   const fileName = name.endsWith('.css') ? name : `${name}.css`;
 
   const localPath = join(getCwd(), 'themes', fileName);

@@ -5,11 +5,20 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-elevated: #f1f5f9;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --accent: #2563eb;
+    --border: #e2e8f0;
+  }
   body {
     width: 720pt;
     height: 405pt;
     font-family: 'Pretendard', -apple-system, sans-serif;
-    background: #ffffff;
+    background: var(--bg-primary);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -23,7 +32,7 @@
     left: 0;
     width: 6pt;
     height: 100%;
-    background: #2563eb;
+    background: var(--accent);
   }
   .accent-line-top {
     position: absolute;
@@ -36,14 +45,14 @@
   h1 {
     font-size: 40pt;
     font-weight: 800;
-    color: #1e293b;
+    color: var(--text-primary);
     letter-spacing: -1.5pt;
     line-height: 1.15;
     margin-bottom: 12pt;
   }
   .subtitle {
     font-size: 15pt;
-    color: #64748b;
+    color: var(--text-secondary);
     font-weight: 400;
     line-height: 1.5;
     margin-bottom: 36pt;
@@ -56,14 +65,14 @@
   .meta-item {
     font-size: 10pt;
     font-weight: 500;
-    color: #64748b;
+    color: var(--text-secondary);
     letter-spacing: 0.3pt;
     text-transform: uppercase;
   }
   .meta-divider {
     width: 1pt;
     height: 12pt;
-    background: #cbd5e1;
+    background: var(--border);
   }
 </style>
 </head>

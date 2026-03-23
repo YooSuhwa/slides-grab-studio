@@ -5,11 +5,20 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-elevated: #f1f5f9;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --accent: #2563eb;
+    --border: #e2e8f0;
+  }
   body {
     width: 720pt;
     height: 405pt;
     font-family: 'Pretendard', -apple-system, sans-serif;
-    background: #ffffff;
+    background: var(--bg-primary);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -27,19 +36,19 @@
     transform: translateX(-50%);
     width: 120pt;
     height: 3pt;
-    background: #2563eb;
+    background: var(--accent);
     border-radius: 2pt;
   }
   h1 {
     font-size: 36pt;
     font-weight: 800;
-    color: #1e293b;
+    color: var(--text-primary);
     letter-spacing: -1pt;
     margin-bottom: 10pt;
   }
   .tagline {
     font-size: 14pt;
-    color: #64748b;
+    color: var(--text-secondary);
     font-weight: 400;
     margin-bottom: 36pt;
     line-height: 1.5;
@@ -49,23 +58,23 @@
     flex-direction: column;
     gap: 6pt;
     padding: 18pt 32pt;
-    background: #f8fafc;
+    background: var(--bg-secondary);
     border-radius: 6pt;
-    border: 1pt solid #e2e8f0;
+    border: 1pt solid var(--border);
   }
   .contact-name {
     font-size: 12pt;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--text-primary);
   }
   .contact-detail {
     font-size: 10pt;
-    color: #64748b;
+    color: var(--text-secondary);
     font-weight: 400;
   }
   .contact-email {
     font-size: 10pt;
-    color: #2563eb;
+    color: var(--accent);
     font-weight: 500;
     text-decoration: none;
   }

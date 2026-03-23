@@ -83,8 +83,12 @@ Instead, follow the structure and styling of the matching template.
 
 ### Theme CSS Variables
 
-When using `figma-default` pack, color and styling decisions should follow `themes/figma-default.css`.
-For other packs, follow the pack's `meta.json` color definitions.
+Each pack has a `theme.css` file defining CSS variables (`:root { --bg-primary, --text-primary, --accent, ... }`).
+Templates use these variables via `var(--xxx)` instead of hardcoded colors.
+
+- View a pack's theme: `slides-grab show-theme <pack-id>`
+- All templates include the `:root` block inline for standalone rendering
+- When generating slides, copy the `:root` variables from the pack's template and use `var()` references
 
 ---
 

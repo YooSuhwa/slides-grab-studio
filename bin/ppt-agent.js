@@ -328,18 +328,32 @@ program
 
 program
   .command('show-theme')
-  .description('Print the contents of a theme file')
-  .argument('<name>', 'Theme name (e.g. "modern-dark", "executive")')
-  .action(async (name) => {
-    const { resolveTheme } = await import('../src/resolve.js');
-    const result = resolveTheme(name);
+  .description('Print the theme CSS for a pack or legacy theme')
+  .argument('[name]', 'Pack ID or legacy theme name (default: figma-default)')
+  .option('--pack <id>', 'Pack ID (alias for argument)')
+  .action(async (name, options) => {
+    const packId = options.pack || name || 'figma-default';
+    const { resolvePackTheme, resolveTheme } = await import('../src/resolve.js');
+
+    // Try pack theme first
+    const packResult = resolvePackTheme(packId);
+    if (packResult) {
+      const content = readFileSync(packResult.path, 'utf-8');
+      console.log(`/* Theme: ${packId} (${packResult.source}, pack: ${packResult.pack}) */`);
+      console.log(`/* Path: ${packResult.path} */\n`);
+      console.log(content);
+      return;
+    }
+
+    // Fallback to legacy theme
+    const result = resolveTheme(packId);
     if (!result) {
-      console.error(`Theme "${name}" not found.`);
+      console.error(`Theme "${packId}" not found.`);
       process.exitCode = 1;
       return;
     }
     const content = readFileSync(result.path, 'utf-8');
-    console.log(`/* Theme: ${name} (${result.source}) */`);
+    console.log(`/* Theme: ${packId} (${result.source}) */`);
     console.log(`/* Path: ${result.path} */\n`);
     console.log(content);
   });
