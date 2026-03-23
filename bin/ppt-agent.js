@@ -308,17 +308,43 @@ program
   .description('Print the contents of a template file')
   .argument('<name>', 'Template name (e.g. "cover", "content", "chart")')
   .option('--pack <id>', 'Pack ID to resolve template from')
+  .option('--raw', 'Print raw HTML without inlining external CSS')
   .action(async (name, options) => {
     const { resolveTemplate } = await import('../src/resolve.js');
+    const { dirname: dirnameFn, join: joinFn } = await import('node:path');
     const result = resolveTemplate(name, options.pack);
     if (!result) {
       console.error(`Template "${name}" not found${options.pack ? ` in pack "${options.pack}"` : ''}.`);
       process.exitCode = 1;
       return;
     }
-    const content = readFileSync(result.path, 'utf-8');
+    let content = readFileSync(result.path, 'utf-8');
     console.log(`# Template: ${name} (${result.source}, pack: ${result.pack})`);
     console.log(`# Path: ${result.path}\n`);
+
+    // Inline external CSS <link> references for AI readability
+    if (!options.raw) {
+      const templateDir = dirnameFn(result.path);
+      // Also check pack root (one level up from templates/)
+      const packDir = dirnameFn(templateDir);
+      content = content.replace(
+        /<link\s+rel=["']stylesheet["']\s+href=["']([^"']+)["']\s*\/?>/gi,
+        (match, href) => {
+          // Skip CDN/external URLs
+          if (href.startsWith('http://') || href.startsWith('https://')) return match;
+          // Try resolving from template dir, then pack root
+          for (const base of [templateDir, packDir]) {
+            const cssPath = joinFn(base, href);
+            try {
+              const css = readFileSync(cssPath, 'utf-8');
+              return `<style>\n/* Inlined from ${href} */\n${css}\n</style>`;
+            } catch { /* not found here, try next */ }
+          }
+          return match; // Keep original if not found
+        }
+      );
+    }
+
     console.log(content);
   });
 

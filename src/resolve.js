@@ -60,23 +60,23 @@ function parseThemeColors(css) {
 
 /**
  * Derive a display name from a pack ID.
- * "figma-default" → "Figma Default", "midnight" → "Midnight"
+ * "figma-default" → "Figma Default", "mobile_strategy" → "Mobile Strategy"
  */
 function packIdToName(id) {
-  return id.replace(/(^|-)([a-z])/g, (_, sep, ch) => (sep ? ' ' : '') + ch.toUpperCase());
+  return id.replace(/(^|[-_])([a-z])/g, (_, sep, ch) => (sep ? ' ' : '') + ch.toUpperCase());
 }
 
 /**
  * Validate and normalize a pack ID from user input.
- * Returns trimmed kebab-case ID or empty string if invalid.
+ * Returns trimmed ID or empty string if invalid.
  * @param {*} value
  * @returns {string}
  */
 export function normalizePackId(value) {
   if (typeof value !== 'string') return '';
   const trimmed = value.trim();
-  // Only allow kebab-case alphanumeric IDs (prevent path traversal)
-  if (!trimmed || !/^[a-z0-9][a-z0-9\-]*$/.test(trimmed)) return '';
+  // Allow kebab-case and snake_case alphanumeric IDs (prevent path traversal)
+  if (!trimmed || !/^[a-z0-9][a-z0-9\-_]*$/.test(trimmed)) return '';
   return trimmed;
 }
 
@@ -86,7 +86,7 @@ export function normalizePackId(value) {
  * @returns {{ path: string, source: 'local' | 'package' } | null}
  */
 export function resolvePack(packId) {
-  if (!packId || !/^[a-z0-9][a-z0-9\-]*$/.test(packId)) return null;
+  if (!packId || !/^[a-z0-9][a-z0-9\-_]*$/.test(packId)) return null;
 
   const localPath = join(getCwd(), 'packs', packId);
   if (existsSync(join(localPath, 'theme.css'))) {
