@@ -32,17 +32,21 @@ If prerequisites are not met, guide the user to review slides in `<slides-dir>/v
 
 ## Core Workflow
 
-### HTML -> PPTX Conversion
+### HTML -> PPTX Conversion (experimental / unstable)
 
-1. **Prepare HTML slides**
-   - Verify HTML files exist in selected `--slides-dir` (default: `slides/`)
-   - Validate each file is 720pt x 405pt (16:9) specification
+> **Warning:** PPTX export is **experimental / unstable**. Expect best-effort output, layout shifts, and manual cleanup in PowerPoint. Always tell the user this upfront.
 
-2. **Run html2pptx.js**
+1. **Validate slides first**
+   ```bash
+   slides-grab validate --slides-dir <path>
+   ```
+   Do not proceed if validation fails.
+
+2. **Run conversion**
    ```bash
    slides-grab convert --slides-dir <path> --output presentation.pptx
    ```
-   - Script-level alternative:
+   Script-level alternative:
    ```bash
    node .claude/skills/pptx-skill/scripts/html2pptx.js
    ```
@@ -50,6 +54,19 @@ If prerequisites are not met, guide the user to review slides in `<slides-dir>/v
 3. **Verify results**
    - Check generated PPTX file
    - Visual verification via thumbnail
+
+### HTML -> PDF Conversion (recommended)
+
+PDF is the most reliable export format.
+
+```bash
+slides-grab pdf --slides-dir <path> --output presentation.pdf
+```
+
+Options:
+- `--mode capture` (default) — rasterized, pixel-perfect fidelity
+- `--mode print` — searchable/selectable text
+- `--resolution 2160p` (default) — also accepts `720p`, `1080p`, `1440p`, `4k`
 
 ## Script Usage
 

@@ -652,23 +652,30 @@ This skill is **Stage 2**. It works from the `slide-outline.md` approved by the 
 ### Steps
 
 1. **Analyze + Design**: Read `slide-outline.md`, decide theme/layout, generate HTML slides
-2. **Auto-build viewer**: After slide generation, automatically run:
+2. **Validate**: After generation or edits, run:
    ```bash
-   node scripts/build-viewer.js --slides-dir <path>
+   slides-grab validate --slides-dir <path>
    ```
-3. **Guide user to review**: Tell the user to check slides in the browser:
+   If validation fails, fix the source slide HTML/CSS and re-run until it passes.
+3. **Build viewer**: Only after validation passes, run:
+   ```bash
+   slides-grab build-viewer --slides-dir <path>
+   ```
+4. **Guide user to review**: Tell the user to check slides in the browser:
    ```
    open <slides-dir>/viewer.html
    ```
-4. **Revision loop**: When the user requests changes to specific slides:
+5. **Revision loop**: When the user requests changes to specific slides:
    - Edit only the relevant HTML file
-   - Re-run `node scripts/build-viewer.js --slides-dir <path>` to rebuild the viewer
+   - Re-run `slides-grab validate --slides-dir <path>`
+   - After validation passes, re-run `slides-grab build-viewer --slides-dir <path>`
    - Guide user to review again
-5. **Completion**: Repeat the revision loop until the user signals approval for PPTX conversion
+6. **Completion**: Repeat the revision loop until the user signals approval for conversion
 
 ### Absolute Rules
-- **Never start PPTX conversion without approval** — PPTX conversion is the responsibility of `pptx-skill` and requires explicit user approval.
-- **Never forget to build the viewer** — Run `node scripts/build-viewer.js --slides-dir <path>` every time slides are generated or modified.
+- **Never start conversion without approval** — Conversion is the responsibility of `pptx-skill` and requires explicit user approval.
+- **Never skip validation** — Run `slides-grab validate` after every generation/edit pass.
+- **Never build viewer before validation passes** — Validate first, build viewer second.
 
 ---
 
@@ -676,7 +683,7 @@ This skill is **Stage 2**. It works from the `slide-outline.md` approved by the 
 
 1. **CSS gradients**: Not supported in PowerPoint conversion — replace with background images
 2. **Webfonts**: Always include the Pretendard CDN link
-3. **Image paths**: Use absolute paths or URLs
+3. **Image contract**: Store local assets in `<slides-dir>/assets/` and reference as `./assets/<file>`. Allow `data:` URLs for self-contained slides. Remote `https://` URLs are best-effort only. Never use absolute filesystem paths.
 4. **Colors**: Always include `#` prefix in CSS
 5. **Text rules**: Never place text directly in div/span
 6. **SVG 내보내기와 이모지**: 이모지·특수문자(✓ ① ▶ 등)는 SVG 내보내기 시 래스터 PNG로 자동 변환됨. 벡터 품질이 중요한 경우 위 "SVG 아이콘 스니펫"의 인라인 SVG를 사용
