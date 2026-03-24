@@ -1735,6 +1735,11 @@
     .export-dropdown-item:disabled:hover {
       background: none;
     }
+    .export-dropdown-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
 
     /* ── Slide Loading Skeleton ── */
     .slide-skeleton {
@@ -3921,6 +3926,8 @@
             <span class="figma-conn-dot" id="figma-conn-dot"></span>
             Send to Figma
           </button>
+          <div class="export-dropdown-divider"></div>
+          <button class="export-dropdown-item" id="btn-retheme" role="menuitem">Retheme Deck</button>
         </div>
       </div>
       <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle light/dark mode">
@@ -4386,6 +4393,26 @@
         <div class="shortcut-keys"><span class="shortcut-key">Esc</span></div>
       </div>
       <button class="shortcuts-close" id="shortcuts-close">Close</button>
+    </div>
+  </div>
+
+  <!-- Retheme Modal -->
+  <div class="shortcuts-overlay" id="retheme-modal" hidden>
+    <div class="shortcuts-modal" role="dialog" aria-label="Retheme deck" style="max-width: 420px;">
+      <h3>Retheme Deck</h3>
+      <p style="font-size: 13px; color: var(--text-1); margin-bottom: 16px;">다른 팩으로 전체 덱을 리디자인합니다.</p>
+      <div style="margin-bottom: 16px;">
+        <label for="retheme-pack-select" style="display: block; font-size: 12px; color: var(--text-2); margin-bottom: 6px;">Target Pack</label>
+        <select id="retheme-pack-select" style="width: 100%; padding: 8px 12px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-0); font-size: 13px;"></select>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label for="retheme-save-as" style="display: block; font-size: 12px; color: var(--text-2); margin-bottom: 6px;">Save as (leave empty to overwrite)</label>
+        <input type="text" id="retheme-save-as" placeholder="e.g., my-deck-dark" style="width: 100%; padding: 8px 12px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-0); font-size: 13px;" autocomplete="off">
+      </div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button class="shortcuts-close" id="retheme-cancel">Cancel</button>
+        <button class="shortcuts-close" id="retheme-confirm" style="background: var(--accent); color: #fff; border-color: var(--accent);">Retheme</button>
+      </div>
     </div>
   </div>
 

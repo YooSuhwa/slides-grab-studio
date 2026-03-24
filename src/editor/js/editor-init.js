@@ -343,6 +343,85 @@ window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e
   }
 });
 
+// ── Retheme modal ──
+const rethemeBtn = document.getElementById('btn-retheme');
+const rethemeModal = document.getElementById('retheme-modal');
+const rethemePackSelect = document.getElementById('retheme-pack-select');
+const rethemeSaveAs = document.getElementById('retheme-save-as');
+const rethemeCancel = document.getElementById('retheme-cancel');
+const rethemeConfirm = document.getElementById('retheme-confirm');
+
+if (rethemeBtn && rethemeModal) {
+  rethemeBtn.addEventListener('click', async () => {
+    // Populate pack options
+    try {
+      const res = await fetch('/api/packs');
+      if (res.ok) {
+        const packs = await res.json();
+        rethemePackSelect.innerHTML = packs
+          .map(p => `<option value="${p.id}">${p.name} (${p.templates?.length || 0} templates)</option>`)
+          .join('');
+      }
+    } catch { /* keep empty */ }
+    rethemeSaveAs.value = '';
+    rethemeModal.hidden = false;
+  });
+
+  rethemeCancel.addEventListener('click', () => {
+    rethemeModal.hidden = true;
+  });
+
+  rethemeModal.addEventListener('click', (e) => {
+    if (e.target === rethemeModal) rethemeModal.hidden = true;
+  });
+
+  rethemeConfirm.addEventListener('click', async () => {
+    const packId = rethemePackSelect.value;
+    if (!packId) return;
+
+    // Get current deck name from config
+    let deckName = '';
+    try {
+      const cfgRes = await fetch('/api/editor-config');
+      if (cfgRes.ok) {
+        const cfg = await cfgRes.json();
+        deckName = cfg.deckName;
+      }
+    } catch { /* */ }
+
+    if (!deckName) {
+      setStatus('덱 이름을 확인할 수 없습니다.');
+      return;
+    }
+
+    rethemeModal.hidden = true;
+    setStatus(`Retheme 진행 중: ${deckName} → ${packId}...`);
+
+    try {
+      const res = await fetch('/api/retheme', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deckName,
+          packId,
+          saveAs: rethemeSaveAs.value.trim() || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        setStatus(`Retheme 실패: ${err.error}`);
+        return;
+      }
+
+      const data = await res.json();
+      setStatus(`Retheme 시작됨: ${data.targetDeckName} → ${data.targetPack}`);
+    } catch (err) {
+      setStatus(`Retheme 실패: ${err.message}`);
+    }
+  });
+}
+
 // Prompt textarea auto-grow
 if (promptInput) {
   const sidebarTextarea = document.querySelector('.sidebar-textarea');

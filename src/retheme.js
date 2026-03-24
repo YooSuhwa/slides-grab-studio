@@ -1,0 +1,228 @@
+/**
+ * Retheme module — re-generate a deck's slides with a different pack.
+ *
+ * Strategy:
+ *   1. If slide-outline.md exists → reuse outline, swap pack
+ *   2. If no outline → extract text from each HTML, reconstruct minimal outline
+ *   3. AI regenerates slides with the target pack's templates + theme.css
+ */
+
+import { readFile, readdir, writeFile, mkdir, copyFile, stat } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { join, basename } from 'node:path';
+import { getPackInfo, listPackTemplates, resolvePackTheme, getCommonTypes } from './resolve.js';
+
+/**
+ * Read the slide-outline.md from a deck, if it exists.
+ * @param {string} deckDir - Absolute path to deck directory
+ * @returns {Promise<string|null>}
+ */
+export async function readOutline(deckDir) {
+  const outlinePath = join(deckDir, 'slide-outline.md');
+  try {
+    return await readFile(outlinePath, 'utf-8');
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * List slide HTML files in a deck directory, sorted.
+ * @param {string} deckDir
+ * @returns {Promise<string[]>} sorted file names
+ */
+export async function listSlideFiles(deckDir) {
+  const entries = await readdir(deckDir);
+  return entries
+    .filter(f => /^slide-\d+.*\.html$/i.test(f))
+    .sort((a, b) => {
+      const numA = parseInt(a.match(/\d+/)?.[0] || '0', 10);
+      const numB = parseInt(b.match(/\d+/)?.[0] || '0', 10);
+      return numA - numB;
+    });
+}
+
+/**
+ * Extract visible text from a slide HTML file (rough extraction for outline reconstruction).
+ * @param {string} html
+ * @returns {{ title: string, body: string }}
+ */
+export function extractTextFromSlide(html) {
+  // Remove style and script tags
+  let clean = html.replace(/<style[\s\S]*?<\/style>/gi, '');
+  clean = clean.replace(/<script[\s\S]*?<\/script>/gi, '');
+  // Remove HTML tags
+  clean = clean.replace(/<[^>]+>/g, ' ');
+  // Decode HTML entities
+  clean = clean.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ');
+  // Normalize whitespace
+  clean = clean.replace(/\s+/g, ' ').trim();
+
+  // Try to detect title (first meaningful chunk, usually short)
+  const words = clean.split(' ');
+  // Heuristic: first "sentence" up to 60 chars is the title
+  let title = '';
+  let body = clean;
+  let acc = '';
+  for (const w of words) {
+    acc += (acc ? ' ' : '') + w;
+    if (acc.length >= 15) {
+      title = acc;
+      body = clean.slice(acc.length).trim();
+      break;
+    }
+  }
+  if (!title) {
+    title = clean.slice(0, 60);
+    body = clean.slice(60).trim();
+  }
+
+  return { title, body };
+}
+
+/**
+ * Reconstruct a minimal outline from slide HTML files when no outline exists.
+ * @param {string} deckDir
+ * @param {string[]} slideFiles
+ * @returns {Promise<string>}
+ */
+export async function reconstructOutline(deckDir, slideFiles) {
+  const lines = ['# Reconstructed Outline', '', '## Meta', `- deck-name: ${basename(deckDir)}`, `- slide-count: ${slideFiles.length}`, '', '## Slides'];
+
+  for (let i = 0; i < slideFiles.length; i++) {
+    const html = await readFile(join(deckDir, slideFiles[i]), 'utf-8');
+    const { title, body } = extractTextFromSlide(html);
+
+    lines.push('');
+    lines.push(`### Slide ${i + 1}`);
+    // Guess type from slide position
+    if (i === 0) {
+      lines.push('- type: cover');
+    } else if (i === slideFiles.length - 1) {
+      lines.push('- type: closing');
+    } else {
+      lines.push('- type: content');
+    }
+    lines.push(`- title: ${title}`);
+    if (body) {
+      lines.push(`- content: ${body.slice(0, 500)}`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Replace the pack reference in an outline's Meta section.
+ * @param {string} outline - Original outline text
+ * @param {string} newPackId - Target pack ID
+ * @returns {string}
+ */
+export function swapOutlinePack(outline, newPackId) {
+  // Replace existing pack line
+  if (/^- pack:.*/m.test(outline)) {
+    return outline.replace(/^- pack:.*/m, `- pack: ${newPackId}`);
+  }
+  // Insert pack after slide-count or deck-name
+  return outline.replace(
+    /^(- (?:slide-count|deck-name):.*)/m,
+    `$1\n- pack: ${newPackId}`
+  );
+}
+
+/**
+ * Build the retheme prompt for AI regeneration.
+ * @param {object} opts
+ * @param {string} opts.outline - The outline text (with pack already swapped)
+ * @param {string} opts.targetPackId - Target pack ID
+ * @param {string} opts.deckName - Deck folder name
+ * @param {string} opts.themeCss - Target pack's theme.css content
+ * @param {string[]} opts.packTemplates - Available templates in target pack
+ * @param {string[]} opts.allTypes - All common types
+ * @returns {string}
+ */
+export function buildRethemePrompt({ outline, targetPackId, deckName, themeCss, packTemplates, allTypes }) {
+  const lines = [
+    `기존 프레젠테이션을 "${targetPackId}" 팩으로 리디자인하세요.`,
+    '',
+    '=== 아웃라인 ===',
+    outline,
+    '=== 아웃라인 끝 ===',
+    '',
+    `타겟 팩: ${targetPackId}`,
+    `팩이 보유한 템플릿: ${packTemplates.join(', ')}`,
+    `전체 type: ${allTypes.join(', ')}`,
+    '',
+    '타겟 팩의 theme.css:',
+    '```css',
+    themeCss,
+    '```',
+    '',
+    '규칙:',
+    '1. 아웃라인의 각 슬라이드를 새 팩 스타일로 HTML 파일을 생성하세요.',
+    '2. 팩에 해당 type 템플릿이 있으면 그 템플릿 스타일을 따르세요.',
+    '3. 팩에 없는 type은 theme.css의 색상으로 직접 디자인하세요.',
+    '4. 컨텐츠(텍스트, 데이터)는 아웃라인의 것을 그대로 사용하세요.',
+    '5. 슬라이드 크기: 720pt × 405pt',
+    '6. 각 슬라이드를 slide-01.html, slide-02.html, ... 형식으로 생성하세요.',
+    `7. 파일 경로: decks/${deckName}/slide-01.html 등`,
+    '8. theme.css와 base.css는 link 태그로 참조하지 말고, 스타일을 인라인으로 포함하세요.',
+    '',
+    '중요: HTML 슬라이드 파일만 생성하세요. 다른 파일은 수정하지 마세요.',
+  ];
+
+  return lines.join('\n');
+}
+
+/**
+ * Prepare retheme data — gather outline, pack info, and build prompt.
+ * @param {object} opts
+ * @param {string} opts.deckDir - Absolute path to deck directory
+ * @param {string} opts.targetPackId - Target pack ID
+ * @returns {Promise<{ prompt: string, deckName: string, outline: string }>}
+ */
+export async function prepareRetheme({ deckDir, targetPackId }) {
+  const deckName = basename(deckDir);
+
+  // Get pack info
+  const packInfo = getPackInfo(targetPackId);
+  if (!packInfo) {
+    throw new Error(`Pack "${targetPackId}" not found.`);
+  }
+
+  // Get theme CSS
+  const themeResult = resolvePackTheme(targetPackId);
+  let themeCss = '';
+  if (themeResult) {
+    themeCss = await readFile(themeResult.path, 'utf-8');
+  }
+
+  // Get pack templates
+  const packTemplates = listPackTemplates(targetPackId);
+  const allTypes = Object.keys(getCommonTypes());
+
+  // Get or reconstruct outline
+  let outline = await readOutline(deckDir);
+  if (!outline) {
+    const slideFiles = await listSlideFiles(deckDir);
+    if (slideFiles.length === 0) {
+      throw new Error(`No slides found in ${deckDir}`);
+    }
+    outline = await reconstructOutline(deckDir, slideFiles);
+  }
+
+  // Swap pack in outline
+  outline = swapOutlinePack(outline, targetPackId);
+
+  // Build prompt
+  const prompt = buildRethemePrompt({
+    outline,
+    targetPackId,
+    deckName,
+    themeCss,
+    packTemplates,
+    allTypes,
+  });
+
+  return { prompt, deckName, outline };
+}

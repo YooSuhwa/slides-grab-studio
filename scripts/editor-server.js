@@ -23,6 +23,7 @@ import {
 
 import { listTemplates, listPacks, resolvePack, resolveTemplate, listPackTemplates, normalizePackId, getPackInfo, getCommonTypes } from '../src/resolve.js';
 import { parseSource, detectSourceType } from '../src/parsers.js';
+import { prepareRetheme } from '../src/retheme.js';
 
 import { mergePdfBuffers } from './html2pdf.js';
 import { PDFDocument } from 'pdf-lib';
@@ -88,6 +89,8 @@ function parseArgs(argv) {
     importPack: '',
     importSlideCount: '',
     importResearch: false,
+    rethemeMode: false,
+    rethemeSaveAs: '',
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -191,6 +194,18 @@ function parseArgs(argv) {
 
     if (arg === '--research') {
       opts.importResearch = true;
+      continue;
+    }
+
+    if (arg === '--retheme') {
+      opts.rethemeMode = true;
+      opts.createMode = true;
+      continue;
+    }
+
+    if (arg === '--save-as') {
+      opts.rethemeSaveAs = argv[i + 1] || '';
+      i += 1;
       continue;
     }
 
@@ -1769,6 +1784,104 @@ async function startServer(opts) {
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         broadcastSSE('planFinished', { runId, success: false, message, outline: null });
+      } finally {
+        activeGenerate = false;
+      }
+    })();
+  });
+
+  // ── POST /api/retheme — Re-generate deck with different pack ──────
+  app.post('/api/retheme', async (req, res) => {
+    const { deckName, packId, model: reqModel, saveAs } = req.body ?? {};
+
+    if (!deckName || typeof deckName !== 'string') {
+      return res.status(400).json({ error: 'deckName required.' });
+    }
+    if (!packId || typeof packId !== 'string') {
+      return res.status(400).json({ error: 'packId required.' });
+    }
+    if (activeGenerate) {
+      return res.status(409).json({ error: 'A generation is already in progress.' });
+    }
+
+    const targetPack = normalizePackId(packId);
+    if (!targetPack) {
+      return res.status(400).json({ error: 'Invalid pack ID.' });
+    }
+
+    const deckDir = resolve(process.cwd(), 'decks', deckName);
+    if (!existsSync(deckDir)) {
+      return res.status(404).json({ error: `Deck not found: ${deckName}` });
+    }
+
+    const selectedModel = typeof reqModel === 'string' && CLAUDE_MODELS.includes(reqModel.trim())
+      ? reqModel.trim()
+      : CLAUDE_MODELS[0];
+
+    // Determine target deck directory
+    const targetDeckName = (typeof saveAs === 'string' && saveAs.trim()) || deckName;
+    const targetDeckDir = resolve(process.cwd(), 'decks', targetDeckName);
+
+    const runId = randomRunId();
+    activeGenerate = true;
+
+    broadcastSSE('planStarted', { runId, topic: `(Retheme: ${deckName} → ${targetPack})` });
+    res.json({ runId, deckName, targetDeckName, targetPack, model: selectedModel });
+
+    (async () => {
+      try {
+        broadcastSSE('progress', { runId, phase: 'retheme', step: 'Preparing retheme data' });
+
+        const { prompt, outline } = await prepareRetheme({
+          deckDir,
+          targetPackId: targetPack,
+        });
+
+        // If saving as new deck, create directory
+        if (targetDeckName !== deckName) {
+          await mkdir(targetDeckDir, { recursive: true });
+          // Copy outline to new deck
+          const outlinePath = join(deckDir, 'slide-outline.md');
+          const targetOutlinePath = join(targetDeckDir, 'slide-outline.md');
+          try {
+            await writeFile(targetOutlinePath, outline, 'utf-8');
+          } catch { /* ok if outline didn't exist */ }
+        } else {
+          // Overwrite: save updated outline
+          await writeFile(join(deckDir, 'slide-outline.md'), outline, 'utf-8');
+        }
+
+        broadcastSSE('progress', { runId, phase: 'retheme', step: `Regenerating slides with ${targetPack} pack` });
+
+        const result = await spawnClaudeEdit({
+          prompt,
+          imagePath: null,
+          model: selectedModel,
+          cwd: process.cwd(),
+          onLog: (stream, chunk) => {
+            broadcastSSE('planLog', { runId, stream, chunk });
+          },
+        });
+
+        const success = result.code === 0;
+
+        if (success) {
+          // Update slidesDirectory to target deck
+          slidesDirectory = targetDeckDir;
+          setupFileWatcher(slidesDirectory);
+        }
+
+        broadcastSSE('planFinished', {
+          runId,
+          success,
+          message: success
+            ? `Retheme complete: ${targetDeckName} now uses ${targetPack} pack.`
+            : `Retheme failed (exit code ${result.code}).`,
+          deckName: targetDeckName,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        broadcastSSE('planFinished', { runId, success: false, message });
       } finally {
         activeGenerate = false;
       }

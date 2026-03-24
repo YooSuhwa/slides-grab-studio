@@ -189,6 +189,20 @@ program
   });
 
 program
+  .command('retheme')
+  .description('Re-generate a deck with a different template pack (one-click redesign)')
+  .requiredOption('--deck <name>', 'Deck folder name under decks/')
+  .requiredOption('--pack <id>', 'Target template pack ID')
+  .option('--save-as <name>', 'Save as a new deck instead of overwriting')
+  .option('--model <model>', 'Claude model to use')
+  .action(async (options = {}) => {
+    const args = ['--deck', options.deck, '--pack', options.pack];
+    if (options.saveAs) args.push('--save-as', options.saveAs);
+    if (options.model) args.push('--model', options.model);
+    await runCommand('scripts/retheme.js', args);
+  });
+
+program
   .command('browse')
   .description('Open deck browser to view and manage all decks')
   .option('--port <number>', 'Server port')
