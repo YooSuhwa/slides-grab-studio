@@ -8,35 +8,35 @@
     .timeline-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
+      gap: 16pt;
       height: 100%;
-      margin-top: 8px;
+      margin-top: 8pt;
     }
     .time-col {
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      border-top: 2px solid var(--border-light);
-      padding-top: 16px;
+      gap: 16pt;
+      border-top: 2pt solid var(--border-light);
+      padding-top: 16pt;
       position: relative;
     }
     .time-col::before {
       content: '';
       position: absolute;
-      top: -5px;
+      top: -5pt;
       left: 0;
-      width: 8px;
-      height: 8px;
+      width: 8pt;
+      height: 8pt;
       background-color: var(--bg-accent);
       border-radius: 50%;
     }
-    .quarter-label { font-size: 14px; font-weight: 700; color: var(--text-primary); }
-    .task-list { display: flex; flex-direction: column; gap: 12px; }
+    .quarter-label { font-size: 14pt; font-weight: 700; color: var(--text-primary); }
+    .task-list { display: flex; flex-direction: column; gap: 12pt; }
     .task-item {
-      font-size: 10px;
+      font-size: 10pt;
       color: var(--text-secondary);
       line-height: 1.4;
-      padding-left: 12px;
+      padding-left: 12pt;
       position: relative;
     }
     .task-item::before {
@@ -51,7 +51,7 @@
 <body>
   <div class="slide">
     <div class="slide-label" data-slot="project-name">PROJECT NAME</div>
-    <h2 class="slide-title" style="margin-bottom: 12px;" data-slot="title">Timeline</h2>
+    <h2 class="slide-title" style="margin-bottom: 12pt;" data-slot="title">Timeline</h2>
 
     <div class="timeline-grid">
       <div class="time-col">

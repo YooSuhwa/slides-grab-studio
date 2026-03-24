@@ -642,7 +642,10 @@ slideIframe.addEventListener('load', () => {
     const doc = slideIframe.contentDocument;
     if (doc && doc.body) {
       const body = doc.body;
-      const cs = doc.defaultView.getComputedStyle(body);
+      // Prefer .slide element dimensions (more reliable when body has no explicit size)
+      const slideEl = doc.querySelector('.slide');
+      const target = slideEl || body;
+      const cs = doc.defaultView.getComputedStyle(target);
       const w = parseFloat(cs.width);
       const h = parseFloat(cs.height);
       const wrapper = document.getElementById('slide-wrapper');
