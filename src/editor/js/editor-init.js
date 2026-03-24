@@ -9,7 +9,7 @@ import {
   popoverTextInput, popoverApplyText, popoverTextColorInput, popoverBgColorInput,
   popoverSizeInput, popoverApplySize, toolModeDrawBtn, toolModeSelectBtn,
   btnNewDeck,
-  slideStrip, btnExportToggle, exportDropdown, btnReviewOutline,
+  slideStrip, btnExportToggle, exportDropdown, btnReviewOutline, btnReviewDeck,
   slideSkeleton, bboxEmptyGuide, shortcutsModal, shortcutsClose, btnShortcuts,
   sidebarToggle, editorSidebar, btnSendLabel,
   themeToggle,
@@ -846,6 +846,7 @@ async function init() {
     if (btnNewDeck) btnNewDeck.disabled = true;
     if (btnReviewOutline) btnReviewOutline.classList.add('nav-emphasis');
     if (btnExportToggle) btnExportToggle.classList.add('nav-emphasis');
+    if (btnReviewDeck) btnReviewDeck.style.display = '';
 
     setStatus(`Ready. Model: ${state.selectedModel}. Draw red pending bboxes, run Codex, then review green bboxes.`);
   } catch (error) {

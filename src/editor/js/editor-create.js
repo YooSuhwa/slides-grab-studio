@@ -6,7 +6,7 @@ import {
   creationGenerate, creationLog, creationProgress,
   creationDeckName, creationSlideCount,
   slidePanel, editorSidebar, slideCounter, btnNewDeck, slideStrip,
-  btnPrev, btnNext, btnExportToggle, btnReviewOutline,
+  btnPrev, btnNext, btnExportToggle, btnReviewOutline, btnReviewDeck,
   tabTopic, tabImport, tabTopicPanel, tabImportPanel,
   importDropzone, importFileInput, importBrowse, importFileInfo,
   importFileName, importFileClear, importSlideCount, importResearchMode,
@@ -93,8 +93,12 @@ export function showCreationMode() {
   // Reset to input phase
   const phaseInput = document.getElementById('creation-phase-input');
   const phaseOutline = document.getElementById('creation-phase-outline');
+  const packSection = document.getElementById('pack-section');
+  const creationHeader = document.getElementById('creation-header');
   if (phaseInput) phaseInput.hidden = false;
   if (phaseOutline) phaseOutline.hidden = true;
+  if (packSection) packSection.hidden = false;
+  if (creationHeader) creationHeader.hidden = false;
   showPlanLoading(false);
 
   if (creationGenerate) {
@@ -113,6 +117,7 @@ export function showCreationMode() {
   if (btnNext) btnNext.disabled = true;
   if (btnReviewOutline) btnReviewOutline.disabled = true;
   if (btnExportToggle) btnExportToggle.disabled = true;
+  if (btnReviewDeck) btnReviewDeck.style.display = 'none';
   // Remove editor-mode emphasis during creation
   if (btnReviewOutline) btnReviewOutline.classList.remove('nav-emphasis');
   if (btnExportToggle) btnExportToggle.classList.remove('nav-emphasis');
@@ -132,6 +137,7 @@ export function hideCreationMode() {
   if (btnNext) btnNext.disabled = false;
   if (btnReviewOutline) btnReviewOutline.disabled = false;
   if (btnExportToggle) btnExportToggle.disabled = false;
+  if (btnReviewDeck) btnReviewDeck.style.display = '';
   // Editor-mode button states (same logic in editor-init.js init)
   if (btnNewDeck) btnNewDeck.disabled = true;
   if (btnReviewOutline) btnReviewOutline.classList.add('nav-emphasis');

@@ -10,6 +10,8 @@ const $ = (sel) => document.querySelector(sel);
 
 const phaseInput = $('#creation-phase-input');
 const phaseOutline = $('#creation-phase-outline');
+const packSection = $('#pack-section');
+const creationHeader = $('#creation-header');
 const outlineCount = $('#outline-count');
 const outlineDeckName = $('#outline-deck-name');
 const outlineSlides = $('#outline-slides');
@@ -79,6 +81,8 @@ export function showOutlinePhase(outline, { isExistingDeck = false } = {}) {
   editingIndex = -1;
 
   if (phaseInput) phaseInput.hidden = true;
+  if (packSection) packSection.hidden = true;
+  if (creationHeader) creationHeader.hidden = true;
   if (phaseOutline) phaseOutline.hidden = false;
   if (creationProgress) creationProgress.hidden = true;
   const oProgress = document.getElementById('outline-progress');
@@ -110,6 +114,8 @@ export function showOutlinePhase(outline, { isExistingDeck = false } = {}) {
 export function hideOutlinePhase() {
   if (phaseOutline) phaseOutline.hidden = true;
   if (phaseInput) phaseInput.hidden = false;
+  if (packSection) packSection.hidden = false;
+  if (creationHeader) creationHeader.hidden = false;
   currentOutline = null;
   editingIndex = -1;
 }

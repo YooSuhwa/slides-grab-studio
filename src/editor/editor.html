@@ -2381,10 +2381,10 @@
     .creation-panel {
       flex: 1;
       display: none;
-      align-items: flex-start;
+      align-items: center;
       justify-content: center;
       background: var(--bg-0);
-      padding: 40px;
+      padding: 24px 40px;
       position: relative;
       overflow-y: auto;
     }
@@ -2395,15 +2395,45 @@
 
     .creation-content {
       width: 100%;
-      max-width: 640px;
+      max-width: 1100px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto 1fr;
+      gap: 0px 32px;
+      margin: auto 0;
+    }
+    .creation-content > .creation-header {
+      grid-column: 1 / -1;
+    }
+    .creation-content > #creation-phase-input {
       display: flex;
       flex-direction: column;
-      gap: 24px;
-      margin: auto 0;
+      gap: 14px;
+      align-self: start;
+    }
+    .creation-content > .pack-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      align-self: start;
+      max-height: 70vh;
+    }
+    .creation-content > #creation-phase-outline {
+      grid-column: 1 / -1;
+    }
+    @media (max-width: 860px) {
+      .creation-content {
+        grid-template-columns: 1fr;
+        max-width: 640px;
+      }
+      .creation-content > .pack-section {
+        margin-top: 16px;
+      }
     }
 
     .creation-header {
       text-align: center;
+      margin-bottom: 20px;
     }
 
     .creation-header h2 {
@@ -2451,72 +2481,49 @@
       border-color: var(--accent);
     }
 
-    /* ── Pack Collapsible ── */
-    .pack-collapsible {
-      margin-top: 4px;
-    }
-    .pack-toggle {
+    /* ── Pack Section (always visible right column) ── */
+    .pack-section-header {
       display: flex;
       align-items: center;
       gap: 8px;
       padding: 10px 14px;
       background: var(--surface-2);
       border: 1px solid var(--border-subtle);
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: all var(--transition);
-      list-style: none;
+      border-radius: var(--radius) var(--radius) 0 0;
       font-family: var(--sans);
     }
-    .pack-toggle::-webkit-details-marker { display: none; }
-    .pack-toggle:hover {
-      border-color: var(--border-hover);
-      background: var(--surface-hover);
-    }
-    .pack-toggle-icon {
+    .pack-section-icon {
       color: var(--text-2);
       flex-shrink: 0;
     }
-    .pack-toggle-label {
+    .pack-section-label {
       font-size: 11px;
       font-weight: 600;
       color: var(--text-2);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    .pack-toggle-current {
+    .pack-section-current {
       font-size: 12px;
       color: var(--text-0);
       font-weight: 500;
       margin-left: 2px;
     }
-    .pack-toggle-chevron {
-      margin-left: auto;
-      color: var(--text-2);
-      transition: transform var(--transition);
-      flex-shrink: 0;
-    }
-    .pack-collapsible[open] .pack-toggle-chevron {
-      transform: rotate(180deg);
-    }
-    .pack-collapsible[open] .pack-toggle {
-      border-bottom-left-radius: 0;
-      border-bottom-right-radius: 0;
-      border-bottom-color: var(--border-subtle);
-    }
 
-    /* ── Pack Gallery (inside collapsible) ── */
+    /* ── Pack Gallery ── */
     .pack-gallery {
-      padding: 14px;
+      padding: 10px;
       background: var(--surface-1);
       border: 1px solid var(--border-subtle);
       border-top: none;
       border-radius: 0 0 var(--radius) var(--radius);
+      flex: 1;
+      overflow-y: auto;
     }
     .pack-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
+      gap: 8px;
     }
     @media (max-width: 520px) {
       .pack-grid { grid-template-columns: repeat(2, 1fr); }
@@ -2524,7 +2531,7 @@
     .pack-card {
       background: var(--surface-2);
       border: 1.5px solid var(--border-subtle);
-      border-radius: var(--radius);
+      border-radius: var(--radius-sm);
       cursor: pointer;
       padding: 0;
       transition: all var(--transition);
@@ -2548,7 +2555,7 @@
     /* Color swatch bar at top of card */
     .pack-swatches {
       display: flex;
-      height: 5px;
+      height: 4px;
       flex-shrink: 0;
     }
     .pack-swatches > div { flex: 1; min-width: 0; }
@@ -2561,28 +2568,28 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
-      padding: 12px 16px;
+      padding: 8px 10px;
     }
     .pack-slide-title {
       width: 55%;
-      height: 5px;
+      height: 4px;
       border-radius: 2px;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       opacity: 0.85;
     }
     .pack-slide-accent {
       width: 35%;
-      height: 3px;
-      border-radius: 1.5px;
-      margin-bottom: 10px;
+      height: 2px;
+      border-radius: 1px;
+      margin-bottom: 6px;
       opacity: 0.9;
     }
     .pack-slide-body {
       width: 70%;
-      height: 3px;
-      border-radius: 1.5px;
+      height: 2px;
+      border-radius: 1px;
       opacity: 0.3;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
     .pack-slide-body-sm {
       width: 50%;
@@ -2592,10 +2599,10 @@
     }
     /* Pack info section */
     .pack-info {
-      padding: 8px 10px 10px;
+      padding: 5px 8px 6px;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 1px;
       border-top: 1px solid var(--border-subtle);
     }
     .pack-info-row {
@@ -2605,7 +2612,7 @@
       gap: 4px;
     }
     .pack-name {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       color: var(--text-0);
       white-space: nowrap;
@@ -2613,36 +2620,73 @@
       text-overflow: ellipsis;
     }
     .pack-template-count {
-      font-size: 10px;
+      font-size: 9px;
       color: var(--text-2);
       white-space: nowrap;
       flex-shrink: 0;
     }
     .pack-desc {
-      font-size: 10px;
+      font-size: 9px;
       color: var(--text-2);
-      line-height: 1.4;
+      line-height: 1.3;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    /* ── Pack Detail Panel (below grid) ── */
-    .pack-detail {
-      margin-top: 12px;
+    /* ── Pack Preview Modal ── */
+    .pack-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      animation: packModalFadeIn 150ms ease;
+    }
+    .pack-modal-backdrop[hidden] { display: none; }
+    @keyframes packModalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .pack-modal {
       background: var(--surface-1);
       border: 1px solid var(--border-subtle);
-      border-radius: var(--radius);
-      overflow: hidden;
-      transition: opacity 200ms ease;
+      border-radius: var(--radius-lg, 12px);
+      width: 90%;
+      max-width: 680px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+      animation: packModalSlideUp 200ms ease;
     }
-    .pack-detail[hidden] { display: none; }
-    .pack-detail-header {
-      padding: 10px 14px;
+    @keyframes packModalSlideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .pack-modal-header {
+      padding: 14px 18px;
       display: flex;
       align-items: center;
       gap: 8px;
       border-bottom: 1px solid var(--border-subtle);
+    }
+    .pack-modal-close {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--text-2);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      line-height: 1;
+      transition: all var(--transition);
+    }
+    .pack-modal-close:hover {
+      color: var(--text-0);
+      background: var(--surface-hover);
     }
     .pack-detail-name {
       font-size: 12px;
@@ -2656,7 +2700,7 @@
       letter-spacing: 0.3px;
     }
     .pack-detail-types {
-      padding: 10px 14px;
+      padding: 12px 18px;
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
@@ -2684,7 +2728,7 @@
       background: rgba(59, 130, 246, 0.08);
     }
     .pack-detail-preview {
-      padding: 0 14px 14px;
+      padding: 0 18px 18px;
     }
     .pack-preview-iframe-wrapper {
       width: 100%;
@@ -3745,7 +3789,7 @@
     }
 
     /* ── Theme Toggle Button ── */
-    .theme-toggle {
+    .nav-bar .theme-toggle {
       width: 28px;
       height: 28px;
       background: transparent;
@@ -3758,8 +3802,9 @@
       justify-content: center;
       transition: all var(--transition);
       flex-shrink: 0;
+      padding: 0;
     }
-    .theme-toggle:hover { color: var(--text-0); border-color: var(--border-hover); background: var(--surface-hover); }
+    .nav-bar .theme-toggle:hover { color: var(--text-0); border-color: var(--border-hover); background: var(--surface-hover); }
     .theme-icon { width: 14px; height: 14px; display: block; }
     .theme-icon-sun { display: none; }
     [data-theme="light"] .theme-icon-moon { display: none; }
@@ -3917,7 +3962,7 @@
       <div class="nav-spacer"></div>
       <button class="nav-bar-btn btn-new-deck" id="btn-new-deck" title="New Presentation">+ New</button>
       <button class="nav-bar-btn ghost" id="btn-review-outline" title="Review Outline">Outline</button>
-      <button class="nav-bar-btn ghost" id="btn-review-deck" title="Analyze presentation quality">Review</button>
+      <button class="nav-bar-btn ghost" id="btn-review-deck" title="Analyze presentation quality" style="display:none;">Review</button>
       <div class="export-dropdown-wrapper">
         <button class="nav-bar-btn ghost" id="btn-export-toggle" title="Export options" aria-haspopup="true" aria-expanded="false">Export</button>
         <div class="export-dropdown" id="export-dropdown" role="menu">
@@ -3955,14 +4000,14 @@
           </div>
         </div>
         <div class="creation-content">
-          <div id="creation-phase-input">
-            <div class="creation-header">
-              <h2>New Presentation</h2>
-              <div class="creation-tabs" role="tablist">
-                <button class="creation-tab active" id="tab-topic" data-tab="topic" role="tab" aria-selected="true" aria-controls="creation-tab-topic">Topic</button>
-                <button class="creation-tab" id="tab-import" data-tab="import" role="tab" aria-selected="false" aria-controls="creation-tab-import">Import</button>
-              </div>
+          <div class="creation-header" id="creation-header">
+            <h2>New Presentation</h2>
+            <div class="creation-tabs" role="tablist">
+              <button class="creation-tab active" id="tab-topic" data-tab="topic" role="tab" aria-selected="true" aria-controls="creation-tab-topic">Topic</button>
+              <button class="creation-tab" id="tab-import" data-tab="import" role="tab" aria-selected="false" aria-controls="creation-tab-import">Import</button>
             </div>
+          </div>
+          <div id="creation-phase-input">
             <!-- Topic tab (default) — primary input, shown first -->
             <div class="creation-input-area" id="creation-tab-topic" role="tabpanel" aria-labelledby="tab-topic">
               <textarea id="creation-topic" placeholder="어떤 주제의 프레젠테이션인가요?" rows="3"></textarea>
@@ -4030,31 +4075,17 @@
                 <button id="import-submit">Import &amp; Plan</button>
               </div>
             </div>
-            <!-- Design Theme — collapsible, defaults applied -->
-            <details class="pack-collapsible" id="pack-collapsible">
-              <summary class="pack-toggle">
-                <svg class="pack-toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-                <span class="pack-toggle-label">Design Theme</span>
-                <span class="pack-toggle-current" id="pack-toggle-current">Simple Light</span>
-                <svg class="pack-toggle-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
-              </summary>
-              <div class="pack-gallery" id="pack-gallery">
-                <div class="pack-grid" id="pack-grid"></div>
-                <div class="pack-detail" id="pack-detail" hidden>
-                  <div class="pack-detail-header">
-                    <span class="pack-detail-name" id="pack-detail-name"></span>
-                    <span class="pack-detail-label">Available Templates</span>
-                  </div>
-                  <div class="pack-detail-types" id="pack-detail-types"></div>
-                  <div class="pack-detail-preview">
-                    <div class="pack-preview-iframe-wrapper" id="pack-preview-wrapper">
-                      <div class="pack-preview-skeleton" id="pack-preview-skeleton">Loading preview...</div>
-                      <iframe class="pack-preview-iframe" id="pack-preview-iframe" loading="lazy"></iframe>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </details>
+          </div>
+          <!-- Design Theme — always visible right column -->
+          <div class="pack-section" id="pack-section">
+            <div class="pack-section-header">
+              <svg class="pack-section-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              <span class="pack-section-label">Design Theme</span>
+              <span class="pack-section-current" id="pack-toggle-current">Simple Light</span>
+            </div>
+            <div class="pack-gallery" id="pack-gallery">
+              <div class="pack-grid" id="pack-grid"></div>
+            </div>
           </div>
           <div id="creation-phase-outline" hidden>
             <div class="outline-review">
@@ -4088,6 +4119,23 @@
           </div>
           <div class="creation-progress" id="creation-progress" hidden>
             <div class="creation-log" id="creation-log"></div>
+          </div>
+        </div>
+        <!-- Pack Preview Modal -->
+        <div class="pack-modal-backdrop" id="pack-modal-backdrop" hidden>
+          <div class="pack-modal" id="pack-modal">
+            <div class="pack-modal-header">
+              <span class="pack-detail-name" id="pack-detail-name"></span>
+              <span class="pack-detail-label">Preview</span>
+              <button class="pack-modal-close" id="pack-modal-close" type="button" aria-label="Close">&times;</button>
+            </div>
+            <div class="pack-detail-types" id="pack-detail-types"></div>
+            <div class="pack-detail-preview">
+              <div class="pack-preview-iframe-wrapper" id="pack-preview-wrapper">
+                <div class="pack-preview-skeleton" id="pack-preview-skeleton">Loading preview...</div>
+                <iframe class="pack-preview-iframe" id="pack-preview-iframe" loading="lazy"></iframe>
+              </div>
+            </div>
           </div>
         </div>
       </div>

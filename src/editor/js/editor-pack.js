@@ -58,7 +58,7 @@ export function setSelectedPack(packId) {
   creationState.packId = packId;
   updatePackSelection();
   updateToggleText();
-  renderPackDetail();
+  // Don't open modal — just sync selection state
 }
 
 /** Sanitize a CSS color value to prevent injection. */
@@ -174,18 +174,15 @@ function updatePackSelection() {
   }
 }
 
-/** Render the detail panel showing template types and live preview. */
+/** Open the modal showing template types and live preview. */
 function renderPackDetail() {
-  const detail = document.getElementById('pack-detail');
-  if (!detail) return;
+  const backdrop = document.getElementById('pack-modal-backdrop');
+  if (!backdrop) return;
 
   const pack = packsData.find(p => p.id === selectedPackId);
-  if (!pack || !pack.templates?.length) {
-    detail.hidden = true;
-    return;
-  }
+  if (!pack || !pack.templates?.length) return;
 
-  detail.hidden = false;
+  backdrop.hidden = false;
 
   const nameEl = document.getElementById('pack-detail-name');
   if (nameEl) nameEl.textContent = pack.name || pack.id;
@@ -224,6 +221,43 @@ function renderPackDetail() {
   loadTemplatePreview(pack.id, activePreviewType);
 }
 
+function closePackModal() {
+  const backdrop = document.getElementById('pack-modal-backdrop');
+  if (backdrop) backdrop.hidden = true;
+}
+
+/** Detect the actual content dimensions inside an iframe. */
+function detectIframeContentSize(iframe) {
+  try {
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    // Check for .slide element first (used by packs with base.css)
+    const slide = doc.querySelector('.slide');
+    if (slide) {
+      const rect = slide.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) return { w: rect.width, h: rect.height };
+    }
+    // Fall back to body computed size
+    const body = doc.body;
+    if (body) {
+      const cs = iframe.contentWindow.getComputedStyle(body);
+      const w = parseFloat(cs.width);
+      const h = parseFloat(cs.height);
+      if (w > 0 && h > 0) return { w, h };
+    }
+  } catch (_) { /* cross-origin fallback */ }
+  return { w: 960, h: 540 };
+}
+
+/** Apply correct scale to preview iframe based on content size. */
+function applyPreviewScale(iframe, wrapper) {
+  const { w, h } = detectIframeContentSize(iframe);
+  iframe.style.width = w + 'px';
+  iframe.style.height = h + 'px';
+  const wrapperWidth = wrapper.clientWidth || wrapper.offsetWidth || 600;
+  const scale = wrapperWidth / w;
+  iframe.style.transform = `scale(${scale})`;
+}
+
 /** Load a template into the preview iframe. */
 function loadTemplatePreview(packId, templateName) {
   const iframe = document.getElementById('pack-preview-iframe');
@@ -231,10 +265,11 @@ function loadTemplatePreview(packId, templateName) {
   const wrapper = document.getElementById('pack-preview-wrapper');
   if (!iframe || !wrapper) return;
 
-  // Pre-calculate scale before loading
+  // Hide iframe until loaded; use default 960 scale as initial guess
   const wrapperWidth = wrapper.clientWidth || wrapper.offsetWidth || 600;
-  const scale = wrapperWidth / 960;
-  iframe.style.transform = `scale(${scale})`;
+  iframe.style.width = '960px';
+  iframe.style.height = '540px';
+  iframe.style.transform = `scale(${wrapperWidth / 960})`;
 
   // Show loading state
   if (skeleton) skeleton.style.display = 'flex';
@@ -244,10 +279,7 @@ function loadTemplatePreview(packId, templateName) {
   iframe.src = src;
 
   iframe.onload = () => {
-    // Re-calculate in case container resized
-    const newWidth = wrapper.clientWidth || wrapper.offsetWidth || 600;
-    const newScale = newWidth / 960;
-    if (newScale > 0) iframe.style.transform = `scale(${newScale})`;
+    applyPreviewScale(iframe, wrapper);
     iframe.style.opacity = '1';
     if (skeleton) skeleton.style.display = 'none';
   };
@@ -255,20 +287,29 @@ function loadTemplatePreview(packId, templateName) {
   // Fallback: show after 2s even if onload didn't fire
   setTimeout(() => {
     if (iframe.style.opacity === '0') {
-      const fbWidth = wrapper.clientWidth || wrapper.offsetWidth || 600;
-      iframe.style.transform = `scale(${fbWidth / 960})`;
+      applyPreviewScale(iframe, wrapper);
       iframe.style.opacity = '1';
       if (skeleton) skeleton.style.display = 'none';
     }
   }, 2000);
 }
 
-// Lazy-load detail panel: only render when collapsible is opened
-const collapsible = document.getElementById('pack-collapsible');
-if (collapsible) {
-  collapsible.addEventListener('toggle', () => {
-    if (collapsible.open) {
-      renderPackDetail();
-    }
+// ── Modal close handlers ──
+const modalCloseBtn = document.getElementById('pack-modal-close');
+const modalBackdrop = document.getElementById('pack-modal-backdrop');
+
+if (modalCloseBtn) {
+  modalCloseBtn.addEventListener('click', closePackModal);
+}
+if (modalBackdrop) {
+  modalBackdrop.addEventListener('click', (e) => {
+    // Close only when clicking the backdrop itself, not the modal content
+    if (e.target === modalBackdrop) closePackModal();
   });
 }
+// Escape key closes modal
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && modalBackdrop && !modalBackdrop.hidden) {
+    closePackModal();
+  }
+});

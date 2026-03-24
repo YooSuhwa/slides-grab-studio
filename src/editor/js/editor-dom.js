@@ -89,6 +89,7 @@ export const slideStrip = $('#slide-strip');
 export const btnExportToggle = $('#btn-export-toggle');
 export const exportDropdown = $('#export-dropdown');
 export const btnReviewOutline = $('#btn-review-outline');
+export const btnReviewDeck = $('#btn-review-deck');
 
 // Phase 4: Loading skeleton, empty guide, shortcuts
 export const slideSkeleton = $('#slide-skeleton');
