@@ -131,7 +131,21 @@
       "Bash(cd \"D:\\\\_bootstrap\\\\slides-grab\" && node -e \"\nconst fs = require\\('fs'\\);\nlet html = fs.readFileSync\\('src/editor/editor.html', 'utf-8'\\);\nhtml = html.replace\\(\n  '<option value=\\\\\"svg\\\\\">SVG</option>\\\\n            <option value=\\\\\"svg-outline\\\\\" selected>SVG \\(Outline \\\\u2014 for Figma\\)</option>',\n  '<option value=\\\\\"svg\\\\\" selected>SVG</option>\\\\n            <option value=\\\\\"svg-outline\\\\\">SVG \\(\\\\uBCA1\\\\uD130\\\\uD654\\)</option>'\n\\);\nfs.writeFileSync\\('src/editor/editor.html', html, 'utf-8'\\);\nconsole.log\\('OK'\\);\n\")",
       "Bash(cd \"D:\\\\_bootstrap\\\\slides-grab\" && node -e \"\nconst fs = require\\('fs'\\);\nlet html = fs.readFileSync\\('src/editor/editor.html', 'utf-8'\\);\n// Find the exact line\nconst idx = html.indexOf\\('svg-export-format'\\);\nconsole.log\\('Found at:', idx\\);\n// Show exact bytes around the options\nconst start = html.indexOf\\('<option value=\\\\\"svg\\\\\">', idx\\);\nconst end = html.indexOf\\('</select>', start\\);\nconsole.log\\('Options block:'\\);\nconsole.log\\(JSON.stringify\\(html.slice\\(start, end\\)\\)\\);\n\")",
       "Bash(cd \"D:\\\\_bootstrap\\\\slides-grab\" && node -e \"\nconst fs = require\\('fs'\\);\nlet html = fs.readFileSync\\('src/editor/editor.html', 'utf-8'\\);\nconst old = '<option value=\\\\\"svg\\\\\">SVG</option>\\\\r\\\\n            <option value=\\\\\"svg-outline\\\\\" selected>SVG \\(Outline \\\\u2014 for Figma\\)</option>';\nconst rep = '<option value=\\\\\"svg\\\\\" selected>SVG</option>\\\\r\\\\n            <option value=\\\\\"svg-outline\\\\\">SVG \\(\\\\uBCA1\\\\uD130\\\\uD654\\)</option>';\nhtml = html.replace\\(old, rep\\);\nfs.writeFileSync\\('src/editor/editor.html', html, 'utf-8'\\);\nconsole.log\\('OK'\\);\n\")",
-      "Bash(cd \"D:\\\\_bootstrap\\\\slides-grab\" && node -e \"\nconst fs = require\\('fs'\\);\nlet h = fs.readFileSync\\('src/editor/editor.html', 'utf-8'\\);\nh = h.replace\\(\n  'SVG \\(\\\\uBCA1\\\\uD130\\\\uD654\\)',\n  'SVG \\(\\\\uC544\\\\uC6C3\\\\uB77C\\\\uC778\\)'\n\\);\nfs.writeFileSync\\('src/editor/editor.html', h, 'utf-8'\\);\nconsole.log\\('OK'\\);\n\")"
+      "Bash(cd \"D:\\\\_bootstrap\\\\slides-grab\" && node -e \"\nconst fs = require\\('fs'\\);\nlet h = fs.readFileSync\\('src/editor/editor.html', 'utf-8'\\);\nh = h.replace\\(\n  'SVG \\(\\\\uBCA1\\\\uD130\\\\uD654\\)',\n  'SVG \\(\\\\uC544\\\\uC6C3\\\\uB77C\\\\uC778\\)'\n\\);\nfs.writeFileSync\\('src/editor/editor.html', h, 'utf-8'\\);\nconsole.log\\('OK'\\);\n\")",
+      "Bash(python3 skills/ui-ux-pro-max/scripts/search.py \"presentation slide editor template selector tool\" --design-system -p \"Slides Grab\")",
+      "Bash(python3 ~/.claude/skills/ui-ux-pro-max/scripts/search.py \"presentation slide editor template selector tool dark\" --design-system -p \"Slides Grab\")",
+      "Bash(node -e \"import\\(''./src/resolve.js''\\).then\\(m => { const packs = m.listPacks\\(\\); console.log\\(JSON.stringify\\(packs.map\\(p => \\({id: p.id, name: p.name, templates: p.templates.length}\\)\\), null, 2\\)\\); }\\)\")",
+      "Bash(node -e \"import\\(''./src/resolve.js''\\).then\\(m => { const r = m.resolveTemplate\\(''cover'', ''midnight''\\); console.log\\(r\\); }\\)\")",
+      "Bash(node -e \":*)",
+      "Bash(node --check src/editor/js/editor-pack.js)",
+      "Bash(timeout 5 node -e \":*)",
+      "Bash(grep:*)",
+      "Bash(npm run:*)",
+      "Bash(node scripts/cli.js list-packs)",
+      "Bash(npx slides-grab:*)",
+      "Bash(timeout 4 node -e \":*)",
+      "Bash(node bin/ppt-agent.js list-packs)",
+      "Bash(node --input-type=module -e \":*)"
     ]
   }
 }
