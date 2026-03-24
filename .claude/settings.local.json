@@ -145,7 +145,17 @@
       "Bash(npx slides-grab:*)",
       "Bash(timeout 4 node -e \":*)",
       "Bash(node bin/ppt-agent.js list-packs)",
-      "Bash(node --input-type=module -e \":*)"
+      "Bash(node --input-type=module -e \":*)",
+      "Bash(find D:/_bootstrap/slides-grab/src -type f \\\\\\(-name *.js -o -name *.html -o -name *.css \\\\\\))",
+      "Bash(find D:/_bootstrap/slides-grab -maxdepth 3 -type f -name *.html)",
+      "Bash(find D:/_bootstrap/slides-grab -maxdepth 2 -type f \\\\\\(-name *.html -o -name *.css \\\\\\) ! -path */node_modules/* ! -path */decks/*)",
+      "Bash(find D:/_bootstrap/slides-grab -type f \\\\\\(-name *.js -o -name *.cjs -o -name *.html -o -name *.css \\\\\\) ! -path */node_modules/* ! -path */decks/* ! -path */.git/*)",
+      "Bash(python3 skills/ui-ux-pro-max/scripts/search.py \"presentation editor slide tool dark professional\" --design-system -p \"slides-grab\")",
+      "Bash(python3 \"C:/Users/유수화/.claude/skills/ui-ux-pro-max/scripts/search.py\" \"presentation editor slide tool dark professional\" --design-system -p \"slides-grab\")",
+      "Bash(python3:*)",
+      "Bash(node bin/ppt-agent.js validate --slides-dir decks/test-deck)",
+      "Bash(find D:/_bootstrap/slides-grab/src -type f -name *.js -o -name *.html)",
+      "Bash(find D:/_bootstrap/slides-grab/packs -name *.html -type f)"
     ]
   }
 }
