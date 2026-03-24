@@ -2711,6 +2711,55 @@
       font-size: 11px;
     }
 
+    /* ── Import URL Input ── */
+    .import-url-row {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+    }
+    .import-url-input {
+      flex: 1;
+      padding: 10px 14px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-0);
+      font-size: 13px;
+      font-family: var(--sans);
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    .import-url-input::placeholder { color: var(--text-2); }
+    .import-url-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+    .import-url-go {
+      padding: 0 16px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: filter var(--transition);
+      white-space: nowrap;
+    }
+    .import-url-go:hover { filter: brightness(1.15); }
+    .import-url-go:disabled { opacity: 0.5; cursor: not-allowed; }
+    .import-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 12px 0;
+      color: var(--text-2);
+      font-size: 12px;
+    }
+    .import-divider::before, .import-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
     /* ── Import Dropzone ── */
     .import-dropzone {
       border: 2px dashed var(--border);
@@ -3903,7 +3952,7 @@
               <h2>New Presentation</h2>
               <div class="creation-tabs" role="tablist">
                 <button class="creation-tab active" id="tab-topic" data-tab="topic" role="tab" aria-selected="true" aria-controls="creation-tab-topic">Topic</button>
-                <button class="creation-tab" id="tab-import" data-tab="import" role="tab" aria-selected="false" aria-controls="creation-tab-import">Import MD</button>
+                <button class="creation-tab" id="tab-import" data-tab="import" role="tab" aria-selected="false" aria-controls="creation-tab-import">Import</button>
               </div>
             </div>
             <!-- Topic tab (default) — primary input, shown first -->
@@ -3928,12 +3977,19 @@
             </div>
             <!-- Import MD tab -->
             <div class="creation-input-area" id="creation-tab-import" role="tabpanel" aria-labelledby="tab-import" hidden>
+              <!-- URL Input -->
+              <div class="import-url-row" id="import-url-row">
+                <input type="url" class="import-url-input" id="import-url-input" placeholder="https://... URL을 붙여넣으세요" autocomplete="off">
+                <button class="import-url-go" id="import-url-go">Go</button>
+              </div>
+              <div class="import-divider"><span>or</span></div>
+              <!-- File Dropzone (MD + PDF) -->
               <div class="import-dropzone" id="import-dropzone">
-                <input type="file" id="import-file-input" accept=".md,.markdown,.txt" hidden>
+                <input type="file" id="import-file-input" accept=".md,.markdown,.txt,.pdf" hidden>
                 <div class="import-dropzone-content">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg>
-                  <p><strong>.md</strong> 파일을 여기에 놓거나 <button class="import-browse-btn" id="import-browse">파일 선택</button></p>
-                  <p class="import-hint">슬라이드 구조 또는 리서치용 마크다운을 지원합니다</p>
+                  <p><strong>.md</strong> 또는 <strong>.pdf</strong> 파일을 여기에 놓거나 <button class="import-browse-btn" id="import-browse">파일 선택</button></p>
+                  <p class="import-hint">마크다운, PDF 문서를 프레젠테이션으로 변환합니다</p>
                 </div>
               </div>
               <div class="import-file-info" id="import-file-info" hidden>

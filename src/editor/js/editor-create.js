@@ -10,7 +10,7 @@ import {
   tabTopic, tabImport, tabTopicPanel, tabImportPanel,
   importDropzone, importFileInput, importBrowse, importFileInfo,
   importFileName, importFileClear, importSlideCount, importResearchMode,
-  importModel, importSubmit,
+  importModel, importSubmit, importUrlInput, importUrlGo,
 } from './editor-dom.js';
 import { getSelectedPack } from './editor-pack.js';
 import { setStatus, loadModelOptions } from './editor-utils.js';
@@ -379,6 +379,7 @@ var _placeholderTimer = null;
 // ── Import MD Tab Logic ──────────────────────────────────────────────
 
 let _importedContent = '';
+let _importedPdfFile = null;
 
 function switchTab(tab) {
   const isTopic = tab === 'topic';
@@ -413,14 +414,15 @@ function showImportedFile(name) {
 
 function clearImportedFile() {
   _importedContent = '';
+  _importedPdfFile = null;
   if (importDropzone) importDropzone.hidden = false;
   if (importFileInfo) importFileInfo.hidden = true;
   if (importFileName) importFileName.textContent = '';
   if (importFileInput) importFileInput.value = '';
 }
 
-const MAX_IMPORT_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_EXTENSIONS = ['md', 'markdown', 'txt'];
+const MAX_IMPORT_FILE_SIZE = 10 * 1024 * 1024; // 10MB (PDF can be larger)
+const ALLOWED_EXTENSIONS = ['md', 'markdown', 'txt', 'pdf'];
 
 function handleImportFile(file) {
   if (!file) return;
@@ -434,7 +436,15 @@ function handleImportFile(file) {
   // Extension check (important for drag-and-drop which ignores accept attribute)
   const ext = file.name.split('.').pop()?.toLowerCase();
   if (!ALLOWED_EXTENSIONS.includes(ext)) {
-    setStatus('.md, .markdown, .txt 파일만 지원합니다.');
+    setStatus('.md, .markdown, .txt, .pdf 파일만 지원합니다.');
+    return;
+  }
+
+  // PDF files are handled as binary (sent directly to server)
+  if (ext === 'pdf') {
+    _importedPdfFile = file;
+    _importedContent = '';
+    showImportedFile(file.name);
     return;
   }
 
@@ -447,6 +457,7 @@ function handleImportFile(file) {
       return;
     }
     _importedContent = reader.result;
+    _importedPdfFile = null;
     showImportedFile(file.name);
   };
   reader.readAsText(file, 'utf-8');
@@ -548,7 +559,39 @@ export async function submitImport(content) {
 }
 
 if (importSubmit) {
-  importSubmit.addEventListener('click', () => submitImport());
+  importSubmit.addEventListener('click', () => {
+    if (_importedPdfFile) {
+      submitPdfUpload(_importedPdfFile);
+    } else {
+      submitImport();
+    }
+  });
+}
+
+// URL import
+function handleUrlImport() {
+  const url = importUrlInput?.value?.trim();
+  if (!url) {
+    setStatus('URL을 입력해 주세요.');
+    return;
+  }
+  if (!/^https?:\/\//i.test(url)) {
+    setStatus('https:// 또는 http:// 로 시작하는 URL을 입력하세요.');
+    return;
+  }
+  submitDocImport({ source: url, sourceType: 'url' });
+}
+
+if (importUrlGo) {
+  importUrlGo.addEventListener('click', handleUrlImport);
+}
+if (importUrlInput) {
+  importUrlInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleUrlImport();
+    }
+  });
 }
 
 // Populate import model select from the same source as creation model
@@ -568,5 +611,135 @@ export async function loadImportModelOptions() {
     if (importModel) {
       importModel.innerHTML = '<option value="claude-sonnet-4-6">claude-sonnet-4-6</option>';
     }
+  }
+}
+
+// ── Document Import (PDF / URL) ───────────────────────────────────
+/**
+ * Submit a document import (PDF path or URL) to /api/import-doc.
+ * Called from editor-init.js for CLI --import-doc mode, or from the UI.
+ */
+export async function submitDocImport({ source, sourceType, model, slideCount, researchMode, packId } = {}) {
+  if (!source) {
+    setStatus('소스가 지정되지 않았습니다.');
+    return;
+  }
+  if (creationState.generating) {
+    setStatus('이미 진행 중입니다.');
+    return;
+  }
+
+  const selectedModel = model || importModel?.value || 'claude-sonnet-4-6';
+  const selectedSlideCount = slideCount || importSlideCount?.value || '';
+  const selectedResearchMode = researchMode || importResearchMode?.value || 'none';
+  const selectedPack = packId || getSelectedPack();
+
+  creationState.generating = true;
+  window.addEventListener('beforeunload', preventUnload);
+  if (importSubmit) importSubmit.disabled = true;
+  if (creationProgress) creationProgress.hidden = false;
+  if (creationLog) creationLog.textContent = '';
+
+  const isUrl = sourceType === 'url' || /^https?:\/\//i.test(source);
+  const labelText = isUrl ? 'URL 가져오는 중' : 'PDF 변환 중';
+  showPlanLoading(true, labelText);
+  setStatus(`${labelText}...`);
+
+  try {
+    const queryType = isUrl ? 'url' : 'pdf-path';
+    const body = {
+      model: selectedModel,
+      slideCount: selectedSlideCount,
+      researchMode: selectedResearchMode,
+      packId: selectedPack,
+    };
+    if (isUrl) {
+      body.url = source;
+    } else {
+      body.filePath = source;
+    }
+
+    const res = await fetch(`/api/import-doc?sourceType=${queryType}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    creationState.runId = data.runId;
+    appendCreationLog(`[Doc Import] ${data.sourceLabel || source}\n`);
+    appendCreationLog(`[Doc Import] Model: ${data.model}\n`);
+  } catch (err) {
+    creationState.generating = false;
+    window.removeEventListener('beforeunload', preventUnload);
+    if (importSubmit) importSubmit.disabled = false;
+    showPlanLoading(false);
+    appendCreationLog(`[Error] ${err.message}\n`);
+    setStatus(`가져오기 실패: ${err.message}`);
+  }
+}
+
+/**
+ * Submit a PDF file (browser File object) via binary upload.
+ */
+export async function submitPdfUpload(file, { model, slideCount, researchMode, packId } = {}) {
+  if (!file) {
+    setStatus('PDF 파일을 선택해 주세요.');
+    return;
+  }
+  if (creationState.generating) {
+    setStatus('이미 진행 중입니다.');
+    return;
+  }
+
+  const selectedModel = model || importModel?.value || 'claude-sonnet-4-6';
+  const selectedSlideCount = slideCount || importSlideCount?.value || '';
+  const selectedResearchMode = researchMode || importResearchMode?.value || 'none';
+  const selectedPack = packId || getSelectedPack();
+
+  creationState.generating = true;
+  window.addEventListener('beforeunload', preventUnload);
+  if (importSubmit) importSubmit.disabled = true;
+  if (creationProgress) creationProgress.hidden = false;
+  if (creationLog) creationLog.textContent = '';
+  showPlanLoading(true, 'PDF 변환 중');
+  setStatus('PDF를 아웃라인으로 변환 중...');
+
+  try {
+    const buffer = await file.arrayBuffer();
+    const qs = new URLSearchParams({
+      sourceType: 'pdf',
+      model: selectedModel,
+      slideCount: selectedSlideCount,
+      researchMode: selectedResearchMode,
+      packId: selectedPack,
+    });
+    const res = await fetch(`/api/import-doc?${qs}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/pdf' },
+      body: buffer,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    creationState.runId = data.runId;
+    appendCreationLog(`[PDF Import] ${file.name}\n`);
+    appendCreationLog(`[PDF Import] Model: ${data.model}\n`);
+  } catch (err) {
+    creationState.generating = false;
+    window.removeEventListener('beforeunload', preventUnload);
+    if (importSubmit) importSubmit.disabled = false;
+    showPlanLoading(false);
+    appendCreationLog(`[Error] ${err.message}\n`);
+    setStatus(`PDF 가져오기 실패: ${err.message}`);
   }
 }

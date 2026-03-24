@@ -22,6 +22,7 @@ import {
 } from '../src/editor/codex-edit.js';
 
 import { listTemplates, listPacks, resolvePack, resolveTemplate, listPackTemplates, normalizePackId, getPackInfo, getCommonTypes } from '../src/resolve.js';
+import { parseSource, detectSourceType } from '../src/parsers.js';
 
 import { mergePdfBuffers } from './html2pdf.js';
 import { PDFDocument } from 'pdf-lib';
@@ -82,6 +83,9 @@ function parseArgs(argv) {
     browseMode: false,
     deckName: '',
     importFile: '',
+    importDocSource: '',
+    importDocSourceType: '',
+    importPack: '',
     importSlideCount: '',
     importResearch: false,
   };
@@ -157,6 +161,31 @@ function parseArgs(argv) {
 
     if (arg.startsWith('--slide-count=')) {
       opts.importSlideCount = arg.slice('--slide-count='.length);
+      continue;
+    }
+
+    if (arg === '--import-doc') {
+      opts.importDocSource = argv[i + 1] || '';
+      opts.createMode = true;
+      i += 1;
+      continue;
+    }
+
+    if (arg.startsWith('--import-doc=')) {
+      opts.importDocSource = arg.slice('--import-doc='.length);
+      opts.createMode = true;
+      continue;
+    }
+
+    if (arg === '--source-type') {
+      opts.importDocSourceType = argv[i + 1] || '';
+      i += 1;
+      continue;
+    }
+
+    if (arg === '--pack') {
+      opts.importPack = argv[i + 1] || '';
+      i += 1;
       continue;
     }
 
@@ -792,6 +821,9 @@ async function startServer(opts) {
       deckName: opts.deckName || (slidesDirectory ? basename(slidesDirectory) : ''),
       slidesDir: slidesDirectory ? toPosixPath(relative(process.cwd(), slidesDirectory) || slidesDirectory) : '',
       importFile: opts.importFile || null,
+      importDocSource: opts.importDocSource || null,
+      importDocSourceType: opts.importDocSourceType || null,
+      importPack: opts.importPack || null,
       importSlideCount: opts.importSlideCount || null,
       importResearch: opts.importResearch || false,
     });
@@ -1530,6 +1562,195 @@ async function startServer(opts) {
               const outlineContent = await readFile(outlinePath, 'utf-8');
               outline = parseOutline(outlineContent, bestDir);
 
+              slidesDirectory = join(decksRoot, bestDir);
+              setupFileWatcher(slidesDirectory);
+            }
+          } catch (err) {
+            console.error('Failed to parse imported outline:', err);
+          }
+        }
+
+        broadcastSSE('planFinished', {
+          runId,
+          success,
+          message: success ? 'Outline ready.' : `Import failed (exit code ${result.code}).`,
+          outline,
+          deckName: detectedDeckName,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        broadcastSSE('planFinished', { runId, success: false, message, outline: null });
+      } finally {
+        activeGenerate = false;
+      }
+    })();
+  });
+
+  // ── POST /api/import-doc — Import PDF, URL, or text document → outline ──
+  app.post('/api/import-doc', express.raw({ type: 'application/pdf', limit: '10mb' }), async (req, res) => {
+    const sourceType = req.query.sourceType || req.headers['x-source-type'];
+    const sourceUrl = req.query.url || req.headers['x-source-url'];
+
+    if (activeGenerate) {
+      return res.status(409).json({ error: 'A generation is already in progress.' });
+    }
+
+    let extractedText = '';
+    let sourceLabel = '';
+
+    try {
+      if (sourceType === 'pdf' || (req.is('application/pdf') && Buffer.isBuffer(req.body))) {
+        // PDF binary uploaded
+        const buffer = Buffer.isBuffer(req.body)
+          ? req.body
+          : (typeof req.body === 'object' && req.body?.pdfBase64)
+            ? Buffer.from(req.body.pdfBase64, 'base64')
+            : null;
+        if (!buffer || buffer.length === 0) {
+          return res.status(400).json({ error: 'PDF body is empty.' });
+        }
+        if (buffer.length > 10 * 1024 * 1024) {
+          return res.status(400).json({ error: 'PDF too large (max 10MB).' });
+        }
+        const result = await parseSource('upload.pdf', buffer);
+        extractedText = result.text;
+        sourceLabel = `PDF (${result.meta.pages} pages)`;
+      } else if (sourceType === 'url' || sourceUrl) {
+        const url = sourceUrl || (typeof req.body === 'object' ? req.body?.url : '');
+        if (!url || !/^https?:\/\//i.test(url)) {
+          return res.status(400).json({ error: 'Valid URL required.' });
+        }
+        const result = await parseSource(url);
+        extractedText = result.text;
+        sourceLabel = `URL: ${result.meta.title || url}`;
+      } else if (sourceType === 'pdf-path') {
+        // CLI mode: server-side PDF file path
+        const filePath = typeof req.body === 'object' ? req.body?.filePath : '';
+        if (!filePath) {
+          return res.status(400).json({ error: 'filePath required for pdf-path type.' });
+        }
+        const absPath = resolve(process.cwd(), filePath.trim());
+        const result = await parseSource(absPath);
+        extractedText = result.text;
+        sourceLabel = `PDF file (${result.meta.pages} pages)`;
+      } else {
+        return res.status(400).json({ error: 'Specify sourceType (pdf, url, pdf-path) or upload a PDF.' });
+      }
+    } catch (err) {
+      return res.status(400).json({ error: `Source parsing failed: ${err.message}` });
+    }
+
+    if (!extractedText.trim()) {
+      return res.status(400).json({ error: 'Extracted text is empty — the source may not contain readable content.' });
+    }
+
+    // Truncate if too large (keep first ~400KB for prompt safety)
+    if (extractedText.length > 400_000) {
+      extractedText = extractedText.slice(0, 400_000) + '\n\n[… 원문 일부 생략됨]';
+    }
+
+    const reqBody = typeof req.body === 'object' && !Buffer.isBuffer(req.body) ? req.body : {};
+    const model = typeof reqBody.model === 'string' && CLAUDE_MODELS.includes(reqBody.model.trim())
+      ? reqBody.model.trim()
+      : CLAUDE_MODELS[0];
+    const slideCount = typeof reqBody.slideCount === 'string' ? reqBody.slideCount.trim() : '';
+    const researchMode = reqBody.researchMode;
+    const reqImportPackId = reqBody.packId;
+
+    const runId = randomRunId();
+    activeGenerate = true;
+
+    broadcastSSE('planStarted', { runId, topic: `(Doc Import: ${sourceLabel})` });
+    broadcastSSE('progress', { runId, phase: 'plan', step: `Extracted text from ${sourceLabel}` });
+    res.json({ runId, topic: `(Doc Import: ${sourceLabel})`, model, sourceLabel });
+
+    (async () => {
+      try {
+        const useResearch = researchMode === 'research';
+
+        const promptLines = [
+          '아래 문서 내용을 분석하여 프레젠테이션 아웃라인으로 변환하세요.',
+          '',
+          `원본 소스: ${sourceLabel}`,
+          '',
+          '--- 원본 내용 ---',
+          extractedText,
+          '--- 원본 내용 끝 ---',
+          '',
+          '분석 규칙:',
+          '1. 문서의 핵심 내용과 구조를 파악하세요.',
+          '2. 내용을 논리적 단위로 나누어 슬라이드를 구성하세요.',
+          '3. 숫자, 데이터, 인사이트를 우선 추출하세요.',
+          '4. 각 슬라이드에 가장 적합한 type을 배정하세요.',
+          '5. 원본의 핵심 메시지를 보존하되 발표에 적합하게 요약하세요.',
+        ];
+
+        if (useResearch) {
+          promptLines.push('6. 웹 리서치를 추가로 수행하여 내용을 보강하세요.');
+        } else {
+          promptLines.push('6. 원본 문서의 내용만 사용하세요. 추가 리서치는 하지 마세요.');
+        }
+
+        if (slideCount) {
+          promptLines.push(`7. 목표 슬라이드 수: ${slideCount}장`);
+        }
+
+        promptLines.push('');
+        promptLines.push('다음을 수행하세요:');
+        promptLines.push('');
+        promptLines.push('1. 주제에서 핵심 키워드 2~3개를 뽑아 영어 소문자 kebab-case 폴더명을 결정하세요.');
+        promptLines.push('   예: "AI 도입 보고서" → ai-adoption-report');
+        promptLines.push('');
+        promptLines.push('2. 해당 폴더에 slide-outline.md를 생성하세요. (HTML 슬라이드는 생성하지 마세요)');
+        promptLines.push('   mkdir -p decks/<name> && 아웃라인 파일만 작성');
+        promptLines.push('');
+        const importPackId = normalizePackId(reqImportPackId);
+        appendOutlinePrompt(promptLines, importPackId, { includePresenterNote: true });
+
+        const fullPrompt = promptLines.join('\n');
+
+        broadcastSSE('progress', { runId, phase: 'plan', step: 'Converting with AI' });
+
+        const result = await spawnClaudeEdit({
+          prompt: fullPrompt,
+          imagePath: null,
+          model,
+          cwd: process.cwd(),
+          onLog: (stream, chunk) => {
+            broadcastSSE('planLog', { runId, stream, chunk });
+          },
+        });
+
+        const success = result.code === 0;
+        let outline = null;
+        let detectedDeckName = '';
+
+        if (success) {
+          broadcastSSE('progress', { runId, phase: 'plan', step: 'Parsing generated outline' });
+
+          try {
+            const decksRoot = resolve(process.cwd(), 'decks');
+            const dirs = await readdir(decksRoot, { withFileTypes: true });
+            let bestDir = '';
+            let bestMtime = 0;
+
+            for (const d of dirs) {
+              if (!d.isDirectory()) continue;
+              const outlinePath = join(decksRoot, d.name, 'slide-outline.md');
+              try {
+                const s = await stat(outlinePath);
+                if (s.mtimeMs > bestMtime) {
+                  bestMtime = s.mtimeMs;
+                  bestDir = d.name;
+                }
+              } catch { /* no outline */ }
+            }
+
+            if (bestDir) {
+              detectedDeckName = bestDir;
+              const outlinePath = join(decksRoot, bestDir, 'slide-outline.md');
+              const outlineContent = await readFile(outlinePath, 'utf-8');
+              outline = parseOutline(outlineContent, bestDir);
               slidesDirectory = join(decksRoot, bestDir);
               setupFileWatcher(slidesDirectory);
             }

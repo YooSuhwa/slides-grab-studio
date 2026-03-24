@@ -37,7 +37,7 @@ import { connectSSE, loadRunsInitial } from './editor-sse.js';
 import { openExportModal } from './editor-svg-export.js';
 import { openPdfExportModal } from './editor-pdf-export.js';
 import './editor-figma-export.js';
-import { showCreationMode, hideCreationMode, loadCreationModelOptions, checkCreateMode, loadImportModelOptions, switchToImportTab, submitImport } from './editor-create.js';
+import { showCreationMode, hideCreationMode, loadCreationModelOptions, checkCreateMode, loadImportModelOptions, switchToImportTab, submitImport, submitDocImport } from './editor-create.js';
 import { showOutlinePhase } from './editor-outline.js';
 import { renderThumbnailStrip, updateActiveThumbnail } from './editor-thumbnails.js';
 import { loadPacks } from './editor-pack.js';
@@ -492,6 +492,35 @@ async function init() {
         const cfgRes = await fetch('/api/editor-config');
         if (cfgRes.ok) {
           const cfg = await cfgRes.json();
+          // CLI --import-doc mode: PDF or URL
+          if (cfg.importDocSource) {
+            switchToImportTab();
+            const importSlideCountEl = document.getElementById('import-slide-count');
+            const importResearchEl = document.getElementById('import-research-mode');
+            if (cfg.importSlideCount && importSlideCountEl) {
+              importSlideCountEl.value = cfg.importSlideCount;
+            }
+            if (cfg.importResearch && importResearchEl) {
+              importResearchEl.value = 'research';
+            }
+            // Show source info in dropzone area
+            const dropzone = document.getElementById('import-dropzone');
+            const fileInfo = document.getElementById('import-file-info');
+            const fileNameEl = document.getElementById('import-file-name');
+            if (dropzone) dropzone.hidden = true;
+            if (fileInfo) fileInfo.hidden = false;
+            if (fileNameEl) fileNameEl.textContent = cfg.importDocSource;
+            // Auto-submit document import
+            submitDocImport({
+              source: cfg.importDocSource,
+              sourceType: cfg.importDocSourceType,
+              slideCount: cfg.importSlideCount,
+              researchMode: cfg.importResearch ? 'research' : 'none',
+              packId: cfg.importPack,
+            });
+            return;
+          }
+
           if (cfg.importFile) {
             switchToImportTab();
             // Fetch import file content from server

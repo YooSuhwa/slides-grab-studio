@@ -122,6 +122,8 @@ export const importSlideCount = $('#import-slide-count');
 export const importResearchMode = $('#import-research-mode');
 export const importModel = $('#import-model');
 export const importSubmit = $('#import-submit');
+export const importUrlInput = $('#import-url-input');
+export const importUrlGo = $('#import-url-go');
 
 // Theme toggle
 export const themeToggle = $('#theme-toggle');
