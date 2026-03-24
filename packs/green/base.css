@@ -1,0 +1,62 @@
+/* base.css */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+.slide {
+  /* 720x405 절대 고정 */
+  width: 720px !important;
+  height: 405px !important;
+  min-width: 720px !important;
+  min-height: 405px !important;
+  max-width: 720px !important;
+  max-height: 405px !important;
+
+  box-sizing: border-box !important;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  position: relative;
+  overflow: hidden; /* 넘치는 콘텐츠는 절대 슬라이드 크기를 키우지 않음 */
+  padding: 32px 40px; /* 안전한 상하 여백 확보 */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Page Number */
+.page-number {
+  position: absolute;
+  bottom: 24px;
+  right: 40px;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--bg-accent);
+}
+
+.slide-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.slide-title {
+  font-size: 30px; /* 높이 고정에 맞춰 살짝 보정 */
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.slide-body {
+  font-size: 12px; /* 텍스트가 405px을 넘지 않도록 보정 */
+  line-height: 1.5;
+  color: var(--text-secondary);
+}

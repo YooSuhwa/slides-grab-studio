@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="base.css">
+  <style>
+    .slide-layout { display: flex; height: 100%; gap: 40px; margin-top: 16px; }
+
+    .chart-placeholder {
+      flex: 0.65;
+      background: var(--bg-secondary);
+      border: 2px dashed var(--border-light);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    .chart-note { font-size: 11px; color: var(--text-secondary); max-width: 80%; margin-top: 8px; }
+
+    .budget-sidebar { flex: 0.35; display: flex; flex-direction: column; justify-content: space-between; padding-bottom: 24px; }
+    .budget-item { display: flex; flex-direction: column; }
+    .budget-val { font-size: 40px; font-weight: 800; color: var(--text-primary); line-height: 1; }
+    .budget-lbl { font-size: 10px; font-weight: 700; color: var(--bg-accent); text-transform: uppercase; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="slide">
+    <div class="slide-label" data-slot="project-name">PROJECT NAME</div>
+    <h2 class="slide-title" style="margin-bottom: 0;" data-slot="title">Budget Status</h2>
+
+    <div class="slide-layout">
+      <div class="chart-placeholder" data-slot="chart-area">
+        <div style="font-weight: 600; font-size: 14px; color: var(--text-primary);">A space to show a comparison of the budgeted amount versus the actual expenditure incurred over time.</div>
+        <div class="chart-note">This can be presented as a line graph with two lines representing the budget and actual expenditure, plotted against the project timeline (e.g., months or quarters).</div>
+      </div>
+
+      <div class="budget-sidebar">
+        <div class="budget-item">
+          <div class="budget-val" data-slot="val-1">$1.3M</div>
+          <div class="budget-lbl" data-slot="lbl-1">TOTAL BUDGET</div>
+        </div>
+        <div class="budget-item">
+          <div class="budget-val" data-slot="val-2">$950K</div>
+          <div class="budget-lbl" data-slot="lbl-2">SPEND TO DATE</div>
+        </div>
+        <div class="budget-item">
+          <div class="budget-val" data-slot="val-3" style="color: var(--bg-accent);">$350K</div>
+          <div class="budget-lbl" data-slot="lbl-3">REMAINING BUDGET</div>
+        </div>
+      </div>
+    </div>
+    <div class="page-number">07</div>
+  </div>
+</body>
+</html>
