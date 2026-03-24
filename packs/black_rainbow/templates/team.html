@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>team</title>
+  <link rel="stylesheet" href="theme.css" />
+  <link rel="stylesheet" href="base.css" />
+  <style>
+    .team-title { font-size: 32pt; line-height: .98; margin-bottom: 26pt; }
+    .profile-grid { display:grid; grid-template-columns: repeat(6, 1fr); gap: 12pt; align-items:start; }
+    .profile { text-align:center; }
+    .profile .media-slot { width: 82pt; height: 108pt; margin: 0 auto 12pt; border-radius: 999pt; }
+    .profile strong { display:block; font-size: 11pt; }
+    .profile span { display:block; margin-top: 5pt; font-size: 8.2pt; letter-spacing:.08em; text-transform:uppercase; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <main class="slide theme-table">
+    <h1 class="slide-title team-title" data-slot="title">The producers of this report</h1>
+    <section class="profile-grid">
+      <article class="profile"><div class="media-slot" data-slot="image" data-label="photo"></div><strong data-slot="author">Name</strong><span data-slot="caption">Title, Team Name</span></article>
+      <article class="profile"><div class="media-slot" data-slot="image" data-label="photo"></div><strong data-slot="author">Name</strong><span data-slot="caption">Title, Team Name</span></article>
+      <article class="profile"><div class="media-slot" data-slot="image" data-label="photo"></div><strong data-slot="author">Name</strong><span data-slot="caption">Title, Team Name</span></article>
+      <article class="profile"><div class="media-slot" data-slot="image" data-label="photo"></div><strong data-slot="author">Name</strong><span data-slot="caption">Title, Team Name</span></article>
+      <article class="profile"><div class="media-slot" data-slot="image" data-label="photo"></div><strong data-slot="author">Name</strong><span data-slot="caption">Title, Team Name</span></article>
+      <article class="profile"><div class="media-slot" data-slot="image" data-label="photo"></div><strong data-slot="author">Name</strong><span data-slot="caption">Title, Team Name</span></article>
+    </section>
+    <div class="footer-band"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  </main>
+</body>
+</html>
