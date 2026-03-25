@@ -1,3 +1,5 @@
+`npx slides-grab browse`
+---
 <h1 align="center">slides-grab</h1>
 
 <p align="center">Select context for agents directly from AI-generated HTML slides</p>
