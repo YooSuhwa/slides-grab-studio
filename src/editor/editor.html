@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Slide Editor - ppt-agent</title>
+  <title>Slide Editor - slides-grab-studio</title>
+  <link rel="icon" type="image/png" href="/asset/buddy_logo_round.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <style>
     :root {
@@ -16,14 +17,14 @@
       --text-0: #f8fafc;
       --text-1: #94a3b8;
       --text-2: #728496;
-      --accent: #3b82f6;
-      --accent-2: #60a5fa;
+      --accent: #FC5E20;
+      --accent-2: #FD7E4A;
       --danger: #ef4444;
       --success: #22c55e;
       --warn: #f59e0b;
       --mono: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
       --sans: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-      --ring: hsla(213, 27%, 84%, 0.15);
+      --ring: hsla(17, 27%, 84%, 0.15);
       --radius: 8px;
       --radius-sm: 6px;
       --radius-lg: 12px;
@@ -59,12 +60,12 @@
       --text-0: #0f172a;
       --text-1: #475569;
       --text-2: #64748b;
-      --accent: #3b82f6;
-      --accent-2: #60a5fa;
+      --accent: #FC5E20;
+      --accent-2: #FD7E4A;
       --danger: #dc2626;
       --success: #16a34a;
       --warn: #d97706;
-      --ring: hsla(213, 93%, 67%, 0.2);
+      --ring: hsla(17, 93%, 56%, 0.2);
       --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
       --surface-0: #ffffff;
       --surface-1: #f8fafc;
@@ -204,6 +205,31 @@
       font-weight: 600;
       letter-spacing: 0.08em;
       font-family: var(--mono);
+    }
+
+    .nav-brand {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-0);
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .nav-brand img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    .nav-brand .logo-light { display: none; }
+    [data-theme="light"] .nav-brand .logo-dark { display: none; }
+    [data-theme="light"] .nav-brand .logo-light { display: block; }
+
+    .nav-brand-text span {
+      color: var(--accent);
     }
 
     .main-content {
@@ -1365,7 +1391,7 @@
 
     .sidebar-mode-tab.active {
       border-color: rgba(96, 165, 250, 0.28);
-      background: rgba(59, 130, 246, 0.12);
+      background: rgba(252, 94, 32, 0.12);
       color: var(--text-bright);
     }
 
@@ -1622,7 +1648,7 @@
 
     :focus-visible {
       outline: none;
-      box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px rgba(59, 130, 246, 0.25);
+      box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px rgba(252, 94, 32, 0.25);
     }
 
     /* ── Slide Thumbnail Strip ── */
@@ -1667,7 +1693,7 @@
 
     .slide-thumb.active {
       border-color: var(--accent);
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+      box-shadow: 0 0 0 2px rgba(252, 94, 32, 0.25);
     }
 
     .slide-thumb-num {
@@ -1978,7 +2004,7 @@
     .outline-card[data-type="image-text"],
     .outline-card[data-type="image-description"] { border-left: 3px solid #818cf8; }
     .outline-card[data-type="split-layout"],
-    .outline-card[data-type="two-columns"] { border-left: 3px solid #38bdf8; }
+    .outline-card[data-type="two-columns"] { border-left: 3px solid #FC5E20; }
 
     /* ── Nav bar ghost buttons ── */
     .nav-bar-btn.ghost {
@@ -2553,7 +2579,7 @@
     }
     .pack-card.selected {
       border-color: var(--accent);
-      box-shadow: 0 0 0 1px var(--accent), 0 0 12px rgba(59, 130, 246, 0.15);
+      box-shadow: 0 0 0 1px var(--accent), 0 0 12px rgba(252, 94, 32, 0.15);
     }
     /* Color swatch bar at top of card */
     .pack-swatches {
@@ -2728,7 +2754,7 @@
     .template-chip.active {
       border-color: var(--accent);
       color: var(--accent-2);
-      background: rgba(59, 130, 246, 0.08);
+      background: rgba(252, 94, 32, 0.08);
     }
     .pack-detail-preview {
       padding: 0 18px 18px;
@@ -2823,12 +2849,12 @@
     }
     .import-dropzone:hover {
       border-color: var(--border-hover);
-      background: rgba(59, 130, 246, 0.03);
+      background: rgba(252, 94, 32, 0.03);
     }
     .import-dropzone.dragover {
       border-color: var(--accent);
-      background: rgba(59, 130, 246, 0.08);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+      background: rgba(252, 94, 32, 0.08);
+      box-shadow: 0 0 0 3px rgba(252, 94, 32, 0.15);
     }
     .import-dropzone.dragover .import-dropzone-content svg { opacity: 0.8; }
     .import-dropzone-content {
@@ -3104,13 +3130,13 @@
 
     /* ── Editor-mode emphasized nav buttons ── */
     .nav-bar-btn.ghost.nav-emphasis {
-      background: rgba(59, 130, 246, 0.12);
-      border: 1px solid rgba(59, 130, 246, 0.35);
+      background: rgba(252, 94, 32, 0.12);
+      border: 1px solid rgba(252, 94, 32, 0.35);
       color: var(--accent-2);
     }
     .nav-bar-btn.ghost.nav-emphasis:hover {
-      background: rgba(59, 130, 246, 0.22);
-      border-color: rgba(59, 130, 246, 0.5);
+      background: rgba(252, 94, 32, 0.22);
+      border-color: rgba(252, 94, 32, 0.5);
       color: #fff;
     }
     .nav-bar-btn.ghost.nav-emphasis:disabled {
@@ -3141,14 +3167,14 @@
       gap: 10px;
       padding: 10px 20px;
       background: rgba(15, 23, 42, 0.92);
-      border: 1px solid rgba(59, 130, 246, 0.3);
+      border: 1px solid rgba(252, 94, 32, 0.3);
       border-radius: var(--radius-lg);
       box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
     }
     .slide-running-spinner {
       width: 18px;
       height: 18px;
-      border: 2px solid rgba(59, 130, 246, 0.25);
+      border: 2px solid rgba(252, 94, 32, 0.25);
       border-top-color: var(--accent-2);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
@@ -3249,7 +3275,7 @@
       letter-spacing: 0.5px;
       padding: 2px 8px;
       border-radius: var(--radius-pill);
-      background: rgba(59, 130, 246, 0.15);
+      background: rgba(252, 94, 32, 0.15);
       color: var(--accent-2);
       margin-left: 8px;
       vertical-align: middle;
@@ -3347,7 +3373,7 @@
       letter-spacing: 0.04em;
       padding: 1px 6px;
       border-radius: var(--radius-xs);
-      background: rgba(59, 130, 246, 0.12);
+      background: rgba(252, 94, 32, 0.12);
       color: var(--accent-2);
       white-space: nowrap;
       flex-shrink: 0;
@@ -3732,7 +3758,7 @@
     .outline-card-badge.edit:hover {
       color: var(--accent-2);
       border-color: var(--accent);
-      background: rgba(59, 130, 246, 0.08);
+      background: rgba(252, 94, 32, 0.08);
     }
 
     .outline-card-badge.save {
@@ -3746,7 +3772,7 @@
     }
 
     .outline-card.editing {
-      background: rgba(59, 130, 246, 0.03);
+      background: rgba(252, 94, 32, 0.03);
       border-left: 2px solid var(--accent);
       padding-left: 12px;
     }
@@ -3867,7 +3893,7 @@
     }
     [data-theme="light"] .slide-running-indicator {
       background: rgba(255, 255, 255, 0.95);
-      border-color: rgba(59, 130, 246, 0.2);
+      border-color: rgba(252, 94, 32, 0.2);
       box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
     }
     [data-theme="light"] .slide-running-text {
@@ -3904,12 +3930,12 @@
       background: var(--surface-3);
     }
     [data-theme="light"] .nav-bar-btn.ghost.nav-emphasis {
-      background: rgba(59, 130, 246, 0.06);
-      border-color: rgba(59, 130, 246, 0.2);
+      background: rgba(252, 94, 32, 0.06);
+      border-color: rgba(252, 94, 32, 0.2);
     }
     [data-theme="light"] .nav-bar-btn.ghost.nav-emphasis:hover {
-      background: rgba(59, 130, 246, 0.12);
-      border-color: rgba(59, 130, 246, 0.35);
+      background: rgba(252, 94, 32, 0.12);
+      border-color: rgba(252, 94, 32, 0.35);
       color: var(--accent);
     }
     [data-theme="light"] .bbox-empty-guide-text {
@@ -3921,7 +3947,7 @@
       background: linear-gradient(180deg, rgba(148, 163, 184, 0.1) 0%, rgba(148, 163, 184, 0.5) 48%, rgba(148, 163, 184, 0.1) 100%);
     }
     [data-theme="light"] .outline-card.editing {
-      background: rgba(59, 130, 246, 0.03);
+      background: rgba(252, 94, 32, 0.03);
     }
     [data-theme="light"] .creation-log {
       color: var(--text-1);
@@ -3955,6 +3981,7 @@
   <a class="skip-link" href="#slide-stage">Skip to slide</a>
   <div class="editor-container">
     <div class="nav-bar" role="navigation" aria-label="Editor navigation">
+      <div class="nav-brand"><img class="logo-dark" src="/asset/buddy_logo_round(dark).png" alt=""><img class="logo-light" src="/asset/buddy_logo_round(light).png" alt=""><span class="nav-brand-text">slides-grab<span>-studio</span></span></div>
       <a href="/" class="nav-bar-btn ghost" id="btn-back-browser" title="Back to Deck Browser" style="text-decoration:none; display:none;">&#9664; Decks</a>
       <span class="nav-deck-name" id="nav-deck-name" style="display:none;"></span>
       <div class="nav-controls">
