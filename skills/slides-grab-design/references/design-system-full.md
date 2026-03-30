@@ -97,27 +97,13 @@ line-height: 1;
 
 ## Color Palette System
 
-### 1. Executive Minimal (Recommended Default)
-Refined business presentation look
-- File: `themes/executive.css`
+Colors are managed per-pack via `theme.css` files. Each pack defines CSS variables (`:root { --bg-primary, --text-primary, --accent, ... }`).
 
-### 2. Sage Professional
-Calm and trustworthy tone
-- File: `themes/sage.css`
+- View available packs: `slides-grab list-packs`
+- View pack colors: `slides-grab show-theme <pack-id>`
+- Default pack: `simple_light`
 
-### 3. Modern Dark
-High-impact dark theme
-- File: `themes/modern-dark.css`
-
-### 4. Corporate Blue
-Traditional business tone
-- File: `themes/corporate.css`
-
-### 5. Warm Neutral
-Warm and approachable tone
-- File: `themes/warm.css`
-
-Theme files use shared CSS variables (`:root`). Copy a theme file to create a custom theme.
+When designing slides, use `var()` references from the pack's theme instead of hardcoded colors.
 
 ---
 
@@ -246,45 +232,12 @@ grid-template-columns: 1fr 2.3fr;
 
 ## Slide Templates
 
-### 1. Cover Slide
-- Template file: `templates/cover.html`
+Template types are defined in `packs/common-types.json` (26 types).
+Each pack implements a subset. Check coverage: `slides-grab show-pack <pack-id>`
 
-### 2. Table of Contents (Contents)
-- Template file: `templates/contents.html`
+View a specific template: `slides-grab show-template <type> --pack <pack-id>`
 
-### 3. Section Divider
-- Template file: `templates/section-divider.html`
-
-### 4. Content Slide
-- Template file: `templates/content.html`
-
-### 5. Statistics/Data Slide
-- Template file: `templates/statistics.html`
-
-### 6. Image + Text (Split Layout)
-- Template file: `templates/split-layout.html`
-
-### 7. Team Introduction
-- Template file: `templates/team.html`
-
-### 8. Quote Slide
-- Template file: `templates/quote.html`
-
-### 9. Timeline Slide
-- Template file: `templates/timeline.html`
-
-### 10. Closing Slide
-- Template file: `templates/closing.html`
-
-### 11. Chart Slide
-- Template file: `templates/chart.html`
-
-### 12. Diagram Slide
-- Template file: `templates/diagram.html`
-
-### Custom Templates
-- Custom template directory: `templates/custom/`
-- Users can add template files as drop-in for reuse.
+If the pack doesn't own a template type, design from scratch using the pack's theme.css.
 
 ---
 
@@ -526,47 +479,10 @@ Rules:
 
 ---
 
-## Workflow (Stage 2: Design + Human Review)
-
-This skill is **Stage 2**. It works from the `slide-outline.md` approved by the user in Stage 1 (plan-skill).
-
-### Prerequisites
-- `slide-outline.md` must exist and be approved by the user.
-
-### Steps
-
-1. **Analyze + Design**: Read `slide-outline.md`, decide theme/layout, generate HTML slides
-2. **Validate slides**: After slide generation or edits, automatically run:
-   ```bash
-   slides-grab validate --slides-dir <path>
-   ```
-3. **Auto-fix validation issues**: If validation fails, fix the source HTML/CSS and re-run validation until it passes
-4. **Auto-build viewer**: After validation passes, automatically run:
-   ```bash
-   node scripts/build-viewer.js --slides-dir <path>
-   ```
-5. **Guide user to review**: Tell the user to check slides in the browser:
-   ```
-   open <slides-dir>/viewer.html
-   ```
-6. **Revision loop**: When the user requests changes to specific slides:
-   - Edit only the relevant HTML file
-   - Re-run `slides-grab validate --slides-dir <path>` and fix any failures
-   - Re-run `node scripts/build-viewer.js --slides-dir <path>` to rebuild the viewer
-   - Guide user to review again
-7. **Completion**: Repeat the revision loop until the user signals approval for PPTX conversion
-
-### Absolute Rules
-- **Never start PPTX conversion without approval** — PPTX conversion is the responsibility of `pptx-skill` and requires explicit user approval.
-- **Never skip validation** — Run `slides-grab validate --slides-dir <path>` after generation or edits and fix failures before review.
-- **Never forget to build the viewer** — Run `node scripts/build-viewer.js --slides-dir <path>` every time slides are generated or modified.
-
----
-
 ## Important Notes
 
 1. **CSS gradients**: Not supported in PowerPoint conversion — replace with background images
-2. **Webfonts**: Always include the Pretendard CDN link
-3. **Image paths**: Use `./assets/<file>` from each `slide-XX.html`; avoid absolute filesystem paths
+2. **Webfonts**: Always include the Pretendard CDN link (unless pack specifies a different font)
+3. **Image paths**: Use `./assets/<file>` from each `slide-XX.html`; download remote images before saving; avoid absolute filesystem paths
 4. **Colors**: Always include `#` prefix in CSS
 5. **Text rules**: Never place text directly in div/span

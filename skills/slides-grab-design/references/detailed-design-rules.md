@@ -2,15 +2,16 @@
 
 ### Slide Size (16:9 default)
 - Keep slide body at 720pt x 405pt.
-- Use Pretendard as the default font stack.
+- Use Pretendard as the default font stack; if the pack's theme.css specifies a different font, follow the pack.
 - Include the Pretendard webfont CDN link when needed.
 
-### 4. Image Usage Rules (Local Asset / Data URL / Remote URL / Placeholder)
+### Image Usage Rules (Local Asset / Data URL / Placeholder)
 - Always include alt on img tags.
 - Use `./assets/<file>` as the default image contract for slide HTML.
 - Keep slide assets in `<slides-dir>/assets/`.
+- Use `tldraw`-generated assets for complex diagrams whenever possible.
 - `data:` URLs are allowed for fully self-contained slides.
-- Remote `https://` URLs are allowed but non-deterministic and fallback only.
+- Do not leave remote `http(s)://` image URLs in saved slide HTML; download source images into `<slides-dir>/assets/` and reference them as `./assets/<file>`.
 - Do not use absolute filesystem paths in slide HTML.
 - Do not use non-body `background-image` for content imagery; use `<img>` instead.
 - Use `data-image-placeholder` to reserve space when no image is available yet.
@@ -21,10 +22,9 @@
 
 ## Workflow (Stage 2: Design + Human Review)
 - After slide generation or edits, run `slides-grab validate --slides-dir <path>`.
-- After validation passes, run `slides-grab build-viewer --slides-dir <path>`.
 - Edit only the relevant HTML file during revision loops.
+- Prefer `slides-grab tldraw` + local exported assets for complex diagrams.
 - Never start PPTX conversion without explicit approval.
-- Never forget to build the viewer after slide changes.
 - Do not persist runtime-only editor/viewer injections in saved slide HTML.
 
 ## Important Notes
