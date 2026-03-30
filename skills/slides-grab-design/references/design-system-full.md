@@ -58,13 +58,15 @@ font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-s
 ### Font Size Scale
 | Purpose | Size | Weight | Example |
 |---------|------|--------|---------|
-| Hero Title | 72-96pt | 700-800 | Cover main title |
-| Section Title | 48-60pt | 700 | Section divider heading |
-| Slide Title | 32-40pt | 600-700 | Slide heading |
-| Subtitle | 20-24pt | 500 | Subtitle, description |
-| Body | 16-20pt | 400 | Body text |
-| Caption | 12-14pt | 400 | Caption, source |
-| Label | 10-12pt | 500-600 | Badge, tag |
+| Hero Title | 56-72pt | 700-800 | Cover main title |
+| Section Title | 40-48pt | 700 | Section divider heading |
+| Slide Title | 28-36pt | 600-700 | Slide heading |
+| Subtitle | 18-22pt | 500 | Subtitle, description |
+| Body | 14-18pt | 400 | Body text |
+| Caption | 10-12pt | 400 | Caption, source |
+| Label | 9-11pt | 500-600 | Badge, tag |
+
+Note: If a pack's existing templates use different sizes, follow the pack. This scale is the fallback for packs without existing templates.
 
 ### Letter Spacing
 ```css

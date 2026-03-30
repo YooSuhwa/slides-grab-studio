@@ -25,6 +25,16 @@ Delivers minimal, refined design based on existing templates and theme system.
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 ```
 
+### Typography Priority (Pack-First Rule)
+
+When deciding font sizes for a slide:
+
+1. **Pack has the template** -> copy its font sizes exactly
+2. **Pack doesn't have the template** -> inspect 2-3 existing templates in the same pack to extract the actual sizes being used, then match them
+3. **No pack specified or empty pack** -> use the fallback scale from `references/design-system-full.md`
+
+Never mix the design-system-full.md scale with a pack's own scale in the same deck. Consistency within the deck is more important than conforming to the reference scale.
+
 ---
 
 ## Template Pack System
