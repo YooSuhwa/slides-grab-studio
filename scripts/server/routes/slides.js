@@ -16,6 +16,7 @@ function notesFilenameFor(slideFile) {
  * Slide file API routes.
  * Routes: GET /api/slides, POST /api/slides/:file/save,
  *         POST /api/slides/:file/duplicate, DELETE /api/slides/:file,
+ *         POST /api/slides/reorder,
  *         GET /api/slides/:file/notes, POST /api/slides/:file/notes
  */
 export function createSlidesRouter(ctx) {
@@ -32,6 +33,83 @@ export function createSlidesRouter(ctx) {
       res.json(files);
     } catch (err) {
       res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── Reorder slides ──────────────────────────────────────────────
+  router.post('/api/slides/reorder', async (req, res) => {
+    const order = req.body?.order;
+    if (!Array.isArray(order) || order.length === 0) {
+      return res.status(400).json({ error: '`order` must be a non-empty array of slide filenames.' });
+    }
+
+    // Validate every entry is a proper slide filename
+    const normalized = [];
+    for (const entry of order) {
+      try {
+        normalized.push(normalizeSlideFilename(entry, '`order` entry'));
+      } catch (error) {
+        return res.status(400).json({ error: error.message });
+      }
+    }
+
+    const slidesDirectory = ctx.getSlidesDir();
+    if (!slidesDirectory) {
+      return res.status(400).json({ error: 'No slides directory set.' });
+    }
+
+    try {
+      const files = await listSlideFiles(slidesDirectory);
+
+      // Ensure the provided order matches the existing set of slides exactly
+      const sortedExisting = [...files].sort();
+      const sortedOrder = [...normalized].sort();
+      if (
+        sortedExisting.length !== sortedOrder.length ||
+        sortedExisting.some((f, idx) => f !== sortedOrder[idx])
+      ) {
+        return res.status(400).json({
+          error: 'The provided order does not match the existing slide files.',
+        });
+      }
+
+      // Renumber via temp directory to avoid naming conflicts
+      const tmpDir = join(slidesDirectory, `.tmp-reorder-${Date.now()}`);
+      await mkdir(tmpDir, { recursive: true });
+
+      try {
+        // Move all slides to temp
+        for (const f of files) {
+          await rename(join(slidesDirectory, f), join(tmpDir, f));
+        }
+
+        // Move back in the requested order with sequential numbering
+        const newFiles = [];
+        for (let i = 0; i < normalized.length; i++) {
+          const newName = `slide-${String(i + 1).padStart(2, '0')}.html`;
+          await rename(join(tmpDir, normalized[i]), join(slidesDirectory, newName));
+          newFiles.push(newName);
+        }
+
+        await rm(tmpDir, { recursive: true, force: true });
+
+        const result = await listSlideFiles(slidesDirectory);
+        return res.json({ success: true, slides: result });
+      } catch (innerErr) {
+        // Best-effort recovery: move files back from temp
+        try {
+          for (const f of files) {
+            const tmpPath = join(tmpDir, f);
+            if (existsSync(tmpPath)) {
+              await rename(tmpPath, join(slidesDirectory, f));
+            }
+          }
+          await rm(tmpDir, { recursive: true, force: true });
+        } catch { /* best-effort recovery */ }
+        throw innerErr;
+      }
+    } catch (error) {
+      return res.status(500).json({ error: `Reorder failed: ${error.message}` });
     }
   });
 
