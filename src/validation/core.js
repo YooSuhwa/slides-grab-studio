@@ -18,6 +18,32 @@ export const SLIDE_FILE_PATTERN = /^slide-.*\.html$/i;
 export const TEXT_SELECTOR = 'p,h1,h2,h3,h4,h5,h6,li';
 export const TOLERANCE_PX = 0.5;
 
+export function parseRgbColor(str) {
+  const match = str.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (!match) return null;
+  return { r: Number(match[1]), g: Number(match[2]), b: Number(match[3]) };
+}
+
+export function linearize(channel) {
+  const s = channel / 255;
+  return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+}
+
+export function relativeLuminance({ r, g, b }) {
+  return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
+}
+
+export function contrastRatio(l1, l2) {
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+export function isLargeText(fontSizePx, fontWeight) {
+  const bold = Number(fontWeight) >= 700;
+  return fontSizePx >= 24 || (bold && fontSizePx >= 18.67);
+}
+
 export function toSlideOrder(fileName) {
   const match = fileName.match(/\d+/);
   return match ? Number.parseInt(match[0], 10) : Number.POSITIVE_INFINITY;
@@ -517,7 +543,36 @@ export async function inspectSlide(page, fileName, slidesDir) {
         element: elementPath(element),
         src: (element.getAttribute('src') || '').trim(),
         alt: (element.getAttribute('alt') || '').trim(),
+        hasAlt: element.hasAttribute('alt'),
       }));
+
+      const textContrast = Array.from(document.querySelectorAll(textSelector))
+        .filter((element) => isVisible(element) && (element.textContent || '').trim())
+        .map((element) => {
+          const style = window.getComputedStyle(element);
+          const color = style.color;
+          const fontSize = parseFloat(style.fontSize) || 0;
+          const fontWeight = style.fontWeight || '400';
+
+          let bgColor = null;
+          let current = element;
+          while (current && current !== document.documentElement) {
+            const bg = window.getComputedStyle(current).backgroundColor;
+            if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
+              bgColor = bg;
+              break;
+            }
+            current = current.parentElement;
+          }
+
+          return {
+            element: elementPath(element),
+            color,
+            backgroundColor: bgColor,
+            fontSize,
+            fontWeight,
+          };
+        });
 
       const backgrounds = [document.body, ...Array.from(document.body.querySelectorAll('*'))]
         .map((element) => {
@@ -540,6 +595,7 @@ export async function inspectSlide(page, fileName, slidesDir) {
         warning,
         images,
         backgrounds,
+        textContrast,
       };
     },
     {
@@ -556,6 +612,44 @@ export async function inspectSlide(page, fileName, slidesDir) {
 
   inspection.critical.push(...imageContractIssues.critical);
   inspection.warning.push(...imageContractIssues.warning);
+
+  // Accessibility: contrast ratio checks
+  for (const item of inspection.textContrast || []) {
+    if (!item.color || !item.backgroundColor) continue;
+    const fg = parseRgbColor(item.color);
+    const bg = parseRgbColor(item.backgroundColor);
+    if (!fg || !bg) continue;
+
+    const fgL = relativeLuminance(fg);
+    const bgL = relativeLuminance(bg);
+    const ratio = contrastRatio(fgL, bgL);
+    const large = isLargeText(item.fontSize, item.fontWeight);
+    const threshold = large ? 3.0 : 4.5;
+
+    if (ratio < threshold) {
+      inspection.warning.push({
+        code: 'low-contrast',
+        message: `Text contrast ratio ${ratio.toFixed(2)}:1 is below the ${threshold}:1 threshold.`,
+        element: item.element,
+        contrastRatio: Math.round(ratio * 100) / 100,
+        threshold,
+        color: item.color,
+        backgroundColor: item.backgroundColor,
+      });
+    }
+  }
+
+  // Accessibility: missing alt text on images
+  for (const image of inspection.images) {
+    if (!image.hasAlt) {
+      inspection.warning.push({
+        code: 'missing-alt-text',
+        message: 'Image element is missing an alt attribute.',
+        element: image.element,
+        src: image.src,
+      });
+    }
+  }
 
   const summary = {
     criticalCount: inspection.critical.length,
