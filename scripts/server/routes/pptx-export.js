@@ -36,10 +36,17 @@ export function createPptxExportRouter(ctx) {
       const slideFile = slideFiles[i];
       try {
         const pngBuffer = await withScreenshotPage(ctx, async (page) => {
-          await page.setViewportSize({ width: 1920, height: 1080 });
+          // Match viewport to the slide's actual CSS size (960×540 for 720pt×405pt)
+          await page.setViewportSize({ width: 960, height: 540 });
           const url = `http://localhost:${opts.port}/slides/${slideFile}`;
           await page.goto(url, { waitUntil: 'networkidle' });
-          return page.screenshot({ type: 'png' });
+
+          // Capture just the .slide element if present, otherwise full page
+          const slideEl = await page.$('.slide');
+          if (slideEl) {
+            return slideEl.screenshot({ type: 'png' });
+          }
+          return page.screenshot({ type: 'png', fullPage: false });
         });
 
         const base64 = Buffer.from(pngBuffer).toString('base64');
