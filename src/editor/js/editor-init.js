@@ -34,7 +34,7 @@ import {
 import {
   mutateSelectedObject, applyTextDecorationToken, serializeSlideDocument, persistDirectSlideHtml,
 } from './editor-direct-edit.js';
-import { undo, redo } from './editor-history.js';
+import { undo, redo, pushSnapshot, setRestoring } from './editor-history.js';
 import { updateSendState, applyChanges } from './editor-send.js';
 import { goToSlide } from './editor-navigation.js';
 import { connectSSE, loadRunsInitial } from './editor-sse.js';
@@ -256,14 +256,26 @@ popoverTextColorInput.addEventListener('input', () => {
   if (popoverTextColorInput.disabled) return;
   mutateSelectedObject((el) => {
     el.style.color = popoverTextColorInput.value;
-  }, 'Text color updated.', { delay: 300 });
+  }, 'Text color updated.', { delay: 300, skipSnapshot: true });
+});
+popoverTextColorInput.addEventListener('change', () => {
+  if (popoverTextColorInput.disabled) return;
+  mutateSelectedObject((el) => {
+    el.style.color = popoverTextColorInput.value;
+  }, 'Text color updated.');
 });
 
 popoverBgColorInput.addEventListener('input', () => {
   if (popoverBgColorInput.disabled) return;
   mutateSelectedObject((el) => {
     el.style.backgroundColor = popoverBgColorInput.value;
-  }, 'Background color updated.', { delay: 300 });
+  }, 'Background color updated.', { delay: 300, skipSnapshot: true });
+});
+popoverBgColorInput.addEventListener('change', () => {
+  if (popoverBgColorInput.disabled) return;
+  mutateSelectedObject((el) => {
+    el.style.backgroundColor = popoverBgColorInput.value;
+  }, 'Background color updated.');
 });
 
 // Style toggles
@@ -314,7 +326,9 @@ alignRight.addEventListener('click', () => {
   }, 'Object alignment updated and saved.');
 });
 
-// Global keyboard
+// Global keyboard — use event.code for IME-safe matching (works with Korean input)
+function codeIs(event, code) { return event.code === code; }
+
 document.addEventListener('keydown', (event) => {
   // Presentation mode owns keyboard when active
   if (isPresenting()) return;
@@ -327,52 +341,57 @@ document.addEventListener('keydown', (event) => {
   }
 
   const inTextField = isTextInput(document.activeElement);
+  const ctrl = event.ctrlKey || event.metaKey;
 
-  if (state.toolMode === TOOL_MODE_SELECT && (event.ctrlKey || event.metaKey) && !inTextField) {
-    const key = event.key.toLowerCase();
-    if (key === 'b') { event.preventDefault(); if (!toggleBold.disabled) toggleBold.click(); return; }
-    if (key === 'i') { event.preventDefault(); if (!toggleItalic.disabled) toggleItalic.click(); return; }
-    if (key === 'u') { event.preventDefault(); if (!toggleUnderline.disabled) toggleUnderline.click(); return; }
+  // Ctrl+B/I/U — Select mode text styling
+  if (state.toolMode === TOOL_MODE_SELECT && ctrl && !inTextField) {
+    if (codeIs(event, 'KeyB')) { event.preventDefault(); if (!toggleBold.disabled) toggleBold.click(); return; }
+    if (codeIs(event, 'KeyI')) { event.preventDefault(); if (!toggleItalic.disabled) toggleItalic.click(); return; }
+    if (codeIs(event, 'KeyU')) { event.preventDefault(); if (!toggleUnderline.disabled) toggleUnderline.click(); return; }
   }
 
   // Ctrl+Shift+D — Duplicate slide
-  if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'd' && !inTextField) {
+  if (ctrl && event.shiftKey && codeIs(event, 'KeyD') && !inTextField) {
     event.preventDefault();
     duplicateCurrentSlide();
     return;
   }
 
-  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+  if (ctrl && event.key === 'Enter') {
     event.preventDefault();
     applyChanges();
     return;
   }
 
   // Undo / Redo — available even outside text fields
-  if ((event.ctrlKey || event.metaKey) && !inTextField) {
-    if (event.key === 'z' && !event.shiftKey) {
+  if (ctrl && !inTextField) {
+    if (codeIs(event, 'KeyZ') && !event.shiftKey) {
       event.preventDefault();
       const slide = currentSlideFile();
       if (slide) {
         const html = undo(slide);
         if (html) {
+          setRestoring(true);
           slideIframe.contentDocument.open();
           slideIframe.contentDocument.write(html);
           slideIframe.contentDocument.close();
+          setRestoring(false);
           void persistDirectSlideHtml(slide, html, 'Undo applied.');
         }
       }
       return;
     }
-    if ((event.key === 'z' && event.shiftKey) || event.key === 'y') {
+    if ((codeIs(event, 'KeyZ') && event.shiftKey) || codeIs(event, 'KeyY')) {
       event.preventDefault();
       const slide = currentSlideFile();
       if (slide) {
         const html = redo(slide);
         if (html) {
+          setRestoring(true);
           slideIframe.contentDocument.open();
           slideIframe.contentDocument.write(html);
           slideIframe.contentDocument.close();
+          setRestoring(false);
           void persistDirectSlideHtml(slide, html, 'Redo applied.');
         }
       }
@@ -399,20 +418,20 @@ document.addEventListener('keydown', (event) => {
     return;
   }
 
-  // ? key for shortcuts
-  if (event.key === '?' && !event.ctrlKey && !event.metaKey) {
+  // ? key for shortcuts (Shift+/ on most layouts)
+  if ((event.key === '?' || (event.shiftKey && codeIs(event, 'Slash'))) && !ctrl) {
     event.preventDefault();
     toggleShortcutsModal();
     return;
   }
 
-  // Tool mode shortcuts
-  if (event.key === 'd' || event.key === 'D') {
+  // Tool mode shortcuts (IME-safe via event.code)
+  if (codeIs(event, 'KeyD')) {
     event.preventDefault();
     setToolMode(TOOL_MODE_DRAW);
     return;
   }
-  if (event.key === 's' || event.key === 'S') {
+  if (codeIs(event, 'KeyS')) {
     event.preventDefault();
     setToolMode(TOOL_MODE_SELECT);
     return;
@@ -427,20 +446,6 @@ document.addEventListener('keydown', (event) => {
     event.preventDefault();
     void goToSlide(state.currentIndex + 1);
     return;
-  }
-
-  if (event.key === 'PageUp') {
-    event.preventDefault();
-    void goToSlide(state.currentIndex - 1);
-  } else if (event.key === 'PageDown') {
-    event.preventDefault();
-    void goToSlide(state.currentIndex + 1);
-  } else if (event.key === 'Home') {
-    event.preventDefault();
-    void goToSlide(0);
-  } else if (event.key === 'End') {
-    event.preventDefault();
-    void goToSlide(state.slides.length - 1);
   }
 });
 
@@ -849,6 +854,14 @@ slideIframe.addEventListener('load', () => {
     }
   }
   state.hoveredObjectXPath = '';
+
+  // Push initial snapshot so undo has a baseline to revert to
+  const loadedSlide = currentSlideFile();
+  if (loadedSlide) {
+    const initialHtml = serializeSlideDocument(slideIframe.contentDocument);
+    if (initialHtml) pushSnapshot(loadedSlide, initialHtml);
+  }
+
   renderBboxes();
   renderObjectSelection();
   updateObjectEditorControls();
