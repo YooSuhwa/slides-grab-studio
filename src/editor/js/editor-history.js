@@ -5,6 +5,12 @@ const MAX_HISTORY = 50;
 /** @type {Map<string, { stack: string[], index: number }>} */
 const historyBySlide = new Map();
 
+/** Flag to suppress snapshot pushes during undo/redo restore */
+let _restoring = false;
+
+export function isRestoring() { return _restoring; }
+export function setRestoring(v) { _restoring = !!v; }
+
 function getHistory(slide) {
   if (!historyBySlide.has(slide)) {
     historyBySlide.set(slide, { stack: [], index: -1 });
@@ -19,7 +25,7 @@ function getHistory(slide) {
  * @param {string} html
  */
 export function pushSnapshot(slide, html) {
-  if (!slide || !html) return;
+  if (!slide || !html || _restoring) return;
   const h = getHistory(slide);
   // Skip if identical to current snapshot
   if (h.index >= 0 && h.stack[h.index] === html) return;

@@ -3,8 +3,6 @@
 import { state, runsById, activeRunBySlide, localFileUpdateBySlide } from './editor-state.js';
 import { slideIframe, statusDot, statusConn } from './editor-dom.js';
 import { currentSlideFile, setStatus } from './editor-utils.js';
-import { pushSnapshot } from './editor-history.js';
-import { serializeSlideDocument } from './editor-direct-edit.js';
 import { addChatMessage, renderRunsList } from './editor-chat.js';
 import { renderBboxes } from './editor-bbox.js';
 import { updateSendState } from './editor-send.js';
@@ -103,11 +101,8 @@ export function connectSSE() {
       const payload = JSON.parse(event.data);
       activeRunBySlide.delete(payload.slide);
 
-      // Capture current iframe HTML as pre-AI-edit snapshot (undo point)
-      if (payload.success && payload.slide === currentSlideFile()) {
-        const htmlBefore = serializeSlideDocument(slideIframe.contentDocument);
-        if (htmlBefore) pushSnapshot(payload.slide, htmlBefore);
-      }
+      // Note: initial snapshot is pushed on iframe load; fileChanged will reload
+      // the iframe with new content, pushing the post-AI snapshot automatically.
 
       upsertRun({
         runId: payload.runId,

@@ -100,13 +100,15 @@ export function applyTextDecorationToken(el, token, shouldEnable) {
   el.style.textDecorationLine = parts.size > 0 ? Array.from(parts).join(' ') : 'none';
 }
 
-export function mutateSelectedObject(mutator, message, { delay = 0, preserveTextInput = false } = {}) {
+export function mutateSelectedObject(mutator, message, { delay = 0, preserveTextInput = false, skipSnapshot = false } = {}) {
   const selected = getSelectedObjectElement();
   if (!selected) return;
   const slide = currentSlideFile();
-  const htmlBefore = serializeSlideDocument(slideIframe.contentDocument);
-  if (slide && htmlBefore) pushSnapshot(slide, htmlBefore);
   mutator(selected);
+  if (!skipSnapshot) {
+    const htmlAfter = serializeSlideDocument(slideIframe.contentDocument);
+    if (slide && htmlAfter) pushSnapshot(slide, htmlAfter);
+  }
   renderObjectSelection();
   updateObjectEditorControls({ preserveTextInput });
   scheduleDirectSave(delay, message);

@@ -8,6 +8,8 @@ import {
   canUndo,
   canRedo,
   clearHistory,
+  setRestoring,
+  isRestoring,
 } from '../../src/editor/js/editor-history.js';
 
 const SLIDE = 'test-slide.html';
@@ -137,5 +139,22 @@ test('clearHistory resets state', () => {
   clearHistory(SLIDE);
   assert.equal(canUndo(SLIDE), false);
   assert.equal(canRedo(SLIDE), false);
+  assert.equal(undo(SLIDE), null);
+});
+
+test('pushSnapshot is suppressed while restoring', () => {
+  reset();
+  pushSnapshot(SLIDE, '<html>state1</html>');
+  pushSnapshot(SLIDE, '<html>state2</html>');
+  assert.equal(canUndo(SLIDE), true);
+
+  setRestoring(true);
+  assert.equal(isRestoring(), true);
+  pushSnapshot(SLIDE, '<html>should-be-ignored</html>');
+  setRestoring(false);
+
+  // Only state1 and state2 should be in the stack
+  const prev = undo(SLIDE);
+  assert.equal(prev, '<html>state1</html>');
   assert.equal(undo(SLIDE), null);
 });
