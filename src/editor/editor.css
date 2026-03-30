@@ -3944,6 +3944,127 @@
       color: var(--text-1);
     }
 
+    /* ── Presenter Notes Panel ── */
+    .notes-section {
+      border-top: 1px solid var(--border);
+      padding: 0;
+      flex-shrink: 0;
+    }
+
+    .notes-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 14px;
+      background: transparent;
+      border: none;
+      color: var(--text-2);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: color var(--transition);
+      text-align: left;
+    }
+    .notes-toggle:hover { color: var(--text-0); }
+
+    .notes-toggle-icon {
+      transition: transform var(--transition);
+      flex-shrink: 0;
+    }
+    .notes-section.expanded .notes-toggle-icon {
+      transform: rotate(90deg);
+    }
+
+    .notes-textarea {
+      display: none;
+      width: 100%;
+      min-height: 60px;
+      max-height: 160px;
+      padding: 8px 14px 12px;
+      background: var(--surface-1);
+      border: none;
+      border-top: 1px solid var(--border-subtle);
+      color: var(--text-0);
+      font-size: 12px;
+      font-family: inherit;
+      line-height: 1.6;
+      resize: vertical;
+    }
+    .notes-textarea::placeholder { color: var(--text-2); }
+    .notes-textarea:focus { outline: none; background: var(--surface-2); }
+
+    .notes-section.expanded .notes-textarea {
+      display: block;
+    }
+
+    /* ── Presentation Mode Overlay ── */
+    .present-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .present-slide-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .present-slide-iframe {
+      border: none;
+      background: #fff;
+      transition: opacity 0.3s ease;
+    }
+    .present-slide-iframe.fade-out {
+      opacity: 0;
+    }
+
+    .present-counter {
+      position: fixed;
+      bottom: 16px;
+      right: 24px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: var(--mono);
+      pointer-events: none;
+      z-index: 10001;
+    }
+
+    .present-notes-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-height: 30vh;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 16px 32px;
+      z-index: 10000;
+    }
+
+    .present-notes-text {
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 16px;
+      line-height: 1.7;
+      max-width: 800px;
+      margin: 0 auto;
+      white-space: pre-wrap;
+    }
+
     /* ── Reduced motion ── */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {

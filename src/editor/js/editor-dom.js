@@ -128,3 +128,14 @@ export const importUrlGo = $('#import-url-go');
 
 // Theme toggle
 export const themeToggle = $('#theme-toggle');
+
+// Slide duplicate/delete
+export const btnDuplicateSlide = $('#btn-duplicate-slide');
+export const btnDeleteSlide = $('#btn-delete-slide');
+export const deleteSlideModal = $('#delete-slide-modal');
+export const deleteSlideName = $('#delete-slide-name');
+export const deleteSlideCancel = $('#delete-slide-cancel');
+export const deleteSlideConfirm = $('#delete-slide-confirm');
+
+// Presentation mode
+export const btnPresent = $('#btn-present');

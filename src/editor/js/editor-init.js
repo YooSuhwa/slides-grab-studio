@@ -13,6 +13,9 @@ import {
   slideSkeleton, bboxEmptyGuide, shortcutsModal, shortcutsClose, btnShortcuts,
   sidebarToggle, editorSidebar, btnSendLabel,
   themeToggle,
+  btnDuplicateSlide, btnDeleteSlide,
+  deleteSlideModal, deleteSlideName, deleteSlideCancel, deleteSlideConfirm,
+  btnPresent,
 } from './editor-dom.js';
 import {
   currentSlideFile, getSlideState, normalizeModelName, setStatus,
@@ -42,6 +45,8 @@ import { showCreationMode, hideCreationMode, loadCreationModelOptions, checkCrea
 import { showOutlinePhase } from './editor-outline.js';
 import { renderThumbnailStrip, updateActiveThumbnail } from './editor-thumbnails.js';
 import { loadPacks } from './editor-pack.js';
+import { initNotesPanel, loadNotes } from './editor-notes.js';
+import { enterPresentationMode, exitPresentationMode, isPresenting } from './editor-present.js';
 
 // Late-binding: connect bbox changes to updateSendState
 onBboxChange(updateSendState);
@@ -53,6 +58,86 @@ initBboxLayerEvents();
 btnPrev.addEventListener('click', () => { void goToSlide(state.currentIndex - 1); });
 btnNext.addEventListener('click', () => { void goToSlide(state.currentIndex + 1); });
 
+// ── Slide duplicate / delete ──────────────────────────────────────
+async function duplicateCurrentSlide() {
+  const slide = currentSlideFile();
+  if (!slide) return;
+  setStatus(`Duplicating ${slide}...`);
+  try {
+    const res = await fetch(`/api/slides/${encodeURIComponent(slide)}/duplicate`, { method: 'POST' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      setStatus(`Duplicate failed: ${err.error}`);
+      return;
+    }
+    const data = await res.json();
+    state.slides = data.slides;
+    renderThumbnailStrip();
+    await goToSlide(data.insertIndex);
+    setStatus(`Duplicated as ${data.duplicatedAs}`);
+  } catch (err) {
+    setStatus(`Duplicate failed: ${err.message}`);
+  }
+}
+
+async function deleteCurrentSlide() {
+  const slide = currentSlideFile();
+  if (!slide) return;
+  if (state.slides.length <= 1) {
+    setStatus('Cannot delete the last remaining slide.');
+    return;
+  }
+  setStatus(`Deleting ${slide}...`);
+  try {
+    const res = await fetch(`/api/slides/${encodeURIComponent(slide)}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      setStatus(`Delete failed: ${err.error}`);
+      return;
+    }
+    const data = await res.json();
+    state.slides = data.slides;
+    renderThumbnailStrip();
+    const nextIndex = Math.min(state.currentIndex, state.slides.length - 1);
+    await goToSlide(nextIndex);
+    setStatus(`Deleted ${data.deleted}. ${state.slides.length} slides remaining.`);
+  } catch (err) {
+    setStatus(`Delete failed: ${err.message}`);
+  }
+}
+
+function openDeleteSlideModal() {
+  const slide = currentSlideFile();
+  if (!slide || state.slides.length <= 1) return;
+  if (deleteSlideModal && deleteSlideName) {
+    deleteSlideName.textContent = slide;
+    deleteSlideModal.hidden = false;
+  }
+}
+
+if (btnDuplicateSlide) {
+  btnDuplicateSlide.addEventListener('click', duplicateCurrentSlide);
+}
+
+if (btnDeleteSlide) {
+  btnDeleteSlide.addEventListener('click', openDeleteSlideModal);
+}
+
+if (deleteSlideModal) {
+  if (deleteSlideCancel) {
+    deleteSlideCancel.addEventListener('click', () => { deleteSlideModal.hidden = true; });
+  }
+  if (deleteSlideConfirm) {
+    deleteSlideConfirm.addEventListener('click', async () => {
+      deleteSlideModal.hidden = true;
+      await deleteCurrentSlide();
+    });
+  }
+  deleteSlideModal.addEventListener('click', (e) => {
+    if (e.target === deleteSlideModal) deleteSlideModal.hidden = true;
+  });
+}
+
 // Tool modes
 toolModeDrawBtn.addEventListener('click', () => setToolMode(TOOL_MODE_DRAW));
 toolModeSelectBtn.addEventListener('click', () => setToolMode(TOOL_MODE_SELECT));
@@ -62,6 +147,11 @@ btnPdfExport.addEventListener('click', openPdfExportModal);
 
 // SVG Export
 btnSvgExport.addEventListener('click', openExportModal);
+
+// Presentation mode
+if (btnPresent) {
+  btnPresent.addEventListener('click', () => { void enterPresentationMode(); });
+}
 
 // New Deck — switch to creation mode
 if (btnNewDeck) {
@@ -226,6 +316,16 @@ alignRight.addEventListener('click', () => {
 
 // Global keyboard
 document.addEventListener('keydown', (event) => {
+  // Presentation mode owns keyboard when active
+  if (isPresenting()) return;
+
+  // F5 to enter presentation mode
+  if (event.key === 'F5') {
+    event.preventDefault();
+    void enterPresentationMode();
+    return;
+  }
+
   const inTextField = isTextInput(document.activeElement);
 
   if (state.toolMode === TOOL_MODE_SELECT && (event.ctrlKey || event.metaKey) && !inTextField) {
@@ -233,6 +333,13 @@ document.addEventListener('keydown', (event) => {
     if (key === 'b') { event.preventDefault(); if (!toggleBold.disabled) toggleBold.click(); return; }
     if (key === 'i') { event.preventDefault(); if (!toggleItalic.disabled) toggleItalic.click(); return; }
     if (key === 'u') { event.preventDefault(); if (!toggleUnderline.disabled) toggleUnderline.click(); return; }
+  }
+
+  // Ctrl+Shift+D — Duplicate slide
+  if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'd' && !inTextField) {
+    event.preventDefault();
+    duplicateCurrentSlide();
+    return;
   }
 
   if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
@@ -284,6 +391,13 @@ document.addEventListener('keydown', (event) => {
   }
 
   if (inTextField) return;
+
+  // Backspace / Delete — open delete slide confirmation
+  if (event.key === 'Backspace' || event.key === 'Delete') {
+    event.preventDefault();
+    openDeleteSlideModal();
+    return;
+  }
 
   // ? key for shortcuts
   if (event.key === '?' && !event.ctrlKey && !event.metaKey) {
@@ -743,6 +857,7 @@ slideIframe.addEventListener('load', () => {
 
 // Init
 async function init() {
+  initNotesPanel();
   setStatus('Loading slide list...');
 
   try {
@@ -906,6 +1021,7 @@ async function init() {
     if (btnReviewOutline) btnReviewOutline.classList.add('nav-emphasis');
     if (btnExportToggle) btnExportToggle.classList.add('nav-emphasis');
     if (btnReviewDeck) btnReviewDeck.style.display = '';
+    if (btnPresent) btnPresent.style.display = '';
 
     setStatus(`Ready. Model: ${state.selectedModel}. Draw red pending bboxes, run Codex, then review green bboxes.`);
   } catch (error) {

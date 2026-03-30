@@ -156,6 +156,16 @@
       font-family: var(--mono);
     }
 
+    .nav-controls-sep {
+      width: 1px;
+      height: 18px;
+      background: var(--border-strong);
+      margin: 0 2px;
+    }
+
+    .slide-action-btn { font-size: 11px !important; padding: 0 8px !important; }
+    .slide-action-btn.danger:hover { background: var(--danger) !important; color: #fff !important; border-color: var(--danger) !important; }
+
     .nav-spacer { flex: 1; }
 
     .slide-status-chip {
@@ -3988,6 +3998,9 @@
         <button id="btn-prev" title="Previous slide (Left arrow)" aria-label="Previous slide">&#9664; Prev</button>
         <span class="slide-counter" id="slide-counter" aria-live="polite">-- / --</span>
         <button id="btn-next" title="Next slide (Right arrow)" aria-label="Next slide">Next &#9654;</button>
+        <span class="nav-controls-sep"></span>
+        <button class="nav-bar-btn ghost slide-action-btn" id="btn-duplicate-slide" title="Duplicate current slide (Ctrl+Shift+D)" aria-label="Duplicate slide">&#x2398; Dup</button>
+        <button class="nav-bar-btn ghost slide-action-btn danger" id="btn-delete-slide" title="Delete current slide" aria-label="Delete slide">&#x2715; Del</button>
       </div>
       <div class="nav-spacer"></div>
       <button class="nav-bar-btn btn-new-deck" id="btn-new-deck" title="New Presentation">+ New</button>
@@ -4006,6 +4019,10 @@
           <button class="export-dropdown-item" id="btn-retheme" role="menuitem">Retheme Deck</button>
         </div>
       </div>
+      <button class="nav-bar-btn ghost" id="btn-present" title="Presentation mode (F5)" aria-label="Enter presentation mode" style="display:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+        Present
+      </button>
       <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle light/dark mode">
         <svg class="theme-icon theme-icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         <svg class="theme-icon theme-icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
@@ -4308,6 +4325,15 @@
           </div>
         </div>
 
+        <!-- Presenter Notes -->
+        <div class="notes-section" id="notes-section">
+          <button class="notes-toggle" id="notes-toggle" type="button" aria-expanded="false" aria-controls="notes-textarea">
+            <svg class="notes-toggle-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+            Presenter Notes
+          </button>
+          <textarea id="notes-textarea" class="notes-textarea" placeholder="Add notes for this slide..." rows="4"></textarea>
+        </div>
+
         <div class="sidebar-hint" id="editor-hint">
           Drag on the slide to add red bboxes. Enter to run.
         </div>
@@ -4480,14 +4506,42 @@
         <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">U</span></div>
       </div>
       <div class="shortcut-row">
+        <span class="shortcut-desc">Duplicate slide</span>
+        <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">Shift</span><span class="shortcut-key">D</span></div>
+      </div>
+      <div class="shortcut-row">
+        <span class="shortcut-desc">Delete slide</span>
+        <div class="shortcut-keys"><span class="shortcut-key">Backspace</span> / <span class="shortcut-key">Delete</span></div>
+      </div>
+      <div class="shortcut-row">
         <span class="shortcut-desc">Shortcuts help</span>
         <div class="shortcut-keys"><span class="shortcut-key">?</span></div>
+      </div>
+      <div class="shortcut-row">
+        <span class="shortcut-desc">Presentation mode</span>
+        <div class="shortcut-keys"><span class="shortcut-key">F5</span></div>
+      </div>
+      <div class="shortcut-row">
+        <span class="shortcut-desc">Toggle notes (in present)</span>
+        <div class="shortcut-keys"><span class="shortcut-key">N</span></div>
       </div>
       <div class="shortcut-row">
         <span class="shortcut-desc">Close / Blur</span>
         <div class="shortcut-keys"><span class="shortcut-key">Esc</span></div>
       </div>
       <button class="shortcuts-close" id="shortcuts-close">Close</button>
+    </div>
+  </div>
+
+  <!-- Delete Slide Confirmation Modal -->
+  <div class="shortcuts-overlay" id="delete-slide-modal" hidden>
+    <div class="shortcuts-modal" role="dialog" aria-label="Delete slide confirmation" style="max-width: 380px;">
+      <h3>Delete Slide</h3>
+      <p style="font-size: 13px; color: var(--text-1); margin-bottom: 16px;">Are you sure you want to delete <strong id="delete-slide-name"></strong>? This cannot be undone.</p>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button class="nav-bar-btn ghost" id="delete-slide-cancel">Cancel</button>
+        <button class="nav-bar-btn" id="delete-slide-confirm" style="background: var(--danger); color: #fff; border-color: var(--danger);">Delete</button>
+      </div>
     </div>
   </div>
 
@@ -4550,6 +4604,17 @@
       </div>
       <button class="shortcuts-close" id="review-close" style="margin-top: 16px;">Close</button>
     </div>
+  </div>
+
+  <!-- Presentation Mode Overlay -->
+  <div class="present-overlay" id="present-overlay" hidden>
+    <div class="present-slide-container">
+      <iframe class="present-slide-iframe" id="present-slide-iframe" sandbox="allow-same-origin allow-scripts"></iframe>
+    </div>
+    <div class="present-notes-bar" id="present-notes-bar" hidden>
+      <div class="present-notes-text" id="present-notes-text"></div>
+    </div>
+    <div class="present-counter" id="present-counter"></div>
   </div>
 
   <script type="module" src="/js/editor-init.js"></script>
