@@ -867,7 +867,7 @@ async function extractSlideData(page) {
     document.querySelectorAll('*').forEach((el) => {
       if (processed.has(el)) return;
 
-      // Validate text elements don't have backgrounds, borders, or shadows
+      // Warn about text elements with backgrounds, borders, or shadows (not supported in PPTX text boxes)
       if (textTags.includes(el.tagName)) {
         const computed = window.getComputedStyle(el);
         const hasBg = computed.backgroundColor && computed.backgroundColor !== 'rgba(0, 0, 0, 0)';
@@ -879,11 +879,9 @@ async function extractSlideData(page) {
         const hasShadow = computed.boxShadow && computed.boxShadow !== 'none';
 
         if (hasBg || hasBorder || hasShadow) {
-          errors.push(
-            `Text element <${el.tagName.toLowerCase()}> has ${hasBg ? 'background' : hasBorder ? 'border' : 'shadow'}. ` +
-            'Backgrounds, borders, and shadows are only supported on <div> elements, not text elements.'
+          warnings.push(
+            `<${el.tagName.toLowerCase()}> has ${hasBg ? 'background' : hasBorder ? 'border' : 'shadow'} — ignored in PPTX.`
           );
-          return;
         }
       }
 
@@ -1263,14 +1261,16 @@ async function html2pptx(htmlFile, pres, options = {}) {
       validationErrors.push(...bodyDimensions.errors);
     }
 
-    const dimensionErrors = validateDimensions(bodyDimensions, pres);
-    if (dimensionErrors.length > 0) {
-      validationErrors.push(...dimensionErrors);
-    }
-
-    const textBoxPositionErrors = validateTextBoxPosition(slideData, bodyDimensions);
-    if (textBoxPositionErrors.length > 0) {
-      validationErrors.push(...textBoxPositionErrors);
+    // Auto-adjust presentation layout to match slide dimensions
+    const widthInches = bodyDimensions.width / PX_PER_IN;
+    const heightInches = bodyDimensions.height / PX_PER_IN;
+    if (pres.presLayout) {
+      const layoutWidth = pres.presLayout.width / EMU_PER_IN;
+      const layoutHeight = pres.presLayout.height / EMU_PER_IN;
+      if (Math.abs(layoutWidth - widthInches) > 0.1 || Math.abs(layoutHeight - heightInches) > 0.1) {
+        pres.defineLayout({ name: 'CUSTOM', width: widthInches, height: heightInches });
+        pres.layout = 'CUSTOM';
+      }
     }
 
     if (slideData.errors && slideData.errors.length > 0) {
