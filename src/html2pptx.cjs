@@ -827,15 +827,13 @@ async function extractSlideData(page) {
     const bgImage = bodyStyle.backgroundImage;
     const bgColor = bodyStyle.backgroundColor;
 
-    // Collect validation errors
+    // Collect validation errors and warnings
     const errors = [];
+    const warnings = [];
 
-    // Validate: Check for CSS gradients
+    // Warn about CSS gradients (best-effort: gradient will fall back to solid color)
     if (bgImage && (bgImage.includes('linear-gradient') || bgImage.includes('radial-gradient'))) {
-      errors.push(
-        'CSS gradients are not supported. Use Sharp to rasterize gradients as PNG images first, ' +
-        'then reference with background-image: url(\'gradient.png\')'
-      );
+      warnings.push('CSS gradient on body — will fall back to solid background color in PPTX.');
     }
 
     let background;
@@ -934,27 +932,22 @@ async function extractSlideData(page) {
         const computed = window.getComputedStyle(el);
         const hasBg = computed.backgroundColor && computed.backgroundColor !== 'rgba(0, 0, 0, 0)';
 
-        // Validate: Check for unwrapped text content in DIV
+        // Warn about unwrapped text content in DIV (best-effort: text may not appear in PPTX)
         for (const node of el.childNodes) {
           if (node.nodeType === Node.TEXT_NODE) {
             const text = node.textContent.trim();
             if (text) {
-              errors.push(
-                `DIV element contains unwrapped text "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}". ` +
-                'All text must be wrapped in <p>, <h1>-<h6>, <ul>, or <ol> tags to appear in PowerPoint.'
+              warnings.push(
+                `DIV contains unwrapped text "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}".`
               );
             }
           }
         }
 
-        // Check for background images on shapes
+        // Warn about background images on shapes (skip bg image, continue processing element)
         const bgImage = computed.backgroundImage;
         if (bgImage && bgImage !== 'none') {
-          errors.push(
-            'Background images on DIV elements are not supported. ' +
-            'Use solid colors or borders for shapes, or use slide.addImage() in PptxGenJS to layer images.'
-          );
-          return;
+          warnings.push('DIV has background-image — ignored in PPTX.');
         }
 
         // Check for borders - both uniform and partial
@@ -1224,7 +1217,7 @@ async function extractSlideData(page) {
       processed.add(el);
     });
 
-    return { background, elements, placeholders, errors };
+    return { background, elements, placeholders, errors, warnings };
   });
 }
 
@@ -1284,7 +1277,13 @@ async function html2pptx(htmlFile, pres, options = {}) {
       validationErrors.push(...slideData.errors);
     }
 
-    // Throw all errors at once if any exist
+    // Log warnings (non-fatal)
+    const allWarnings = [...(slideData.warnings || [])];
+    if (allWarnings.length > 0) {
+      console.warn(`[html2pptx] ${htmlFile}: ${allWarnings.length} warning(s): ${allWarnings.join('; ')}`);
+    }
+
+    // Throw only fatal errors (dimension/position issues)
     if (validationErrors.length > 0) {
       const errorMessage = validationErrors.length === 1
         ? validationErrors[0]
@@ -1297,7 +1296,7 @@ async function html2pptx(htmlFile, pres, options = {}) {
     await addBackground(slideData, targetSlide, tmpDir);
     addElements(slideData, targetSlide, pres);
 
-    return { slide: targetSlide, placeholders: slideData.placeholders };
+    return { slide: targetSlide, placeholders: slideData.placeholders, warnings: allWarnings };
   } catch (error) {
     if (!error.message.startsWith(htmlFile)) {
       throw new Error(`${htmlFile}: ${error.message}`);
