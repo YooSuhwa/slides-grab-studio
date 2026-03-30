@@ -81,6 +81,10 @@ function renderPackGrid() {
 
   grid.innerHTML = '';
 
+  // Remove existing browse link if present
+  const existingLink = grid.parentNode?.querySelector('.pack-browse-all');
+  if (existingLink) existingLink.remove();
+
   for (const pack of packsData) {
     const card = document.createElement('button');
     card.className = 'pack-card' + (pack.id === selectedPackId ? ' selected' : '');
@@ -163,6 +167,15 @@ function renderPackGrid() {
 
     grid.appendChild(card);
   }
+
+  // "Browse all packs" link to full gallery
+  const browseLink = document.createElement('a');
+  browseLink.className = 'pack-browse-all';
+  browseLink.href = '/packs-gallery';
+  browseLink.target = '_blank';
+  browseLink.rel = 'noopener';
+  browseLink.textContent = 'Browse all packs \u2192';
+  grid.parentNode.insertBefore(browseLink, grid.nextSibling);
 }
 
 function updatePackSelection() {

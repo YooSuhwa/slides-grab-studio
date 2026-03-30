@@ -1,14 +1,27 @@
 import { join } from 'node:path';
+import { readFile } from 'node:fs/promises';
 
 import { listPacks, resolvePack, resolveTemplate, getPackInfo } from '../../../src/resolve.js';
 
 /**
  * Template pack API routes.
- * Routes: GET /api/packs, GET /api/packs/:id/preview, GET /api/packs/:id/templates/:name
+ * Routes: GET /api/packs, GET /api/packs/:id/preview, GET /api/packs/:id/templates/:name,
+ *         GET /packs-gallery
  */
 export function createPacksRouter(ctx) {
-  const { express } = ctx;
+  const { express, PACKAGE_ROOT } = ctx;
   const router = express.Router();
+
+  // Serve pack gallery page
+  router.get('/packs-gallery', async (_req, res) => {
+    const galleryPath = join(PACKAGE_ROOT, 'src', 'editor', 'gallery.html');
+    try {
+      const html = await readFile(galleryPath, 'utf-8');
+      res.type('html').send(html);
+    } catch (err) {
+      res.status(500).send(`Failed to load gallery: ${err.message}`);
+    }
+  });
 
   router.get('/api/packs', (_req, res) => {
     try {

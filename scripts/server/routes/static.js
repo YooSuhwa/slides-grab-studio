@@ -25,6 +25,7 @@ export function createStaticRouter(ctx) {
   const editorDir = join(PACKAGE_ROOT, 'src', 'editor');
   router.get('/editor.css', (_req, res) => { res.type('text/css').sendFile(join(editorDir, 'editor.css')); });
   router.get('/browser.css', (_req, res) => { res.type('text/css').sendFile(join(editorDir, 'browser.css')); });
+  router.get('/gallery.css', (_req, res) => { res.type('text/css').sendFile(join(editorDir, 'gallery.css')); });
 
   // Serve pack files (templates, theme.css) for iframe preview
   const localPacksDir = join(process.cwd(), 'packs');

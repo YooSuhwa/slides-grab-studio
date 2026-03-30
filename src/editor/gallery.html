@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pack Gallery - slides-grab-studio</title>
+  <link rel="icon" type="image/png" href="/asset/buddy_logo_round.png">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="/gallery.css">
+  <script>(function(){var t=localStorage.getItem('sg-theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia('(prefers-color-scheme: light)').matches)document.documentElement.setAttribute('data-theme','light')})();</script>
+</head>
+<body>
+  <div class="gallery-container">
+    <div class="nav-bar">
+      <a class="nav-brand" href="/">
+        <img class="logo-dark" src="/asset/buddy_logo_round(dark).png" alt="">
+        <img class="logo-light" src="/asset/buddy_logo_round(light).png" alt="">
+        <span class="nav-brand-text">slides-grab<span>-studio</span></span>
+      </a>
+      <div class="nav-spacer"></div>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle light/dark mode">
+        <svg class="theme-icon theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="theme-icon theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </div>
+
+    <div class="gallery-header">
+      <h1>Pack Gallery</h1>
+      <p class="gallery-subtitle">Browse all template packs and preview their designs</p>
+    </div>
+
+    <div class="gallery-grid" id="gallery-grid">
+      <div class="gallery-loading">
+        <div class="loading-spinner"></div>
+        Loading packs...
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    const grid = document.getElementById('gallery-grid');
+
+    function safeColor(v, fallback) {
+      const s = typeof v === 'string' ? v.trim() : '';
+      return /^#[0-9a-fA-F]{3,8}$/.test(s) ? s : fallback;
+    }
+
+    const PACK_DESC = {
+      'simple_light': 'Clean white + orange accent',
+      'simple_dark': 'Dark minimal monochrome',
+      'midnight': 'Deep navy + gold premium dark',
+      'corporate': 'White + navy blue business',
+      'creative': 'Gradient pink/indigo creative',
+      'grab': 'Modern business inline style',
+      'mobile_strategy': 'Dark rose + pink mobile strategy',
+      'black_rainbow': 'Black with rainbow accents',
+      'bold_minimal': 'Bold typography minimal layout',
+      'green': 'Fresh green nature-inspired',
+    };
+
+    async function loadGallery() {
+      try {
+        const res = await fetch('/api/packs');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const packs = await res.json();
+        renderGallery(packs);
+      } catch (err) {
+        grid.innerHTML = `
+          <div class="gallery-error">
+            <p>Failed to load packs: ${err.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderGallery(packs) {
+      grid.innerHTML = '';
+
+      for (const pack of packs) {
+        const card = document.createElement('div');
+        card.className = 'gallery-card';
+
+        const colors = pack.colors || {};
+        const bg = safeColor(colors['bg-primary'], '#333');
+        const bgSec = safeColor(colors['bg-secondary'], '#444');
+        const accent = safeColor(colors.accent, '#666');
+        const textPrimary = safeColor(colors['text-primary'], '#fff');
+        const textSecondary = safeColor(colors['text-secondary'], '#aaa');
+        const templates = pack.templates || [];
+        const hasCover = templates.includes('cover');
+
+        // Preview section with iframe
+        const previewWrapper = document.createElement('div');
+        previewWrapper.className = 'gallery-preview-wrapper';
+
+        if (hasCover) {
+          const iframe = document.createElement('iframe');
+          iframe.className = 'gallery-preview-iframe';
+          iframe.src = `/packs-preview/${encodeURIComponent(pack.id)}/templates/cover.html`;
+          iframe.loading = 'lazy';
+          iframe.setAttribute('sandbox', 'allow-same-origin');
+          iframe.setAttribute('tabindex', '-1');
+          iframe.setAttribute('aria-hidden', 'true');
+
+          iframe.addEventListener('load', () => {
+            try {
+              const doc = iframe.contentDocument || iframe.contentWindow.document;
+              const slide = doc.querySelector('.slide');
+              if (slide) {
+                const rect = slide.getBoundingClientRect();
+                if (rect.width > 0 && rect.height > 0) {
+                  iframe.style.width = rect.width + 'px';
+                  iframe.style.height = rect.height + 'px';
+                  const wrapperWidth = previewWrapper.clientWidth || 360;
+                  iframe.style.transform = `scale(${wrapperWidth / rect.width})`;
+                }
+              }
+            } catch (_) { /* cross-origin */ }
+            iframe.style.opacity = '1';
+          });
+
+          previewWrapper.appendChild(iframe);
+        } else {
+          // Fallback: stylized color preview
+          const preview = document.createElement('div');
+          preview.className = 'gallery-preview-fallback';
+          preview.style.background = bg;
+
+          const titleBar = document.createElement('div');
+          titleBar.className = 'preview-title-bar';
+          titleBar.style.background = textPrimary;
+
+          const accentBar = document.createElement('div');
+          accentBar.className = 'preview-accent-bar';
+          accentBar.style.background = accent;
+
+          const bodyBar = document.createElement('div');
+          bodyBar.className = 'preview-body-bar';
+          bodyBar.style.background = textSecondary;
+
+          preview.append(titleBar, accentBar, bodyBar);
+          previewWrapper.appendChild(preview);
+        }
+
+        // Info section
+        const info = document.createElement('div');
+        info.className = 'gallery-card-info';
+
+        const nameRow = document.createElement('div');
+        nameRow.className = 'gallery-card-name-row';
+
+        const name = document.createElement('h2');
+        name.className = 'gallery-card-name';
+        name.textContent = pack.name || pack.id;
+
+        const count = document.createElement('span');
+        count.className = 'gallery-card-count';
+        count.textContent = `${templates.length} templates`;
+
+        nameRow.append(name, count);
+
+        const desc = document.createElement('p');
+        desc.className = 'gallery-card-desc';
+        desc.textContent = PACK_DESC[pack.id] || '';
+
+        // Color swatches
+        const swatches = document.createElement('div');
+        swatches.className = 'gallery-swatches';
+        for (const c of [bg, bgSec, accent, textPrimary, textSecondary]) {
+          const swatch = document.createElement('div');
+          swatch.className = 'gallery-swatch';
+          swatch.style.background = c;
+          swatch.title = c;
+          swatches.appendChild(swatch);
+        }
+
+        // Template list
+        const templateList = document.createElement('div');
+        templateList.className = 'gallery-template-list';
+        for (const tmpl of templates) {
+          const chip = document.createElement('span');
+          chip.className = 'gallery-template-chip';
+          chip.textContent = tmpl;
+          templateList.appendChild(chip);
+        }
+
+        info.append(nameRow);
+        if (desc.textContent) info.appendChild(desc);
+        info.appendChild(swatches);
+        if (templates.length > 0) info.appendChild(templateList);
+
+        card.append(previewWrapper, info);
+        grid.appendChild(card);
+      }
+    }
+
+    loadGallery();
+
+    // Theme toggle
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('sg-theme', next);
+    });
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+      if (!localStorage.getItem('sg-theme')) {
+        document.documentElement.setAttribute('data-theme', e.matches ? 'light' : 'dark');
+      }
+    });
+  </script>
+</body>
+</html>

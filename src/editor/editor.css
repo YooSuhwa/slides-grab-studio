@@ -2676,6 +2676,16 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .pack-browse-all {
+      display: block;
+      text-align: center;
+      font-size: 12px;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 8px 0 4px;
+      transition: opacity var(--transition);
+    }
+    .pack-browse-all:hover { opacity: 0.8; }
 
     /* ── Pack Preview Modal ── */
     .pack-modal-backdrop {
