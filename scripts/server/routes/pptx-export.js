@@ -38,23 +38,44 @@ export function createPptxExportRouter(ctx) {
       try {
         const pres = new PptxGenJS();
         pres.layout = 'LAYOUT_WIDE';
+        const warnings = [];
 
         for (let i = 0; i < slideFiles.length; i++) {
           const filePath = resolve(slidesDirectory, slideFiles[i]);
-          await html2pptx(filePath, pres);
+          try {
+            await html2pptx(filePath, pres);
+          } catch (slideErr) {
+            console.warn(`[pptx-export] Skipped ${slideFiles[i]}: ${slideErr.message}`);
+            warnings.push(slideFiles[i]);
+            // Add a blank slide as placeholder so slide numbering stays consistent
+            pres.addSlide();
+          }
           broadcastSSE(ctx.sseClients, 'pptxExportProgress', {
             exportId, current: i + 1, total: slideFiles.length, file: slideFiles[i],
+            skipped: warnings.includes(slideFiles[i]),
           });
+        }
+
+        const converted = slideFiles.length - warnings.length;
+        if (converted === 0) {
+          broadcastSSE(ctx.sseClients, 'pptxExportFinished', {
+            exportId, success: false,
+            message: `All ${slideFiles.length} slides failed to convert. Check slide HTML structure.`,
+          });
+          return;
         }
 
         const arrayBuf = await pres.write({ outputType: 'arraybuffer' });
         pptxExportFiles.set(exportId, Buffer.from(arrayBuf));
 
+        const warnMsg = warnings.length > 0
+          ? ` (${warnings.length} skipped: ${warnings.join(', ')})`
+          : '';
         broadcastSSE(ctx.sseClients, 'pptxExportFinished', {
           exportId,
           success: true,
           downloadUrl: `/api/pptx-export/${exportId}/download.pptx`,
-          message: `Exported ${slideFiles.length} slides to PPTX.`,
+          message: `Exported ${converted}/${slideFiles.length} slides to PPTX.${warnMsg}`,
         });
       } catch (err) {
         console.error('[pptx-export] Export failed:', err);
