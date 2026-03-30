@@ -72,11 +72,13 @@ function packIdToName(id) {
  * @param {*} value
  * @returns {string}
  */
+/** Valid pack ID pattern: lowercase alphanumeric, hyphens, underscores. */
+export const PACK_NAME_REGEX = /^[a-z0-9][a-z0-9\-_]*$/;
+
 export function normalizePackId(value) {
   if (typeof value !== 'string') return '';
   const trimmed = value.trim();
-  // Allow kebab-case and snake_case alphanumeric IDs (prevent path traversal)
-  if (!trimmed || !/^[a-z0-9][a-z0-9\-_]*$/.test(trimmed)) return '';
+  if (!trimmed || !PACK_NAME_REGEX.test(trimmed)) return '';
   return trimmed;
 }
 
@@ -86,7 +88,7 @@ export function normalizePackId(value) {
  * @returns {{ path: string, source: 'local' | 'package' } | null}
  */
 export function resolvePack(packId) {
-  if (!packId || !/^[a-z0-9][a-z0-9\-_]*$/.test(packId)) return null;
+  if (!packId || !PACK_NAME_REGEX.test(packId)) return null;
 
   const localPath = join(getCwd(), 'packs', packId);
   if (existsSync(join(localPath, 'theme.css'))) {

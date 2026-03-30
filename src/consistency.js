@@ -141,28 +141,22 @@ export async function checkConsistency(slidesDir, options = {}) {
 
   const themeColors = options.themeColors || new Set();
 
-  // Collect per-slide data
-  const slideData = [];
-  for (const file of slideFiles) {
+  // Collect per-slide data (parallel I/O)
+  const slideData = await Promise.all(slideFiles.map(async (file) => {
     const html = await readFile(join(slidesDir, file), 'utf-8');
     const fontSizes = extractFontSizes(html);
     const classified = fontSizes.map(fs => ({
       ...fs,
       ...classifyFontSize(fs.size, fs.unit),
     }));
-    const titleSizes = classified.filter(c => c.isTitle).map(c => c.ptSize);
-    const bodySizes = classified.filter(c => !c.isTitle).map(c => c.ptSize);
-    const colors = extractColors(html);
-    const spacing = extractSpacing(html);
-
-    slideData.push({
+    return {
       file,
-      titleSizes,
-      bodySizes,
-      colors,
-      spacing,
-    });
-  }
+      titleSizes: classified.filter(c => c.isTitle).map(c => c.ptSize),
+      bodySizes: classified.filter(c => !c.isTitle).map(c => c.ptSize),
+      colors: extractColors(html),
+      spacing: extractSpacing(html),
+    };
+  }));
 
   // 1. Check title font size consistency (flag if varies > 2pt)
   const allTitleMedians = slideData

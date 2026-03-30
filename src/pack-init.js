@@ -9,12 +9,9 @@
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { PACK_NAME_REGEX } from './resolve.js';
 
-/**
- * Regex for valid pack names: lowercase alphanumeric, hyphens, underscores.
- * Must start with a letter or digit (no leading hyphens/underscores).
- */
-export const PACK_NAME_REGEX = /^[a-z0-9][a-z0-9\-_]*$/;
+export { PACK_NAME_REGEX };
 
 /**
  * Validate a pack name.

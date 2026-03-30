@@ -217,12 +217,15 @@ function delay(ms) {
 
 function waitForIframeLoad(iframeEl) {
   return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      iframeEl.removeEventListener('load', onLoad);
+      resolve();
+    }, 3000);
     const onLoad = () => {
+      clearTimeout(timer);
       iframeEl.removeEventListener('load', onLoad);
       resolve();
     };
     iframeEl.addEventListener('load', onLoad);
-    // Timeout fallback
-    setTimeout(resolve, 3000);
   });
 }

@@ -21,12 +21,12 @@ function getHistory(slide) {
 export function pushSnapshot(slide, html) {
   if (!slide || !html) return;
   const h = getHistory(slide);
-  // Drop any forward history
-  h.stack = h.stack.slice(0, h.index + 1);
+  // Skip if identical to current snapshot
+  if (h.index >= 0 && h.stack[h.index] === html) return;
+  h.stack.splice(h.index + 1);
   h.stack.push(html);
-  // Trim to max
   if (h.stack.length > MAX_HISTORY) {
-    h.stack = h.stack.slice(h.stack.length - MAX_HISTORY);
+    h.stack.splice(0, h.stack.length - MAX_HISTORY);
   }
   h.index = h.stack.length - 1;
 }
