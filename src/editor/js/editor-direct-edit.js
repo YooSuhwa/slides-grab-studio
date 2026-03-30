@@ -5,6 +5,7 @@ import { slideIframe } from './editor-dom.js';
 import { currentSlideFile, getDirectSaveState, setStatus } from './editor-utils.js';
 import { addChatMessage } from './editor-chat.js';
 import { getSelectedObjectElement, renderObjectSelection, updateObjectEditorControls, readSelectedObjectStyleState } from './editor-select.js';
+import { pushSnapshot } from './editor-history.js';
 
 export function serializeSlideDocument(doc) {
   if (!doc?.documentElement) return '';
@@ -12,7 +13,7 @@ export function serializeSlideDocument(doc) {
   return `${doctype}\n${doc.documentElement.outerHTML}`;
 }
 
-async function persistDirectSlideHtml(slide, html, message) {
+export async function persistDirectSlideHtml(slide, html, message) {
   if (!slide || !html) return;
 
   try {
@@ -102,6 +103,9 @@ export function applyTextDecorationToken(el, token, shouldEnable) {
 export function mutateSelectedObject(mutator, message, { delay = 0, preserveTextInput = false } = {}) {
   const selected = getSelectedObjectElement();
   if (!selected) return;
+  const slide = currentSlideFile();
+  const htmlBefore = serializeSlideDocument(slideIframe.contentDocument);
+  if (slide && htmlBefore) pushSnapshot(slide, htmlBefore);
   mutator(selected);
   renderObjectSelection();
   updateObjectEditorControls({ preserveTextInput });

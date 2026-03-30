@@ -29,8 +29,9 @@ import {
   clearHoveredObject, getSelectableTargetAt, readSelectedObjectStyleState,
 } from './editor-select.js';
 import {
-  mutateSelectedObject, applyTextDecorationToken,
+  mutateSelectedObject, applyTextDecorationToken, serializeSlideDocument, persistDirectSlideHtml,
 } from './editor-direct-edit.js';
+import { undo, redo } from './editor-history.js';
 import { updateSendState, applyChanges } from './editor-send.js';
 import { goToSlide } from './editor-navigation.js';
 import { connectSSE, loadRunsInitial } from './editor-sse.js';
@@ -240,6 +241,38 @@ document.addEventListener('keydown', (event) => {
     return;
   }
 
+  // Undo / Redo — available even outside text fields
+  if ((event.ctrlKey || event.metaKey) && !inTextField) {
+    if (event.key === 'z' && !event.shiftKey) {
+      event.preventDefault();
+      const slide = currentSlideFile();
+      if (slide) {
+        const html = undo(slide);
+        if (html) {
+          slideIframe.contentDocument.open();
+          slideIframe.contentDocument.write(html);
+          slideIframe.contentDocument.close();
+          void persistDirectSlideHtml(slide, html, 'Undo applied.');
+        }
+      }
+      return;
+    }
+    if ((event.key === 'z' && event.shiftKey) || event.key === 'y') {
+      event.preventDefault();
+      const slide = currentSlideFile();
+      if (slide) {
+        const html = redo(slide);
+        if (html) {
+          slideIframe.contentDocument.open();
+          slideIframe.contentDocument.write(html);
+          slideIframe.contentDocument.close();
+          void persistDirectSlideHtml(slide, html, 'Redo applied.');
+        }
+      }
+      return;
+    }
+  }
+
   if (event.key === 'Escape') {
     // Close shortcuts modal if open
     if (shortcutsModal && !shortcutsModal.hidden) {
@@ -256,6 +289,29 @@ document.addEventListener('keydown', (event) => {
   if (event.key === '?' && !event.ctrlKey && !event.metaKey) {
     event.preventDefault();
     toggleShortcutsModal();
+    return;
+  }
+
+  // Tool mode shortcuts
+  if (event.key === 'd' || event.key === 'D') {
+    event.preventDefault();
+    setToolMode(TOOL_MODE_DRAW);
+    return;
+  }
+  if (event.key === 's' || event.key === 'S') {
+    event.preventDefault();
+    setToolMode(TOOL_MODE_SELECT);
+    return;
+  }
+
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault();
+    void goToSlide(state.currentIndex - 1);
+    return;
+  }
+  if (event.key === 'ArrowRight') {
+    event.preventDefault();
+    void goToSlide(state.currentIndex + 1);
     return;
   }
 
