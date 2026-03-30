@@ -492,7 +492,7 @@ if (sidebarToggle && editorSidebar) {
 
   sidebarToggle.addEventListener('click', () => {
     const isCollapsed = editorSidebar.classList.toggle('collapsed');
-    sidebarToggle.textContent = isCollapsed ? '\u25b8' : '\u25c2';
+    sidebarToggle.textContent = isCollapsed ? '\u25c2' : '\u25b8';
     localStorage.setItem('sidebar-collapsed', isCollapsed ? 'true' : 'false');
     // Recalculate slide scale after sidebar transition completes
     editorSidebar.addEventListener('transitionend', scaleSlide, { once: true });
