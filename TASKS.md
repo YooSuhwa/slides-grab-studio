@@ -17,7 +17,7 @@
 - [ ] 2.5 키보드 단축키 확장 (D=Draw, S=Select, Delete, Duplicate 등)
 
 ### 1C. Validation & CLI
-- [ ] 5.1 접근성 검증 (contrast ratio, alt text)
+- [x] 5.1 접근성 검증 (contrast ratio, alt text)
 - [x] 4.2 커스텀 Pack 생성 CLI (`slides-grab pack init <name>`)
 
 ---
