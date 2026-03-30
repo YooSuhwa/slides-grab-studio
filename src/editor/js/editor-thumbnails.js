@@ -8,7 +8,7 @@ export function renderThumbnailStrip() {
   slideStrip.innerHTML = '';
 
   state.slides.forEach((slide, i) => {
-    const thumb = document.createElement('button');
+    const thumb = document.createElement('div');
     thumb.className = 'slide-thumb' + (i === state.currentIndex ? ' active' : '');
     thumb.setAttribute('role', 'tab');
     thumb.setAttribute('aria-selected', i === state.currentIndex ? 'true' : 'false');
@@ -16,6 +16,16 @@ export function renderThumbnailStrip() {
     thumb.title = slide;
     thumb.dataset.index = i;
 
+    // Mini preview iframe (scaled down)
+    const preview = document.createElement('iframe');
+    preview.className = 'slide-thumb-preview';
+    preview.src = `/slides/${slide}`;
+    preview.tabIndex = -1;
+    preview.setAttribute('aria-hidden', 'true');
+    preview.loading = 'lazy';
+    thumb.appendChild(preview);
+
+    // Number label overlay
     const num = document.createElement('span');
     num.className = 'slide-thumb-num';
     num.textContent = i + 1;

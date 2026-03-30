@@ -1644,7 +1644,7 @@
 
     /* ── Slide Thumbnail Strip ── */
     .slide-strip {
-      height: 52px;
+      height: 86px;
       background: var(--surface-0);
       border-bottom: 1px solid var(--border-medium);
       display: flex;
@@ -1663,23 +1663,19 @@
 
     .slide-thumb {
       flex: 0 0 auto;
-      width: 72px;
-      height: 42px;
+      width: 128px;
+      height: 72px;
       border-radius: var(--radius-xs);
       border: 1.5px solid var(--border);
       background: var(--panel-2);
       cursor: pointer;
-      transition: all var(--transition);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      transition: border-color var(--transition), box-shadow var(--transition), opacity 0.15s;
       position: relative;
       overflow: hidden;
     }
 
     .slide-thumb:hover {
       border-color: var(--border-hover);
-      background: var(--panel);
     }
 
     .slide-thumb.active {
@@ -1687,17 +1683,44 @@
       box-shadow: 0 0 0 2px rgba(252, 94, 32, 0.25);
     }
 
+    .slide-thumb-preview {
+      width: 1280px;
+      height: 720px;
+      transform: scale(0.1);
+      transform-origin: top left;
+      pointer-events: none;
+      border: none;
+      display: block;
+    }
+
     .slide-thumb-num {
-      font-size: 11px;
+      position: absolute;
+      bottom: 2px;
+      right: 4px;
+      font-size: 10px;
       font-weight: 700;
       font-family: var(--mono);
-      color: var(--text-2);
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      padding: 1px 4px;
+      border-radius: 2px;
       pointer-events: none;
       z-index: 1;
     }
 
     .slide-thumb.active .slide-thumb-num {
-      color: var(--accent-2);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* Drag-and-drop feedback */
+    .slide-thumb.dragging {
+      opacity: 0.4;
+    }
+
+    .slide-thumb.drag-over {
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 0 2px rgba(252, 94, 32, 0.35);
     }
 
     /* ── Export Dropdown ── */
