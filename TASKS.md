@@ -47,7 +47,7 @@ Phase 2 머지 후 진행. 새 라우트 모듈에 엔드포인트 추가.
 - [ ] NEW: 프레젠테이션 모드 (전체화면 + fade 전환 + 노트 뷰)
 
 ### 3C. DX
-- [ ] 7.1 에디터 Hot Reload (fsWatch → SSE reload 이벤트)
+- [x] 7.1 에디터 Hot Reload (fsWatch → SSE devReload 이벤트)
 
 ---
 
