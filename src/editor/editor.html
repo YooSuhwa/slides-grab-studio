@@ -4134,6 +4134,13 @@
         <button id="btn-prev" title="Previous slide (Left arrow)" aria-label="Previous slide">&#9664; Prev</button>
         <span class="slide-counter" id="slide-counter" aria-live="polite">-- / --</span>
         <button id="btn-next" title="Next slide (Right arrow)" aria-label="Next slide">Next &#9654;</button>
+        <span style="width:1px;height:18px;background:var(--border-color,#444);margin:0 4px;opacity:0.4;"></span>
+        <button class="nav-bar-btn ghost" id="btn-duplicate-slide" title="Duplicate slide (Ctrl+Shift+D)" aria-label="Duplicate slide">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        <button class="nav-bar-btn ghost" id="btn-delete-slide" title="Delete slide (Del)" aria-label="Delete slide">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
       </div>
       <div class="nav-spacer"></div>
       <button class="nav-bar-btn btn-new-deck" id="btn-new-deck" title="New Presentation">+ New</button>
@@ -4587,28 +4594,49 @@
   </div>
   <div class="figma-toast" id="figma-toast"></div>
 
+  <div class="shortcuts-overlay" id="delete-slide-modal" hidden>
+    <div class="shortcuts-modal" role="dialog" aria-label="Delete slide confirmation" style="max-width:360px;">
+      <h3>Delete Slide</h3>
+      <p style="margin:8px 0 16px;opacity:0.8;">Are you sure you want to delete <strong id="delete-slide-name"></strong>?</p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="nav-bar-btn ghost" id="delete-slide-cancel">Cancel</button>
+        <button class="nav-bar-btn" id="delete-slide-confirm" style="background:#e53e3e;color:#fff;border:none;">Delete</button>
+      </div>
+    </div>
+  </div>
+
   <div class="shortcuts-overlay" id="shortcuts-modal" hidden>
     <div class="shortcuts-modal" role="dialog" aria-label="Keyboard shortcuts">
       <h3>Keyboard Shortcuts</h3>
+
+      <h4 style="margin:12px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;opacity:0.5;">Navigation</h4>
       <div class="shortcut-row">
-        <span class="shortcut-desc">Previous slide</span>
-        <div class="shortcut-keys"><span class="shortcut-key">PgUp</span></div>
+        <span class="shortcut-desc">Previous / Next slide</span>
+        <div class="shortcut-keys"><span class="shortcut-key">&larr;</span><span class="shortcut-key">&rarr;</span></div>
+      </div>
+
+      <h4 style="margin:12px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;opacity:0.5;">Tool Mode</h4>
+      <div class="shortcut-row">
+        <span class="shortcut-desc">Draw mode</span>
+        <div class="shortcut-keys"><span class="shortcut-key">D</span></div>
       </div>
       <div class="shortcut-row">
-        <span class="shortcut-desc">Next slide</span>
-        <div class="shortcut-keys"><span class="shortcut-key">PgDn</span></div>
+        <span class="shortcut-desc">Select mode</span>
+        <div class="shortcut-keys"><span class="shortcut-key">S</span></div>
       </div>
-      <div class="shortcut-row">
-        <span class="shortcut-desc">First slide</span>
-        <div class="shortcut-keys"><span class="shortcut-key">Home</span></div>
-      </div>
-      <div class="shortcut-row">
-        <span class="shortcut-desc">Last slide</span>
-        <div class="shortcut-keys"><span class="shortcut-key">End</span></div>
-      </div>
+
+      <h4 style="margin:12px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;opacity:0.5;">Editing</h4>
       <div class="shortcut-row">
         <span class="shortcut-desc">Run / Send</span>
         <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">Enter</span></div>
+      </div>
+      <div class="shortcut-row">
+        <span class="shortcut-desc">Undo</span>
+        <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">Z</span></div>
+      </div>
+      <div class="shortcut-row">
+        <span class="shortcut-desc">Redo</span>
+        <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">Shift</span><span class="shortcut-key">Z</span></div>
       </div>
       <div class="shortcut-row">
         <span class="shortcut-desc">Bold</span>
@@ -4622,12 +4650,28 @@
         <span class="shortcut-desc">Underline</span>
         <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">U</span></div>
       </div>
+
+      <h4 style="margin:12px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;opacity:0.5;">Slide Management</h4>
+      <div class="shortcut-row">
+        <span class="shortcut-desc">Duplicate slide</span>
+        <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">Shift</span><span class="shortcut-key">D</span></div>
+      </div>
+      <div class="shortcut-row">
+        <span class="shortcut-desc">Delete slide</span>
+        <div class="shortcut-keys"><span class="shortcut-key">Del</span></div>
+      </div>
+      <div class="shortcut-row">
+        <span class="shortcut-desc">Presentation mode</span>
+        <div class="shortcut-keys"><span class="shortcut-key">F5</span></div>
+      </div>
+
+      <h4 style="margin:12px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;opacity:0.5;">General</h4>
       <div class="shortcut-row">
         <span class="shortcut-desc">Shortcuts help</span>
         <div class="shortcut-keys"><span class="shortcut-key">?</span></div>
       </div>
       <div class="shortcut-row">
-        <span class="shortcut-desc">Close / Blur</span>
+        <span class="shortcut-desc">Close modal / Exit text field</span>
         <div class="shortcut-keys"><span class="shortcut-key">Esc</span></div>
       </div>
       <button class="shortcuts-close" id="shortcuts-close">Close</button>
