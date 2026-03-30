@@ -276,6 +276,10 @@ export function connectSSE() {
     }
   });
 
+  evtSource.addEventListener('devReload', () => {
+    window.location.reload();
+  });
+
   evtSource.onerror = () => {
     statusDot.classList.remove('connected');
     statusDot.classList.add('disconnected');

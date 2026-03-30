@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { createServerState, ALL_MODELS } from './server/state.js';
 import { setupFileWatcher, closeBrowser } from './server/helpers.js';
+import { setupDevReloadWatcher } from './server/dev-reload.js';
 import { createStaticRouter } from './server/routes/static.js';
 import { createSlidesRouter } from './server/routes/slides.js';
 import { createDecksRouter } from './server/routes/decks.js';
@@ -248,6 +249,9 @@ async function startServer(opts) {
   const slidesDirectory = ctx.getSlidesDir();
   if (slidesDirectory) setupFileWatcher(ctx, slidesDirectory);
 
+  // Hot-reload watcher for editor JS/CSS (development mode only)
+  const devReloadHandle = setupDevReloadWatcher(ctx);
+
   const server = app.listen(opts.port, () => {
     const mode = opts.browseMode ? 'BROWSE' : opts.createMode ? 'CREATE' : 'EDIT';
     process.stdout.write('\n  slides-grab editor\n');
@@ -265,6 +269,7 @@ async function startServer(opts) {
   async function shutdown() {
     process.stdout.write('\n[editor] Shutting down...\n');
     if (ctx.watcher) ctx.watcher.close();
+    if (devReloadHandle) devReloadHandle.close();
     for (const client of ctx.sseClients) client.end();
     ctx.sseClients.clear();
     for (const ws of ctx.figmaClients) ws.close();
