@@ -3,10 +3,17 @@
  *
  * The pure functions inside src/html2pptx.cjs are embedded in page.evaluate()
  * and not exported. We reimplement the logic here to test it independently.
+ *
+ * Font metric helpers are exported from the module and tested directly.
  */
 
-import { describe, it } from 'node:test';
+import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const html2pptx = require('../../src/html2pptx.cjs');
+const { _measureTextWidth: measureTextWidth, _loadFont: loadFont, _getFontFileNames: getFontFileNames, _fontCache: fontCache } = html2pptx;
 
 // ── Constants (from src/html2pptx.cjs lines 34-36, 440) ──
 
@@ -310,5 +317,141 @@ describe('image source classification', () => {
   it('identifies file:// protocol', () => {
     const src = 'file:///Users/test/image.png';
     assert.ok(src.startsWith('file://'));
+  });
+});
+
+// ── Font metrics tests (using exported helpers from src/html2pptx.cjs) ──
+
+describe('getFontFileNames', () => {
+  it('returns regular variants for non-bold non-italic', () => {
+    const names = getFontFileNames('Arial', false, false);
+    assert.ok(names.includes('Arial'));
+    assert.ok(names.includes('Arial-Regular'));
+  });
+
+  it('returns bold variants first for bold text', () => {
+    const names = getFontFileNames('Arial', true, false);
+    assert.ok(names.includes('Arial Bold'));
+    assert.ok(names.includes('ArialBold'));
+    assert.ok(names.includes('Arial-Bold'));
+    // Should also fall back to regular
+    assert.ok(names.includes('Arial'));
+    // Bold variants should come before regular
+    assert.ok(names.indexOf('Arial Bold') < names.indexOf('Arial'));
+  });
+
+  it('returns italic variants first for italic text', () => {
+    const names = getFontFileNames('Arial', false, true);
+    assert.ok(names.includes('Arial Italic'));
+    assert.ok(names.includes('ArialItalic'));
+  });
+
+  it('returns bold italic variants for bold+italic text', () => {
+    const names = getFontFileNames('Arial', true, true);
+    assert.ok(names.includes('Arial Bold Italic'));
+    assert.ok(names.includes('ArialBoldItalic'));
+  });
+
+  it('handles multi-word font names', () => {
+    const names = getFontFileNames('Times New Roman', true, false);
+    assert.ok(names.includes('Times New Roman Bold'));
+    assert.ok(names.includes('TimesNewRomanBold'));
+  });
+});
+
+describe('measureTextWidth', () => {
+  beforeEach(() => {
+    fontCache.clear();
+  });
+
+  it('returns 0 for empty text', () => {
+    assert.equal(measureTextWidth('', 'Arial', 12, false, false), 0);
+  });
+
+  it('returns 0 for null font family', () => {
+    assert.equal(measureTextWidth('Hello', null, 12, false, false), 0);
+  });
+
+  it('returns 0 for zero font size', () => {
+    assert.equal(measureTextWidth('Hello', 'Arial', 0, false, false), 0);
+  });
+
+  it('returns 0 for unavailable font', () => {
+    const result = measureTextWidth('Hello', 'NonExistentFont12345', 12, false, false);
+    assert.equal(result, 0);
+  });
+
+  it('returns positive width for Arial on macOS', () => {
+    // This test only runs on macOS where Arial.ttf is available
+    if (process.platform !== 'darwin') return;
+    const width = measureTextWidth('Hello World', 'Arial', 12, false, false);
+    assert.ok(width > 0, `Expected positive width, got ${width}`);
+  });
+
+  it('returns wider measurement for bold text', () => {
+    if (process.platform !== 'darwin') return;
+    const regular = measureTextWidth('Hello World', 'Arial', 12, false, false);
+    const bold = measureTextWidth('Hello World', 'Arial', 12, true, false);
+    // Bold text should be wider (or at least the same, if bold variant falls back to regular)
+    assert.ok(bold >= regular, `Bold (${bold}) should be >= regular (${regular})`);
+  });
+
+  it('returns wider measurement for larger font size', () => {
+    if (process.platform !== 'darwin') return;
+    const small = measureTextWidth('Hello', 'Arial', 12, false, false);
+    const large = measureTextWidth('Hello', 'Arial', 24, false, false);
+    assert.ok(large > small, `24pt (${large}) should be wider than 12pt (${small})`);
+    // Width should scale linearly with font size
+    const ratio = large / small;
+    assert.ok(Math.abs(ratio - 2.0) < 0.01, `Width ratio should be ~2.0, got ${ratio}`);
+  });
+
+  it('returns measurement in inches', () => {
+    if (process.platform !== 'darwin') return;
+    const width = measureTextWidth('Hello World', 'Arial', 12, false, false);
+    // 12pt Arial "Hello World" should be roughly 0.8-1.0 inches
+    assert.ok(width > 0.5 && width < 2.0, `Expected ~0.86in, got ${width}in`);
+  });
+});
+
+describe('loadFont', () => {
+  beforeEach(() => {
+    fontCache.clear();
+  });
+
+  it('returns null for non-existent font', () => {
+    const font = loadFont('NonExistentFont12345', false, false);
+    assert.equal(font, null);
+  });
+
+  it('caches font load results', () => {
+    loadFont('NonExistentFont12345', false, false);
+    assert.ok(fontCache.has('NonExistentFont12345|'));
+    assert.equal(fontCache.get('NonExistentFont12345|'), null);
+  });
+
+  it('loads Arial on macOS', () => {
+    if (process.platform !== 'darwin') return;
+    const font = loadFont('Arial', false, false);
+    assert.ok(font !== null, 'Arial should be loadable on macOS');
+    assert.ok(font.unitsPerEm > 0);
+  });
+
+  it('caches loaded font for reuse', () => {
+    if (process.platform !== 'darwin') return;
+    const font1 = loadFont('Arial', false, false);
+    const font2 = loadFont('Arial', false, false);
+    assert.strictEqual(font1, font2, 'Should return same cached instance');
+  });
+
+  it('loads different variant for bold', () => {
+    if (process.platform !== 'darwin') return;
+    const regular = loadFont('Arial', false, false);
+    const bold = loadFont('Arial', true, false);
+    // Both should load, and the cache keys should differ
+    assert.ok(regular !== null);
+    assert.ok(bold !== null);
+    assert.ok(fontCache.has('Arial|'));
+    assert.ok(fontCache.has('Arial|b'));
   });
 });

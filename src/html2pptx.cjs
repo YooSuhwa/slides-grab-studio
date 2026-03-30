@@ -28,12 +28,120 @@
 const { chromium } = require('playwright');
 const os = require('os');
 const path = require('path');
+const fs = require('fs');
 const { fileURLToPath, pathToFileURL } = require('url');
 const sharp = require('sharp');
+const opentype = require('opentype.js');
 
 const PT_PER_PX = 0.75;
 const PX_PER_IN = 96;
 const EMU_PER_IN = 914400;
+
+// ── Font metrics for accurate text width measurement ──
+
+const fontCache = new Map();
+
+// Font search paths by platform
+const FONT_PATHS = {
+  darwin: [
+    '/System/Library/Fonts/Supplemental',
+    '/Library/Fonts',
+    '/System/Library/Fonts',
+    path.join(os.homedir(), 'Library/Fonts')
+  ],
+  linux: [
+    '/usr/share/fonts/truetype',
+    '/usr/share/fonts',
+    '/usr/local/share/fonts',
+    path.join(os.homedir(), '.local/share/fonts'),
+    path.join(os.homedir(), '.fonts')
+  ],
+  win32: [
+    path.join(process.env.WINDIR || 'C:\\Windows', 'Fonts'),
+    path.join(os.homedir(), 'AppData', 'Local', 'Microsoft', 'Windows', 'Fonts')
+  ]
+};
+
+// Font file name variants to try for a given family + style combination
+function getFontFileNames(fontFamily, bold, italic) {
+  const base = fontFamily.replace(/\s+/g, '');
+  const baseSpaced = fontFamily;
+  const variants = [];
+
+  if (bold && italic) {
+    variants.push(
+      `${baseSpaced} Bold Italic`, `${base}BoldItalic`, `${base}-BoldItalic`,
+      `${base}bi`, `${base}z`
+    );
+  } else if (bold) {
+    variants.push(
+      `${baseSpaced} Bold`, `${base}Bold`, `${base}-Bold`,
+      `${base}bd`, `${base}b`
+    );
+  } else if (italic) {
+    variants.push(
+      `${baseSpaced} Italic`, `${base}Italic`, `${base}-Italic`,
+      `${base}i`
+    );
+  }
+
+  // Always fall back to regular variant
+  variants.push(baseSpaced, base, `${base}-Regular`, `${base}Regular`);
+  return variants;
+}
+
+/**
+ * Try to find and load a font file from system directories.
+ * Returns an opentype.js Font object or null if not found.
+ */
+function loadFont(fontFamily, bold, italic) {
+  const cacheKey = `${fontFamily}|${bold ? 'b' : ''}${italic ? 'i' : ''}`;
+  if (fontCache.has(cacheKey)) return fontCache.get(cacheKey);
+
+  const searchDirs = FONT_PATHS[process.platform] || [];
+  const candidates = getFontFileNames(fontFamily, bold, italic);
+  const extensions = ['.ttf', '.otf'];
+
+  for (const candidate of candidates) {
+    for (const dir of searchDirs) {
+      for (const ext of extensions) {
+        const filePath = path.join(dir, candidate + ext);
+        try {
+          if (fs.existsSync(filePath)) {
+            const font = opentype.loadSync(filePath);
+            fontCache.set(cacheKey, font);
+            return font;
+          }
+        } catch {
+          // Skip unreadable or unsupported font files (e.g. .ttc)
+        }
+      }
+    }
+  }
+
+  fontCache.set(cacheKey, null);
+  return null;
+}
+
+/**
+ * Measure the width of a text string using opentype.js font metrics.
+ * @param {string} text - The text to measure
+ * @param {string} fontFamily - CSS font-family name (first family only)
+ * @param {number} fontSizePt - Font size in points
+ * @param {boolean} bold - Whether text is bold
+ * @param {boolean} italic - Whether text is italic
+ * @returns {number} Width in inches, or 0 if font metrics unavailable
+ */
+function measureTextWidth(text, fontFamily, fontSizePt, bold, italic) {
+  if (!text || !fontFamily || !fontSizePt) return 0;
+
+  const font = loadFont(fontFamily, bold, italic);
+  if (!font) return 0;
+
+  // getAdvanceWidth returns width in points (includes kerning)
+  const widthPt = font.getAdvanceWidth(text, fontSizePt);
+  return widthPt / 72; // Convert points to inches
+}
 
 async function launchBrowser(tmpDir) {
   const launchOptions = { env: { TMPDIR: tmpDir } };
@@ -386,22 +494,56 @@ function addElements(slideData, targetSlide, pres) {
       let adjustedX = el.position.x;
       let adjustedW = el.position.w;
 
-      // Make single-line text 2% wider to account for underestimate
       if (isSingleLine) {
-        const widthIncrease = el.position.w * 0.02;
-        const align = el.style.align;
+        // Extract plain text from element (string or array of runs)
+        const plainText = typeof el.text === 'string'
+          ? el.text
+          : Array.isArray(el.text)
+            ? el.text.map(r => r.text || '').join('')
+            : '';
 
-        if (align === 'center') {
-          // Center: expand both sides
-          adjustedX = el.position.x - (widthIncrease / 2);
-          adjustedW = el.position.w + widthIncrease;
-        } else if (align === 'right') {
-          // Right: expand to the left
-          adjustedX = el.position.x - widthIncrease;
-          adjustedW = el.position.w + widthIncrease;
+        // Try font-metric-based measurement for accurate width
+        const measuredWidthIn = measureTextWidth(
+          plainText,
+          el.style.fontFace,
+          el.style.fontSize,
+          el.style.bold || false,
+          el.style.italic || false
+        );
+
+        if (measuredWidthIn > 0) {
+          // Use measured width if it exceeds the HTML-reported width
+          // Add small padding (2pt total) to account for rounding
+          const paddingIn = 2 / 72;
+          const targetW = measuredWidthIn + paddingIn;
+          if (targetW > el.position.w) {
+            const widthIncrease = targetW - el.position.w;
+            const align = el.style.align;
+
+            if (align === 'center') {
+              adjustedX = el.position.x - (widthIncrease / 2);
+              adjustedW = targetW;
+            } else if (align === 'right') {
+              adjustedX = el.position.x - widthIncrease;
+              adjustedW = targetW;
+            } else {
+              adjustedW = targetW;
+            }
+          }
         } else {
-          // Left (default): expand to the right
-          adjustedW = el.position.w + widthIncrease;
+          // Fallback: widen by 2% when font metrics unavailable
+          const widthIncrease = el.position.w * 0.02;
+          const align = el.style.align;
+
+          if (align === 'center') {
+            adjustedX = el.position.x - (widthIncrease / 2);
+            adjustedW = el.position.w + widthIncrease;
+          } else if (align === 'right') {
+            adjustedX = el.position.x - widthIncrease;
+            adjustedW = el.position.w + widthIncrease;
+          } else {
+            adjustedW = el.position.w + widthIncrease;
+          }
         }
       }
 
@@ -1165,3 +1307,9 @@ async function html2pptx(htmlFile, pres, options = {}) {
 }
 
 module.exports = html2pptx;
+
+// Expose font metric helpers for testing
+html2pptx._measureTextWidth = measureTextWidth;
+html2pptx._loadFont = loadFont;
+html2pptx._getFontFileNames = getFontFileNames;
+html2pptx._fontCache = fontCache;
