@@ -9,6 +9,7 @@ import {
   resizeSvg,
 } from '../../html2svg.js';
 
+import { SLIDE_PX, SCREENSHOT_SCALE } from '../../../src/slide-dimensions.js';
 import { broadcastSSE } from '../sse.js';
 import { listSlideFiles, getScreenshotBrowser, withScreenshotPage } from '../helpers.js';
 
@@ -29,7 +30,7 @@ export function createPdfFigmaRouter(ctx) {
 
   async function renderSlideToPdfBuffer(browser, slideFile) {
     const context = await browser.newContext({
-      viewport: { width: 1280, height: 720 },
+      viewport: { width: SLIDE_PX.width, height: SLIDE_PX.height },
       deviceScaleFactor: PDF_SCALE,
     });
     const page = await context.newPage();
@@ -38,14 +39,14 @@ export function createPdfFigmaRouter(ctx) {
       await page.goto(slideUrl, { waitUntil: 'load' });
       await page.evaluate(async () => { if (document.fonts?.ready) await document.fonts.ready; });
 
-      const bodySize = await page.evaluate(() => {
+      const bodySize = await page.evaluate((fallback) => {
         const body = document.body;
         const style = window.getComputedStyle(body);
         return {
-          width: Math.round(parseFloat(style.width) || body.getBoundingClientRect().width || 1280),
-          height: Math.round(parseFloat(style.height) || body.getBoundingClientRect().height || 720),
+          width: Math.round(parseFloat(style.width) || body.getBoundingClientRect().width || fallback.width),
+          height: Math.round(parseFloat(style.height) || body.getBoundingClientRect().height || fallback.height),
         };
-      });
+      }, SLIDE_PX);
 
       await page.setViewportSize({ width: bodySize.width, height: bodySize.height });
       await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
@@ -122,14 +123,14 @@ export function createPdfFigmaRouter(ctx) {
 
   router.post('/api/figma-export', async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    const { scope, slide, scale = 1, width = 1920, height = 1080 } = req.body ?? {};
+    const { scope, slide, scale = SCREENSHOT_SCALE, width = SLIDE_PX.width, height = SLIDE_PX.height } = req.body ?? {};
     if (!['current', 'all'].includes(scope)) return res.status(400).json({ error: 'scope must be current or all' });
     if (ctx.figmaClients.size === 0) return res.status(400).json({ error: 'No Figma plugin connected.' });
     if (activeFigmaExport) return res.status(409).json({ error: 'A Figma export is already in progress.' });
 
-    const numScale = Number(scale) || 1;
-    const numW = Math.max(320, Math.min(7680, Math.round(Number(width) || 1920)));
-    const numH = Math.max(180, Math.min(4320, Math.round(Number(height) || 1080)));
+    const numScale = Number(scale) || SCREENSHOT_SCALE;
+    const numW = Math.max(320, Math.min(7680, Math.round(Number(width) || SLIDE_PX.width)));
+    const numH = Math.max(180, Math.min(4320, Math.round(Number(height) || SLIDE_PX.height)));
     const slidesDirectory = ctx.getSlidesDir();
 
     let slideFiles;

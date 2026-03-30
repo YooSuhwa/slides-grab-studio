@@ -11,6 +11,7 @@ import {
   getOutputFileName,
 } from '../../html2svg.js';
 
+import { SLIDE_PX } from '../../../src/slide-dimensions.js';
 import { broadcastSSE } from '../sse.js';
 import { listSlideFiles, withScreenshotPage } from '../helpers.js';
 
@@ -29,14 +30,14 @@ export function createExportRouter(ctx) {
   const svgExportZips = new Map();
 
   router.post('/api/svg-export', async (req, res) => {
-    const { scope, slide, format = 'svg', scale = 1, width = 1280, height = 720, outline = false } = req.body ?? {};
+    const { scope, slide, format = 'svg', scale = 1, width = SLIDE_PX.width, height = SLIDE_PX.height, outline = false } = req.body ?? {};
 
     if (!['svg', 'png'].includes(format)) return res.status(400).json({ error: 'format must be svg or png' });
     if (!['current', 'all'].includes(scope)) return res.status(400).json({ error: 'scope must be current or all' });
 
     const numScale = Number(scale) || 1;
-    const numW = Math.max(320, Math.min(7680, Math.round(Number(width) || 1280)));
-    const numH = Math.max(180, Math.min(4320, Math.round(Number(height) || 720)));
+    const numW = Math.max(320, Math.min(7680, Math.round(Number(width) || SLIDE_PX.width)));
+    const numH = Math.max(180, Math.min(4320, Math.round(Number(height) || SLIDE_PX.height)));
     const useOutline = Boolean(outline) && format === 'svg';
     const slidesDirectory = ctx.getSlidesDir();
 
