@@ -45,12 +45,18 @@ export async function enterPresentationMode() {
   notesVisible = false;
 
   overlay.hidden = false;
+  overlay.tabIndex = -1;
   if (notesBar) notesBar.hidden = true;
+
+  // Request browser fullscreen on the overlay
+  try { await overlay.requestFullscreen?.(); } catch { /* user denied or unsupported */ }
 
   await showSlide(presentIndex);
   fitIframe();
+  overlay.focus();
 
   document.addEventListener('keydown', onPresentKeydown);
+  document.addEventListener('fullscreenchange', onFullscreenChange);
   window.addEventListener('resize', fitIframe);
 }
 
@@ -58,12 +64,29 @@ export function exitPresentationMode() {
   if (!active) return;
   active = false;
 
+  if (iframe) {
+    try { iframe.contentWindow?.removeEventListener('keydown', onIframeKeydown); } catch { /* ok */ }
+  }
+
+  // Exit browser fullscreen if active
+  if (document.fullscreenElement) {
+    document.exitFullscreen?.().catch(() => {});
+  }
+
   if (overlay) overlay.hidden = true;
   if (notesBar) notesBar.hidden = true;
   notesVisible = false;
 
   document.removeEventListener('keydown', onPresentKeydown);
+  document.removeEventListener('fullscreenchange', onFullscreenChange);
   window.removeEventListener('resize', fitIframe);
+}
+
+/** If user exits fullscreen via browser (e.g. Esc handled by browser), also exit presentation mode */
+function onFullscreenChange() {
+  if (!document.fullscreenElement && active) {
+    exitPresentationMode();
+  }
 }
 
 // ── Navigation ──────────────────────────────────────────────────────
@@ -84,8 +107,10 @@ async function showSlide(index) {
   if (iframe) {
     iframe.src = `/slides/${slideFile}`;
     await waitForIframeLoad(iframe);
+    bindIframeKeydown(iframe);
     fitIframe();
     iframe.classList.remove('fade-out');
+    if (overlay) overlay.focus();
   }
 
   // Update counter
@@ -114,40 +139,35 @@ async function prevSlide() {
 
 function onPresentKeydown(event) {
   if (!active) return;
+  const key = event.key;
+  const code = event.code;
 
-  switch (event.key) {
-    case 'Escape':
-      event.preventDefault();
-      exitPresentationMode();
-      break;
-    case 'ArrowRight':
-    case 'ArrowDown':
-    case ' ':
-    case 'PageDown':
-      event.preventDefault();
-      nextSlide();
-      break;
-    case 'ArrowLeft':
-    case 'ArrowUp':
-    case 'PageUp':
-      event.preventDefault();
-      prevSlide();
-      break;
-    case 'Home':
-      event.preventDefault();
-      showSlide(0);
-      break;
-    case 'End':
-      event.preventDefault();
-      showSlide(state.slides.length - 1);
-      break;
-    case 'n':
-    case 'N':
-      event.preventDefault();
-      toggleNotes();
-      break;
-    default:
-      break;
+  // Escape — exit (note: in fullscreen the browser may consume the first Esc)
+  if (key === 'Escape') {
+    event.preventDefault();
+    exitPresentationMode();
+    return;
+  }
+
+  // Next slide
+  if (key === 'ArrowRight' || key === 'ArrowDown' || key === ' ' || key === 'PageDown') {
+    event.preventDefault();
+    nextSlide();
+    return;
+  }
+
+  // Previous slide
+  if (key === 'ArrowLeft' || key === 'ArrowUp' || key === 'PageUp') {
+    event.preventDefault();
+    prevSlide();
+    return;
+  }
+
+  // N — toggle notes (code-based for Korean IME)
+  if (code === 'KeyN') {
+    event.preventDefault();
+    toggleNotes();
+    return;
   }
 }
 
@@ -198,10 +218,10 @@ function fitIframe() {
     }
   } catch { /* cross-origin */ }
 
-  // Scale to fit
+  // Scale to fit — no upper cap so slides fill the screen in fullscreen
   const scaleX = availW / slideW;
   const scaleY = availH / slideH;
-  const scale = Math.min(scaleX, scaleY, 1.5);
+  const scale = Math.min(scaleX, scaleY);
 
   iframe.style.width = `${slideW}px`;
   iframe.style.height = `${slideH}px`;
@@ -210,6 +230,20 @@ function fitIframe() {
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────
+
+/** Forward keydown events from inside the presentation iframe to the main handler */
+function bindIframeKeydown(iframeEl) {
+  try {
+    const win = iframeEl.contentWindow;
+    if (!win) return;
+    win.removeEventListener('keydown', onIframeKeydown);
+    win.addEventListener('keydown', onIframeKeydown);
+  } catch { /* cross-origin */ }
+}
+
+function onIframeKeydown(event) {
+  onPresentKeydown(event);
+}
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
