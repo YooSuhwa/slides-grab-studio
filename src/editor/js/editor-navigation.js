@@ -12,6 +12,7 @@ import { renderObjectSelection, updateObjectEditorControls } from './editor-sele
 import { flushDirectSaveForSlide } from './editor-direct-edit.js';
 import { updateSendState } from './editor-send.js';
 import { updateActiveThumbnail } from './editor-thumbnails.js';
+import { loadNotes } from './editor-notes.js';
 
 export function persistCurrentSlideDraft() {
   const slide = currentSlideFile();
@@ -56,5 +57,6 @@ export async function goToSlide(index) {
   updateObjectEditorControls();
   updateSendState();
   updateActiveThumbnail(index);
+  void loadNotes(slide);
   setStatus(`Loaded ${slide}`);
 }
