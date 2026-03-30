@@ -284,6 +284,7 @@ async function startServer(opts) {
   process.on('SIGTERM', shutdown);
 }
 
+let opts;
 try {
   opts = parseArgs(process.argv.slice(2));
 } catch (error) {
