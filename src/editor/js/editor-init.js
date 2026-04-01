@@ -41,6 +41,7 @@ import { connectSSE, loadRunsInitial } from './editor-sse.js';
 import { openExportModal } from './editor-svg-export.js';
 import { openPdfExportModal } from './editor-pdf-export.js';
 import { openPptxExportModal } from './editor-pptx-export.js';
+import { openLogoSettingsModal } from './editor-logo.js';
 import './editor-figma-export.js';
 import { showCreationMode, hideCreationMode, loadCreationModelOptions, checkCreateMode, loadImportModelOptions, switchToImportTab, submitImport, submitDocImport } from './editor-create.js';
 import { showOutlinePhase } from './editor-outline.js';
@@ -442,12 +443,12 @@ document.addEventListener('keydown', (event) => {
     return;
   }
 
-  if (event.key === 'ArrowLeft') {
+  if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
     event.preventDefault();
     void goToSlide(state.currentIndex - 1);
     return;
   }
-  if (event.key === 'ArrowRight') {
+  if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
     event.preventDefault();
     void goToSlide(state.currentIndex + 1);
     return;
@@ -495,7 +496,7 @@ if (shortcutsModal) {
   });
 }
 
-// Sidebar toggle
+// Sidebar toggle (right chat sidebar)
 if (sidebarToggle && editorSidebar) {
   const savedState = localStorage.getItem('sidebar-collapsed');
   if (savedState === 'true') editorSidebar.classList.add('collapsed');
@@ -507,6 +508,24 @@ if (sidebarToggle && editorSidebar) {
     // Recalculate slide scale after sidebar transition completes
     editorSidebar.addEventListener('transitionend', scaleSlide, { once: true });
   });
+}
+
+// Slide sidebar toggle (left thumbnail sidebar)
+{
+  const slideSidebar = document.getElementById('slide-sidebar');
+  const slideSidebarToggle = document.getElementById('slide-sidebar-toggle');
+  if (slideSidebar && slideSidebarToggle) {
+    const savedState = localStorage.getItem('slide-sidebar-collapsed');
+    if (savedState === 'true') slideSidebar.classList.add('collapsed');
+
+    const handleToggle = () => {
+      const isCollapsed = slideSidebar.classList.toggle('collapsed');
+      localStorage.setItem('slide-sidebar-collapsed', isCollapsed ? 'true' : 'false');
+      slideSidebar.addEventListener('transitionend', scaleSlide, { once: true });
+    };
+
+    slideSidebarToggle.addEventListener('click', handleToggle);
+  }
 }
 
 // Theme toggle
@@ -522,6 +541,10 @@ window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e
     document.documentElement.setAttribute('data-theme', e.matches ? 'light' : 'dark');
   }
 });
+
+// ── Logo settings ──
+const logoBtn = document.getElementById('btn-logo-settings');
+if (logoBtn) logoBtn.addEventListener('click', () => openLogoSettingsModal());
 
 // ── Retheme modal ──
 const rethemeBtn = document.getElementById('btn-retheme');
