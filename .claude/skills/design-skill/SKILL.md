@@ -25,15 +25,16 @@ Delivers minimal, refined design based on existing templates and theme system.
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 ```
 
-### Typography Priority (Pack-First Rule)
+### Typography Priority (Pack-Guided Rule)
 
 When deciding font sizes for a slide:
 
-1. **Pack has the template** -> copy its font sizes exactly
-2. **Pack doesn't have the template** -> inspect 2-3 existing templates in the same pack to extract the actual sizes being used, then match them
-3. **No pack specified or empty pack** -> use the fallback scale from `references/design-system-full.md`
+1. **Pack has the template** → 해당 템플릿의 타이포그래피 스케일을 **기본값으로 사용**
+2. **Pack doesn't have the template** → 팩의 theme.css와 기존 템플릿의 스케일을 참고하여 매칭
+3. **No pack specified or empty pack** → `references/design-system-full.md`의 스케일 사용
 
-Never mix the design-system-full.md scale with a pack's own scale in the same deck. Consistency within the deck is more important than conforming to the reference scale.
+단, 콘텐츠의 특성(긴 한글 제목, 대형 숫자 강조, 다크 배경 등)에 따라
+스케일을 자연스럽게 조정할 수 있다. 팩의 스케일은 "범위"이지 "고정값"이 아니다.
 
 ---
 
@@ -60,15 +61,17 @@ All packs share a common set of template type names defined in `packs/common-typ
 
 ---
 
-## Template-First Design Rule
+## Template-Guided Design Rule
 
-**If the pack owns the template type, use it as the base.** Copy its HTML structure, CSS, and layout -- only replace placeholder content.
+팩에 해당 type 템플릿이 있으면, **색상 체계와 레이아웃 패턴을 참고**한다.
+단, 템플릿을 그대로 복사하지 말고 콘텐츠에 맞게 자유롭게 변형한다:
 
-**If the pack doesn't own the template type**, design the slide from scratch:
-- Get colors via `slides-grab show-theme <pack-id>`
-- Use the pack's typography scale, spacing, and visual style
-- Match the look of other slides in the same pack
-- Do NOT copy simple_light templates -- they have a different design language
+- 아웃라인에 스타일 힌트("배경은 어둡게", "대형 숫자 중심" 등)가 있으면 우선 적용
+- accent 색상(--accent)을 적극 활용: 섹션 라벨, 핵심 수치, 강조 문구
+- 슬라이드마다 콘텐츠에 최적화된 레이아웃을 선택. 같은 패턴을 3장 이상 반복하지 않기
+- 팩에 없는 type은 theme.css 색상으로 자유롭게 디자인
+
+**핵심: 팩은 "색상+분위기 가이드"이지, "레이아웃 강제"가 아니다.**
 
 ### Theme CSS Variables
 
@@ -149,4 +152,4 @@ This skill is **Stage 2**. It works from the `slide-outline.md` approved by the 
 3. **Image contract**: Store local assets in `<slides-dir>/assets/` and reference as `./assets/<file>`. Download remote images before saving. Allow `data:` URLs for self-contained slides. Never use absolute filesystem paths.
 4. **Colors**: Always include `#` prefix in CSS
 5. **Text rules**: Never place text directly in div/span
-6. **SVG export**: Emoji/special characters are auto-rasterized to PNG in SVG export. Use inline SVG icons from `references/charts-icons-library.md` for vector quality.
+6. **SVG export**: Emoji/special characters are auto-rasterized to PNG in SVG export — quality is sufficient for slides. Use emoji freely for visual richness. Only use inline SVG icons from `references/charts-icons-library.md` when precise color control or large hero icons (24pt+) are needed.
