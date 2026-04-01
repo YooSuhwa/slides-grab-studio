@@ -6,6 +6,8 @@
 import { readFile } from 'node:fs/promises';
 import { extname } from 'node:path';
 
+import { renderPdfPages } from './pdf-vision.js';
+
 /**
  * Detect source type from input string.
  * @param {string} input - File path or URL
@@ -101,16 +103,53 @@ export async function parseText(filePath) {
 }
 
 /**
+ * Extract text + render page images from a PDF.
+ * Combines parsePdf (text) with renderPdfPages (vision).
+ * @param {string|Buffer} source - File path or Buffer
+ * @param {string} outputDir - Directory for page-NN.png files
+ * @param {object} [options] - Options passed to renderPdfPages
+ * @returns {Promise<{text: string, pages: number, pageImages: string[], totalPages: number, renderedPages: number}>}
+ */
+export async function parsePdfWithVision(source, outputDir, options = {}) {
+  // Pre-read once so both parsePdf and renderPdfPages share the buffer
+  const buf = Buffer.isBuffer(source) ? source : await readFile(source);
+  const [{ text, pages }, { pageImages, totalPages, renderedPages }] = await Promise.all([
+    parsePdf(buf),
+    renderPdfPages(buf, outputDir, options),
+  ]);
+  return { text, pages, pageImages, totalPages, renderedPages };
+}
+
+/**
  * Unified parser: auto-detect type and extract text.
  * @param {string} input - File path or URL
  * @param {Buffer} [buffer] - Optional pre-read buffer (for uploaded files)
+ * @param {object} [opts] - Additional options
+ * @param {boolean} [opts.vision] - Enable vision (PDF page images)
+ * @param {string} [opts.visionOutputDir] - Directory for page images
  * @returns {Promise<{text: string, sourceType: string, meta: object}>}
  */
-export async function parseSource(input, buffer) {
+export async function parseSource(input, buffer, { vision = false, visionOutputDir = '' } = {}) {
   const sourceType = detectSourceType(input);
 
   switch (sourceType) {
     case 'pdf': {
+      if (vision && visionOutputDir) {
+        const result = buffer
+          ? await parsePdfWithVision(buffer, visionOutputDir)
+          : await parsePdfWithVision(input, visionOutputDir);
+        return {
+          text: result.text,
+          sourceType,
+          meta: {
+            pages: result.pages,
+            originalPath: input,
+            pageImages: result.pageImages,
+            totalPages: result.totalPages,
+            renderedPages: result.renderedPages,
+          },
+        };
+      }
       const { text, pages } = buffer
         ? await parsePdf(buffer)
         : await parsePdf(input);
