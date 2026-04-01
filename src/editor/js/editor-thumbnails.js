@@ -102,6 +102,6 @@ export function updateActiveThumbnail(index) {
   // Scroll active thumb into view
   const active = slideStrip.querySelector('.slide-thumb.active');
   if (active) {
-    active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    active.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 }

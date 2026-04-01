@@ -269,6 +269,7 @@
       flex: 1;
       min-height: 0;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       overflow: hidden;
@@ -722,33 +723,31 @@
       display: block;
     }
 
-    .clear-overlay-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 12;
+    .clear-bboxes-btn {
       border: 1px solid var(--border);
-      background: hsla(215, 28%, 8%, 0.88);
-      color: var(--text-0);
-      border-radius: var(--radius-sm);
-      padding: 6px 10px;
-      font-size: 12px;
+      background: none;
+      color: var(--text-2);
+      border-radius: var(--radius-xs);
+      padding: 2px 8px;
+      font-size: 11px;
       font-family: var(--mono);
       cursor: pointer;
       transition: all var(--transition);
     }
 
-    .clear-overlay-btn:hover {
-      background: hsla(215, 28%, 14%, 0.95);
+    .clear-bboxes-btn:hover {
+      border-color: var(--danger);
+      color: var(--danger);
     }
 
-    .clear-overlay-btn:disabled {
+    .clear-bboxes-btn:disabled {
       opacity: 0.35;
       cursor: default;
     }
 
-    .clear-overlay-btn:disabled:hover {
-      background: hsla(215, 28%, 8%, 0.88);
+    .clear-bboxes-btn:disabled:hover {
+      border-color: var(--border);
+      color: var(--text-2);
     }
 
     .sidebar {
@@ -1651,34 +1650,95 @@
       box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px rgba(252, 94, 32, 0.25);
     }
 
-    /* ── Slide Thumbnail Strip ── */
-    .slide-strip {
-      height: 52px;
+    /* ── Slide Sidebar ── */
+    .slide-sidebar {
+      width: 180px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
       background: var(--surface-0);
-      border-bottom: 1px solid var(--border-medium);
+      border-right: 1px solid var(--border-medium);
+      transition: width 200ms ease-out;
+      overflow: hidden;
+    }
+    .slide-sidebar.collapsed {
+      width: 40px;
+    }
+    .slide-sidebar.collapsed .slide-strip {
+      display: none;
+    }
+    .slide-sidebar.collapsed .slide-sidebar-title {
+      display: none;
+    }
+    .slide-sidebar.collapsed .slide-sidebar-header {
+      justify-content: center;
+    }
+    .slide-sidebar-header {
       display: flex;
       align-items: center;
-      padding: 4px 14px;
-      gap: 6px;
-      overflow-x: auto;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border-medium);
       flex-shrink: 0;
+    }
+    .slide-sidebar-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-2);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .slide-sidebar-toggle {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: none;
+      color: var(--text-2);
+      cursor: pointer;
+      border-radius: var(--radius-xs);
+      transition: background var(--transition), color var(--transition), transform 200ms ease-out;
+    }
+    .slide-sidebar-toggle:hover {
+      background: var(--surface-hover);
+      color: var(--text-0);
+    }
+    .slide-sidebar.collapsed .slide-sidebar-toggle {
+      transform: rotate(180deg);
+    }
+
+    /* ── Slide Thumbnail Strip (vertical) ── */
+    .slide-strip {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 10px;
+      gap: 8px;
+      overflow-y: auto;
+      overflow-x: hidden;
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
     }
 
-    .slide-strip::-webkit-scrollbar { height: 3px; }
+    .slide-strip::-webkit-scrollbar { width: 3px; }
     .slide-strip::-webkit-scrollbar-track { background: transparent; }
     .slide-strip::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
     .slide-thumb {
       flex: 0 0 auto;
-      width: 72px;
-      height: 42px;
+      width: 160px;
+      height: 90px;
       border-radius: var(--radius-xs);
       border: 1.5px solid var(--border);
       background: var(--panel-2);
       cursor: pointer;
-      transition: all var(--transition);
+      transition: border-color var(--transition), box-shadow var(--transition), opacity 0.15s;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1697,16 +1757,36 @@
     }
 
     .slide-thumb-num {
-      font-size: 11px;
+      position: absolute;
+      top: 4px;
+      left: 6px;
+      font-size: 10px;
       font-weight: 700;
       font-family: var(--mono);
-      color: var(--text-2);
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      padding: 1px 4px;
+      border-radius: 2px;
       pointer-events: none;
       z-index: 1;
     }
 
     .slide-thumb.active .slide-thumb-num {
-      color: var(--accent-2);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .slide-thumb-preview {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 960px;
+      height: 540px;
+      transform: scale(0.16667);
+      transform-origin: top left;
+      pointer-events: none;
+      border: none;
+      display: block;
     }
 
     /* ── Export Dropdown ── */
@@ -1796,29 +1876,25 @@
       100% { background-position: -200% 0; }
     }
 
-    /* ── Empty State Guide ── */
+    /* ── Empty State Guide (below slide) ── */
     .bbox-empty-guide {
-      position: absolute;
-      bottom: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 7;
       display: none;
-      pointer-events: none;
+      justify-content: center;
+      padding: 8px 0 0;
     }
 
     .bbox-empty-guide.visible {
-      display: block;
+      display: flex;
     }
 
     .bbox-empty-guide-text {
-      padding: 6px 14px;
-      background: rgba(15, 23, 42, 0.75);
+      padding: 5px 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-medium);
       border-radius: var(--radius-pill);
       color: var(--text-2);
       font-size: 11px;
       font-family: var(--mono);
-      pointer-events: none;
       white-space: nowrap;
     }
 
@@ -2048,6 +2124,11 @@
         opacity: 1;
         pointer-events: auto;
       }
+      .slide-sidebar {
+        width: 0 !important;
+        overflow: hidden;
+        border-right: none;
+      }
       .slide-panel {
         padding: 12px 16px;
       }
@@ -2056,7 +2137,7 @@
     @media (max-width: 768px) {
       .export-dropdown-wrapper,
       .nav-bar-btn.ghost,
-      .slide-strip {
+      .slide-sidebar {
         display: none;
       }
       .slide-panel {
@@ -2236,6 +2317,151 @@
     .svg-export-progress-text {
       font-size: 11px;
       color: var(--text-2);
+    }
+
+    /* ── Logo Settings ── */
+    .logo-preview-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #111;
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: crosshair;
+    }
+    .logo-preview-container.no-logo { cursor: default; }
+    .logo-preview-iframe {
+      width: 960px; height: 540px;
+      border: none;
+      transform-origin: 0 0;
+      pointer-events: none;
+      display: block;
+    }
+    .logo-preview-overlay {
+      position: absolute;
+      cursor: grab;
+      user-select: none;
+      z-index: 10;
+    }
+    .logo-preview-overlay:active { cursor: grabbing; }
+    .logo-preview-overlay img {
+      width: 100%; height: 100%;
+      display: block;
+      pointer-events: none;
+    }
+    .logo-resize-handle {
+      position: absolute;
+      right: -4px; bottom: -4px;
+      width: 10px; height: 10px;
+      background: var(--accent);
+      border-radius: 2px;
+      cursor: nwse-resize;
+      z-index: 11;
+    }
+    .logo-upload-dropzone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 10px;
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      font-size: 12px; color: var(--text-2);
+    }
+    .logo-upload-dropzone:hover { border-color: var(--accent); }
+    .logo-upload-dropzone.dragover {
+      border-color: var(--accent);
+      background: rgba(252,94,32,0.06);
+    }
+    .logo-upload-dropzone img {
+      width: 40px; height: 40px; object-fit: contain;
+      border-radius: 4px; background: var(--panel-2, #1e293b);
+    }
+    .logo-upload-dropzone .logo-upload-text { flex: 1; min-width: 0; }
+    .logo-upload-dropzone .logo-upload-name {
+      display: block; font-weight: 600; color: var(--text-1, #fff);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .logo-slide-strip {
+      display: flex; flex-direction: column; gap: 4px; padding: 4px 0;
+      overflow-y: auto; max-height: 320px;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+    .logo-slide-strip::-webkit-scrollbar { width: 3px; }
+    .logo-slide-strip::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .logo-slide-chip {
+      flex-shrink: 0;
+      width: 80px; height: 45px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      font-size: 10px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 2px;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: var(--panel-2, var(--panel));
+      color: var(--text-2);
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .logo-slide-chip.viewing { border-color: var(--accent); color: var(--accent); }
+    .logo-slide-chip.excluded {
+      opacity: 0.4;
+      background: repeating-linear-gradient(
+        -45deg, transparent, transparent 3px,
+        rgba(255,255,255,0.05) 3px, rgba(255,255,255,0.05) 6px
+      );
+    }
+    .logo-slide-chip .chip-check {
+      position: absolute; top: 2px; left: 2px;
+      width: 12px; height: 12px;
+      border: 1.5px solid var(--text-2);
+      border-radius: 2px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 8px; line-height: 1;
+      z-index: 1;
+    }
+    .logo-slide-chip:not(.excluded) .chip-check {
+      background: var(--accent); border-color: var(--accent); color: #fff;
+    }
+    .logo-slide-chip.excluded .chip-check { background: none; color: transparent; }
+    .logo-slide-chip .chip-num {
+      position: absolute; bottom: 2px; right: 3px;
+      font-size: 9px; font-weight: 700;
+      background: rgba(0,0,0,0.5); color: #fff;
+      padding: 0 3px; border-radius: 2px;
+      z-index: 1;
+    }
+    .logo-controls-row {
+      display: flex; gap: 8px; align-items: flex-start;
+    }
+    .logo-image-info {
+      flex: 1; display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--text-2);
+      min-width: 0;
+    }
+    .logo-image-info span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .logo-image-btn {
+      background: none; border: 1px solid var(--border);
+      border-radius: 4px; color: var(--text-2);
+      font-size: 11px; padding: 3px 8px; cursor: pointer;
+    }
+    .logo-image-btn:hover { border-color: var(--text-2); }
+    .logo-position-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
+    }
+    .logo-pos-btn {
+      background: var(--panel-2, var(--panel));
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-2);
+      padding: 7px 12px; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .logo-pos-btn:hover { border-color: var(--text-2); background: rgba(255,255,255,0.04); }
+    .logo-pos-btn.active {
+      border-color: var(--accent); color: var(--accent);
+      background: rgba(252,94,32,0.1);
     }
 
     .nav-bar-btn {
@@ -2555,20 +2781,43 @@
       overflow-y: auto;
     }
     .pack-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    /* Section label */
+    .pack-group-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-2);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0 2px;
+    }
+    /* Custom templates: 2-col with cover previews */
+    .pack-grid-custom {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 8px;
     }
-    @media (max-width: 520px) {
-      .pack-grid { grid-template-columns: repeat(2, 1fr); }
+    /* Skin cards: 3-col compact */
+    .pack-grid-skins {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
     }
+    @media (max-width: 520px) {
+      .pack-grid-custom { grid-template-columns: 1fr; }
+      .pack-grid-skins { grid-template-columns: repeat(2, 1fr); }
+    }
+    /* Base card styles */
     .pack-card {
       background: var(--surface-2);
       border: 1.5px solid var(--border-subtle);
       border-radius: var(--radius-sm);
       cursor: pointer;
       padding: 0;
-      transition: all var(--transition);
+      transition: border-color var(--transition), box-shadow var(--transition);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -2576,7 +2825,6 @@
     }
     .pack-card:hover {
       border-color: var(--border-hover);
-      background: var(--surface-hover);
     }
     .pack-card:focus-visible {
       outline: 2px solid var(--accent);
@@ -2586,50 +2834,51 @@
       border-color: var(--accent);
       box-shadow: 0 0 0 1px var(--accent), 0 0 12px rgba(252, 94, 32, 0.15);
     }
-    /* Color swatch bar at top of card */
-    .pack-swatches {
-      display: flex;
-      height: 4px;
-      flex-shrink: 0;
-    }
-    .pack-swatches > div { flex: 1; min-width: 0; }
-    /* Stylized mini-slide preview */
+    /* Custom card cover preview */
     .pack-preview {
       width: 100%;
       aspect-ratio: 16/9;
       overflow: hidden;
       position: relative;
+    }
+    .pack-preview-iframe {
+      width: 960px;
+      height: 540px;
+      border: none;
+      transform-origin: top left;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    /* Skin card color bar */
+    .pack-color-bar {
+      height: 28px;
+      position: relative;
       display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 8px 10px;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 6px;
     }
-    .pack-slide-title {
-      width: 55%;
-      height: 4px;
-      border-radius: 2px;
-      margin-bottom: 4px;
-      opacity: 0.85;
+    .pack-color-dots {
+      display: flex;
+      gap: 3px;
     }
-    .pack-slide-accent {
-      width: 35%;
-      height: 2px;
-      border-radius: 1px;
-      margin-bottom: 6px;
-      opacity: 0.9;
+    .pack-color-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.15);
     }
-    .pack-slide-body {
-      width: 70%;
-      height: 2px;
-      border-radius: 1px;
-      opacity: 0.3;
-      margin-bottom: 3px;
-    }
-    .pack-slide-body-sm {
-      width: 50%;
-      height: 2px;
-      border-radius: 1px;
-      opacity: 0.2;
+    /* Tier badge for custom packs */
+    .pack-tier-badge {
+      font-size: 9px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: var(--radius-pill);
+      background: rgba(252, 94, 32, 0.1);
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     /* Pack info section */
     .pack-info {
@@ -2652,12 +2901,6 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-    }
-    .pack-template-count {
-      font-size: 9px;
-      color: var(--text-2);
-      white-space: nowrap;
-      flex-shrink: 0;
     }
     .pack-desc {
       font-size: 9px;
@@ -3903,13 +4146,7 @@
       background: hsl(150 40% 96%);
       color: #166534;
     }
-    [data-theme="light"] .clear-overlay-btn {
-      background: rgba(255, 255, 255, 0.88);
-      border-color: var(--border-strong);
-    }
-    [data-theme="light"] .clear-overlay-btn:hover {
-      background: rgba(255, 255, 255, 0.95);
-    }
+    /* clear-bboxes-btn uses theme tokens — no light override needed */
     [data-theme="light"] .plan-loading {
       background: rgba(248, 250, 252, 0.88);
     }
@@ -3965,8 +4202,7 @@
       color: var(--accent);
     }
     [data-theme="light"] .bbox-empty-guide-text {
-      background: rgba(255, 255, 255, 0.85);
-      color: var(--text-1);
+      /* uses theme tokens — inherits from base styles */
     }
     [data-theme="light"] .tool-separator,
     [data-theme="light"] .toolbar-divider {
@@ -4002,44 +4238,8 @@
     }
 
     /* ── Visual Thumbnail Previews ── */
-    .slide-thumb {
-      position: relative;
-      overflow: hidden;
-      width: 128px;
-      height: 72px;
-    }
-    .slide-thumb-preview {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 960px;
-      height: 540px;
-      transform: scale(0.13333);
-      transform-origin: top left;
-      pointer-events: none;
-      border: none;
-      display: block;
-    }
-    .slide-thumb-num {
-      position: absolute;
-      bottom: 2px;
-      right: 4px;
-      font-size: 10px;
-      font-weight: 700;
-      font-family: var(--mono);
-      background: rgba(0, 0, 0, 0.6);
-      color: #fff;
-      padding: 1px 4px;
-      border-radius: 2px;
-      pointer-events: none;
-      z-index: 1;
-    }
-    .slide-thumb.active .slide-thumb-num {
-      background: var(--accent);
-    }
     .slide-thumb.dragging { opacity: 0.4; }
     .slide-thumb.drag-over { border: 2px solid var(--accent); box-shadow: 0 0 0 2px rgba(252, 94, 32, 0.35); }
-    .slide-strip { height: 86px; }
 
     /* ── Presenter Notes ── */
     .notes-section {
@@ -4152,9 +4352,9 @@
       <a href="/" class="nav-bar-btn ghost" id="btn-back-browser" title="Back to Deck Browser" style="text-decoration:none; display:none;">&#9664; Decks</a>
       <span class="nav-deck-name" id="nav-deck-name" style="display:none;"></span>
       <div class="nav-controls">
-        <button id="btn-prev" title="Previous slide (Left arrow)" aria-label="Previous slide">&#9664; Prev</button>
+        <button id="btn-prev" title="Previous slide (↑)" aria-label="Previous slide">&#9650; Prev</button>
         <span class="slide-counter" id="slide-counter" aria-live="polite">-- / --</span>
-        <button id="btn-next" title="Next slide (Right arrow)" aria-label="Next slide">Next &#9654;</button>
+        <button id="btn-next" title="Next slide (↓)" aria-label="Next slide">Next &#9660;</button>
         <span style="width:1px;height:18px;background:var(--border-color,#444);margin:0 4px;opacity:0.4;"></span>
         <button class="nav-bar-btn ghost" id="btn-duplicate-slide" title="Duplicate slide (Ctrl+Shift+D)" aria-label="Duplicate slide">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -4193,9 +4393,16 @@
       <span class="slide-status-chip idle" id="slide-status-chip" aria-label="Slide status">idle</span>
     </div>
 
-    <div class="slide-strip" id="slide-strip" role="tablist" aria-label="Slide thumbnails"></div>
-
     <div class="main-content">
+      <div class="slide-sidebar" id="slide-sidebar">
+        <div class="slide-sidebar-header">
+          <span class="slide-sidebar-title">Slides</span>
+          <button class="slide-sidebar-toggle" id="slide-sidebar-toggle" title="Toggle slide panel" aria-label="Toggle slide panel">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+        </div>
+        <div class="slide-strip" id="slide-strip" role="tablist" aria-label="Slide thumbnails"></div>
+      </div>
       <div class="creation-panel" id="creation-panel">
         <div class="plan-loading" id="plan-loading">
           <div class="plan-loading-track">
@@ -4359,10 +4566,7 @@
                 <span class="slide-running-text" id="slide-running-text">Running...</span>
               </div>
             </div>
-            <div class="bbox-empty-guide" id="bbox-empty-guide">
-              <span class="bbox-empty-guide-text">Drag on the slide to add edit regions</span>
-            </div>
-            <button class="clear-overlay-btn" id="btn-clear-bboxes" title="Clear all boxes on current slide">Clear Boxes</button>
+            <!-- bbox-empty-guide and clear-bboxes moved outside slide-wrapper -->
             <iframe id="slide-iframe" sandbox="allow-same-origin allow-scripts" loading="eager"></iframe>
             <div class="bbox-layer" id="bbox-layer"></div>
             <div class="object-layer" id="object-layer">
@@ -4372,6 +4576,9 @@
             <div class="draw-layer" id="draw-layer">
               <div class="draw-box" id="draw-box"></div>
             </div>
+          </div>
+          <div class="bbox-empty-guide" id="bbox-empty-guide">
+            <span class="bbox-empty-guide-text">Drag on the slide to add edit regions</span>
           </div>
         </div>
       </div>
@@ -4392,7 +4599,10 @@
         <div class="sidebar-body" id="sidebar-body">
           <div class="sidebar-panel" id="bbox-toolbar">
             <div class="sidebar-section">
-              <span class="sidebar-label" id="bbox-count">0 pending · 0 review</span>
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span class="sidebar-label" id="bbox-count">0 pending · 0 review</span>
+                <button class="clear-bboxes-btn" id="btn-clear-bboxes" title="Clear all boxes on current slide">Clear</button>
+              </div>
               <div class="context-chips" id="context-chip-list"></div>
             </div>
             <div class="sidebar-section">
@@ -4489,6 +4699,12 @@
 
         <div class="sidebar-hint" id="editor-hint">
           Drag on the slide to add red bboxes. Enter to run.
+        </div>
+
+        <!-- Logo Settings -->
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section" style="padding:4px 12px;">
+          <button class="sidebar-btn" id="btn-logo-settings" type="button" style="width:100%;font-size:12px;">Logo Settings</button>
         </div>
 
         <!-- Presenter Notes -->
@@ -4612,6 +4828,55 @@
       <div class="svg-export-actions">
         <button class="svg-export-btn-cancel" id="pptx-export-cancel" type="button">Close</button>
         <button class="svg-export-btn-start" id="pptx-export-start" type="button">Export</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="svg-export-overlay" id="logo-settings-modal" hidden>
+    <div class="svg-export-modal" style="max-width:660px;">
+      <h3>Logo Settings</h3>
+
+      <!-- Slide preview with vertical slide strip -->
+      <div style="display: flex; gap: 10px;">
+        <!-- Left: vertical slide strip -->
+        <div class="logo-slide-strip" id="logo-slide-strip"></div>
+        <!-- Right: slide preview with logo overlay -->
+        <div style="flex: 1; min-width: 0;">
+          <div class="logo-preview-container" id="logo-preview-container">
+            <iframe class="logo-preview-iframe" id="logo-preview-iframe" sandbox="allow-same-origin allow-scripts"></iframe>
+            <div class="logo-preview-overlay" id="logo-overlay" hidden>
+              <img id="logo-overlay-img" draggable="false">
+              <div class="logo-resize-handle" id="logo-resize-handle"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload dropzone -->
+      <div class="logo-upload-dropzone" id="logo-upload-dropzone">
+        <img id="logo-thumb" src="" style="display:none;">
+        <div class="logo-upload-text">
+          <span class="logo-upload-name" id="logo-upload-label">Click or drag logo image</span>
+          <span id="logo-upload-hint" style="font-size:11px;opacity:0.6;">PNG, JPG, SVG</span>
+        </div>
+        <button class="logo-image-btn" id="logo-remove-btn" type="button" style="display:none;">Remove</button>
+        <input type="file" id="logo-file-input" accept="image/*" hidden>
+      </div>
+
+      <!-- Position presets -->
+      <div style="margin-top:10px;">
+        <div style="font-size:11px;color:var(--text-2);margin-bottom:6px;">Quick position</div>
+        <div class="logo-position-grid" id="logo-position-grid">
+          <button class="logo-pos-btn" data-pos="top-left" type="button">Top Left</button>
+          <button class="logo-pos-btn active" data-pos="top-right" type="button">Top Right</button>
+          <button class="logo-pos-btn" data-pos="bottom-left" type="button">Bottom Left</button>
+          <button class="logo-pos-btn" data-pos="bottom-right" type="button">Bottom Right</button>
+        </div>
+      </div>
+
+      <div class="svg-export-actions" style="margin-top:12px;">
+        <button class="svg-export-btn-cancel" id="logo-settings-cancel" type="button">Close</button>
+        <button class="svg-export-btn-start" id="logo-settings-save" type="button">Save</button>
       </div>
     </div>
   </div>
