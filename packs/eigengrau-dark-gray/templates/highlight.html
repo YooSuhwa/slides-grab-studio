@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    .slide {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48pt 88pt;
+      text-align: center;
+    }
+    .statement {
+      max-width: 560pt;
+      font-size: 30pt;
+      line-height: 1.16;
+      letter-spacing: -0.03em;
+      font-weight: 300;
+      color: var(--text-soft);
+    }
+    .support {
+      max-width: 420pt;
+      margin: 16pt auto 0;
+      font-size: 14pt;
+      line-height: 1.55;
+      font-weight: 300;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="slide">
+    <div>
+      <h1 class="statement" data-slot="title">The extremities of a surface are lines.</h1>
+      <p class="support optional" data-slot="body"></p>
+    </div>
+  </div>
+</body>
+</html>

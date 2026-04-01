@@ -1,0 +1,125 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+
+:root {
+  /* === Colors === */
+  --bg-primary: #16161d;
+  --bg-secondary: #29293d;
+  --bg-elevated: #29293d;
+  --text-primary: #f8f8ff;
+  --text-secondary: #87878e;
+  --accent: #9ed7f4;
+  --border: #4e4e61;
+
+  /* === Font === */
+  --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  --font-display: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  --font-accent: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+
+  /* === Typography Scale === */
+  --title-hero: 68pt;
+  --title-section: 44pt;
+  --title-slide: 32pt;
+  --text-subtitle: 20pt;
+  --text-body: 15pt;
+  --text-caption: 10.5pt;
+  --text-label: 10pt;
+
+  /* Extra tokens from the source deck */
+  --panel-fill: #29293d;
+  --panel-soft: #1d1d27;
+  --text-soft: #d2d2ff;
+  --label-muted: #87878e;
+  --divider: #4e4e61;
+  --accent-mint: #a9ebcc;
+  --accent-yellow: #fde4a3;
+  --accent-pink: #ffd3d1;
+  --track-line: #8f8fa5;
+  --ink-dark: #16161d;
+  --accent-mark: rgba(158, 215, 244, 0.42);
+  --text-overlay: rgba(248, 248, 255, 0.72);
+  --text-overlay-bright: rgba(248, 248, 255, 0.88);
+}
+
+html,
+body {
+  margin: 0;
+  width: 720pt;
+  height: 405pt;
+  overflow: hidden;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+ol,
+ul,
+li {
+  margin: 0;
+}
+
+.slide {
+  width: 720pt;
+  height: 405pt;
+  position: relative;
+  overflow: hidden;
+}
+
+.deck-label {
+  font-size: var(--text-label);
+  line-height: 1;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--label-muted);
+}
+
+.optional:empty {
+  display: none !important;
+}
+
+.center-divider::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 0.75pt);
+  width: 1.5pt;
+  background-image: linear-gradient(to bottom, var(--divider) 0 3pt, transparent 3pt 8pt);
+  background-size: 1.5pt 8pt;
+  background-repeat: repeat-y;
+  opacity: 0.95;
+}
+
+.top-divider::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 60pt;
+  height: 1.5pt;
+  background-image: linear-gradient(to right, var(--divider) 0 3pt, transparent 3pt 8pt);
+  background-size: 8pt 1.5pt;
+  background-repeat: repeat-x;
+  opacity: 0.95;
+}
+
+.media-slot[data-image-placeholder],
+.media-block[data-image-placeholder],
+.visual[data-image-placeholder] {
+  background: var(--panel-fill);
+}

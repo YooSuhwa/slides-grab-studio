@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+
+    body::before {
+      display: none;
+    }
+    .slide {
+      padding: 0;
+      background:
+        radial-gradient(circle at 47% 41%, rgba(255,255,255,0.58) 0 9%, rgba(255,255,255,0.24) 10% 18%, rgba(255,255,255,0) 19% 100%),
+        radial-gradient(circle at 47% 41%, rgba(255,255,255,0.26) 0 17%, rgba(255,255,255,0) 17.8% 100%),
+        radial-gradient(circle at 47% 41%, rgba(255,255,255,0.18) 0 25%, rgba(255,255,255,0) 25.8% 100%),
+        radial-gradient(circle at 47% 41%, rgba(255,255,255,0.16) 0 33%, rgba(255,255,255,0) 33.8% 100%),
+        radial-gradient(circle at 47% 41%, rgba(255,255,255,0.14) 0 41%, rgba(255,255,255,0) 41.8% 100%),
+        linear-gradient(180deg, #f9e89a 0%, #f3d64a 58%, #f1cf3a 100%);
+    }
+    .hero {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12pt;
+    }
+    .hero h1 {
+      text-align: center;
+      font-size: 58pt;
+      font-weight: 560;
+      line-height: 0.9;
+      letter-spacing: -0.055em;
+      color: var(--text-on-accent);
+    }
+    .hero h1 .line {
+      display: block;
+    }
+    .hero h1 .accent-word {
+      color: rgba(123, 103, 20, 0.55);
+      text-shadow: 0 0 1pt rgba(255,255,255,0.35);
+    }
+    .subtitle {
+      position: absolute;
+      bottom: 28pt;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: rgba(72, 63, 18, 0.82);
+      font-size: 9pt;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+    }
+
+  </style>
+</head>
+<body class="light">
+
+  <div class="slide">
+    <div class="hero">
+      <h1 data-slot="title">
+        <span class="line">Real</span>
+        <span class="line accent-word">Balance</span>
+      </h1>
+      <p class="subtitle" data-slot="subtitle">General Presentation Template</p>
+    </div>
+  </div>
+
+</body>
+</html>

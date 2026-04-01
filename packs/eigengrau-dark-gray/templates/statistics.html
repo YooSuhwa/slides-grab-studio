@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    .left {
+      position: absolute;
+      inset: 0 50% 0 0;
+      padding: 50pt 44pt 42pt 52pt;
+      display: flex;
+      flex-direction: column;
+    }
+    .right {
+      position: absolute;
+      inset: 0 0 0 50%;
+      padding: 96pt 52pt 42pt 52pt;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 22pt;
+    }
+    .copy {
+      margin: auto 0;
+      max-width: 250pt;
+      display: flex;
+      flex-direction: column;
+      gap: 18pt;
+    }
+    .copy h2 {
+      font-size: 31pt;
+      line-height: 1.16;
+      letter-spacing: -0.04em;
+      font-weight: 300;
+      color: var(--text-primary);
+    }
+    .copy p {
+      font-size: 12.6pt;
+      line-height: 1.56;
+      font-weight: 300;
+      color: var(--text-secondary);
+    }
+    .metric {
+      display: flex;
+      flex-direction: column;
+      gap: 4pt;
+    }
+    .metric-value {
+      font-size: 33pt;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .metric-label {
+      font-size: 9.8pt;
+      line-height: 1.32;
+      font-weight: 300;
+      color: var(--text-secondary);
+      letter-spacing: 0.02em;
+    }
+  </style>
+</head>
+<body>
+  <div class="slide center-divider">
+    <div class="left">
+      <p class="deck-label" data-slot="label">Section name</p>
+      <div class="copy">
+        <h2 data-slot="title">The extremities of a surface are lines.</h2>
+        <p data-slot="body">Longer description of slide content. Typically used to provide extra context or nuance to slides. A good description ensures slides can be consumed async without a live presentation.</p>
+      </div>
+    </div>
+    <div class="right">
+      <div class="metric">
+        <p class="metric-value" data-slot="metric-1">+330K</p>
+        <p class="metric-label" data-slot="metric-1-label">Metric details and caveats</p>
+      </div>
+      <div class="metric">
+        <p class="metric-value" data-slot="metric-2">+103%</p>
+        <p class="metric-label" data-slot="metric-2-label">Metric details and caveats</p>
+      </div>
+      <div class="metric">
+        <p class="metric-value" data-slot="metric-3">-18%</p>
+        <p class="metric-label" data-slot="metric-3-label">Metric details and caveats</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

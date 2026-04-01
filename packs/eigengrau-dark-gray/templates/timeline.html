@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    .slide {
+      padding: 50pt 52pt 42pt;
+    }
+    .summary {
+      position: absolute;
+      left: 52pt;
+      top: 92pt;
+      max-width: 300pt;
+      font-size: 12.8pt;
+      line-height: 1.56;
+      font-weight: 300;
+      color: var(--text-secondary);
+    }
+    .track {
+      position: absolute;
+      left: 52pt;
+      right: 52pt;
+      bottom: 42pt;
+      height: 160pt;
+    }
+    .range {
+      position: absolute;
+      inset: 0 0 auto 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .range p {
+      font-size: 11pt;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--text-primary);
+    }
+    .track-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 18pt;
+      height: 1.5pt;
+      background: var(--track-line);
+    }
+    .lanes {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 34pt;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12pt;
+    }
+    .lane {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 4pt;
+      align-items: center;
+      height: 24pt;
+    }
+    .bar {
+      display: flex;
+      align-items: center;
+      height: 18pt;
+      padding: 0 6pt;
+      border-radius: 0;
+    }
+    .bar p {
+      font-size: 8.6pt;
+      line-height: 1;
+      font-weight: 650;
+      letter-spacing: -0.01em;
+      color: var(--ink-dark);
+      white-space: nowrap;
+    }
+    .cyan { background: var(--accent); }
+    .yellow { background: var(--accent-yellow); }
+    .pink { background: var(--accent-pink); }
+
+    .b1 { grid-column: 1 / span 3; }
+    .b2 { grid-column: 4 / span 3; }
+    .b3 { grid-column: 7 / span 2; }
+
+    .b4 { grid-column: 2 / span 2; }
+    .b5 { grid-column: 4 / span 2; }
+    .b6 { grid-column: 6 / span 2; }
+    .b7 { grid-column: 8 / span 1; }
+
+    .b8 { grid-column: 2 / span 4; }
+  </style>
+</head>
+<body>
+  <div class="slide">
+    <p class="deck-label" data-slot="label">Timeline</p>
+    <p class="summary" data-slot="body">Longer description of slide content. Typically used to provide extra context or nuance to slides. A good description ensures slides can be consumed async without a live presentation.</p>
+    <div class="track">
+      <div class="range">
+        <p data-slot="start">January</p>
+        <p data-slot="end">August</p>
+      </div>
+      <div class="track-line"></div>
+      <div class="lanes">
+        <div class="lane">
+          <div class="bar cyan b1"><p data-slot="bar-1">v1 design</p></div>
+          <div class="bar cyan b2"><p data-slot="bar-2">v2 design</p></div>
+          <div class="bar cyan b3"><p data-slot="bar-3">Brand asset design</p></div>
+        </div>
+        <div class="lane">
+          <div class="bar yellow b4"><p data-slot="bar-4">Engineering exploration</p></div>
+          <div class="bar yellow b5"><p data-slot="bar-5">Web implementation</p></div>
+          <div class="bar yellow b6"><p data-slot="bar-6">Android implementation</p></div>
+          <div class="bar yellow b7"><p data-slot="bar-7">iOS implementation</p></div>
+        </div>
+        <div class="lane">
+          <div class="bar pink b8"><p data-slot="bar-8">User testing &amp; research</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

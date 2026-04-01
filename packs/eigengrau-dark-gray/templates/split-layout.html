@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    .left {
+      position: absolute;
+      inset: 0 50% 0 0;
+      padding: 50pt 44pt 42pt 52pt;
+      display: flex;
+      flex-direction: column;
+    }
+    .right {
+      position: absolute;
+      inset: 0 0 0 50%;
+      background: var(--panel-fill);
+      border-left: 1.5pt dashed var(--divider);
+      overflow: hidden;
+    }
+    .right::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(50% - 0.75pt);
+      height: 1.5pt;
+      background-image: linear-gradient(to right, var(--divider) 0 3pt, transparent 3pt 8pt);
+      background-size: 8pt 1.5pt;
+      background-repeat: repeat-x;
+      opacity: 0.92;
+    }
+    .copy {
+      margin: auto 0;
+      max-width: 250pt;
+      display: flex;
+      flex-direction: column;
+      gap: 18pt;
+    }
+    .copy h2 {
+      font-size: 31pt;
+      line-height: 1.16;
+      letter-spacing: -0.04em;
+      font-weight: 300;
+      color: var(--text-primary);
+    }
+    .copy p {
+      font-size: 12.6pt;
+      line-height: 1.56;
+      font-weight: 300;
+      color: var(--text-secondary);
+    }
+    blockquote {
+      position: relative;
+      padding-top: 18pt;
+      font-size: 16pt;
+      line-height: 1.48;
+      letter-spacing: -0.02em;
+      font-weight: 350;
+      color: var(--accent);
+      max-width: 250pt;
+    }
+    blockquote::before {
+      content: '“';
+      position: absolute;
+      top: -8pt;
+      left: 0;
+      font-size: 34pt;
+      line-height: 1;
+      font-weight: 700;
+      color: var(--accent-mark);
+    }
+    .author {
+      font-size: 12pt;
+      line-height: 1.2;
+      letter-spacing: 0.02em;
+      font-weight: 650;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+    .media-slot {
+      width: 100%;
+      height: 100%;
+      background: var(--panel-fill);
+    }
+  </style>
+</head>
+<body>
+  <div class="slide">
+    <div class="left">
+      <p class="deck-label" data-slot="label">Section name</p>
+      <div class="copy">
+        <h2 class="optional" data-slot="title">A surface is that which has length and breadth only.</h2>
+        <p class="optional" data-slot="body">Longer description of slide content. Typically used to provide extra context or nuance to slides. A good description ensures slides can be consumed async without a live presentation.</p>
+        <blockquote class="optional" data-slot="quote"></blockquote>
+        <p class="author optional" data-slot="author"></p>
+      </div>
+    </div>
+    <div class="right">
+      <div class="media-slot" data-slot="image" data-image-placeholder></div>
+    </div>
+  </div>
+</body>
+</html>

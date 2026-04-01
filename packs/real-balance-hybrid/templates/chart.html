@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+
+    .slide {
+      padding: 0;
+      background:
+        linear-gradient(180deg, rgba(29,29,29,0.98), rgba(35,35,35,1)),
+        linear-gradient(180deg, rgba(242,208,51,0.06), rgba(242,208,51,0.0));
+    }
+    .grid {
+      position: absolute;
+      inset: 28pt 0 64pt 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.08) 0 1pt, transparent 1pt 52pt),
+        repeating-linear-gradient(180deg, rgba(255,255,255,0.08) 0 1pt, transparent 1pt 48pt);
+      opacity: 0.58;
+    }
+    .chart-area {
+      position: absolute;
+      inset: 48pt 0 72pt 0;
+      overflow: hidden;
+      background: none !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+    }
+    .line-svg {
+      position: absolute;
+      left: -18pt;
+      right: -10pt;
+      bottom: 20pt;
+      top: 110pt;
+      width: calc(100% + 28pt);
+      height: calc(100% - 130pt);
+    }
+    .line-svg path {
+      fill: none;
+      stroke: #f2f1ed;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .line-svg .marker {
+      fill: var(--accent);
+      stroke: rgba(255,255,255,0.28);
+      stroke-width: 1;
+    }
+    .callout {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      gap: 18pt;
+    }
+    .ring {
+      width: 88pt;
+      height: 88pt;
+      border-radius: 50%;
+      position: relative;
+      background: conic-gradient(var(--accent) 0 306deg, rgba(255,255,255,0.10) 306deg 360deg);
+      box-shadow: var(--shadow-glow);
+    }
+    .ring.small { width: 76pt; height: 76pt; }
+    .ring::before {
+      content: "";
+      position: absolute;
+      inset: 16pt;
+      border-radius: 50%;
+      background: radial-gradient(circle at 45% 35%, rgba(255,255,255,0.12), rgba(255,255,255,0) 50%), var(--surface-dark);
+      box-shadow: inset 0 0 28pt rgba(255,255,255,0.04);
+    }
+    .ring.small::before { inset: 14pt; }
+    .ring p {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-on-dark);
+      font-size: 20pt;
+      line-height: 1;
+      z-index: 1;
+    }
+    .ring.small p { font-size: 17pt; }
+    .callout-copy .metric {
+      font-size: 32pt;
+      line-height: 1;
+      color: var(--accent);
+      margin-bottom: 10pt;
+    }
+    .callout-copy .body {
+      max-width: 200pt;
+      font-size: 15pt;
+      line-height: 1.3;
+      color: #f0ebe0;
+    }
+    .callout-left { left: 78pt; top: 104pt; }
+    .callout-right { left: 366pt; top: 58pt; }
+    .months {
+      position: absolute;
+      left: 46pt;
+      right: 30pt;
+      bottom: 46pt;
+      display: flex;
+      justify-content: space-between;
+    }
+    .months p {
+      color: var(--accent);
+      font-size: 12pt;
+      line-height: 1;
+    }
+
+  </style>
+</head>
+<body class="dark">
+
+  <div class="slide">
+    <div class="grid" aria-hidden="true"></div>
+    <div class="chart-area">
+      <svg class="line-svg" viewBox="0 0 660 240" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 180 C40 150, 70 120, 100 105 C140 85, 170 115, 200 138 C240 167, 290 162, 330 154 C370 146, 380 118, 425 110 C470 102, 480 132, 520 120 C560 108, 586 48, 630 34 C648 28, 664 46, 678 78" />
+        <line x1="102" y1="106" x2="102" y2="240" stroke="rgba(242,208,51,0.85)" stroke-width="2"/>
+        <line x1="480" y1="116" x2="480" y2="240" stroke="rgba(242,208,51,0.85)" stroke-width="2"/>
+        <circle class="marker" cx="102" cy="106" r="6"></circle>
+        <circle class="marker" cx="240" cy="138" r="6"></circle>
+        <circle class="marker" cx="382" cy="112" r="6"></circle>
+        <circle class="marker" cx="480" cy="116" r="6"></circle>
+        <circle class="marker" cx="628" cy="34" r="6"></circle>
+      </svg>
+    </div>
+
+    <div class="callout callout-left">
+      <div class="ring"><p data-slot="metric">85%</p></div>
+      <div class="callout-copy">
+        <p class="metric" data-slot="metric-2">4,99 M</p>
+        <p class="body" data-slot="body">The European languages are members of the same.</p>
+      </div>
+    </div>
+
+    <div class="callout callout-right">
+      <div class="ring small"><p data-slot="metric-3">65%</p></div>
+      <div class="callout-copy">
+        <p class="metric" data-slot="metric-4">2,99 M</p>
+        <p class="body" data-slot="body-2">The European languages are members of the same.</p>
+      </div>
+    </div>
+
+    <div class="months">
+      <p data-slot="month-1">Jan</p>
+      <p data-slot="month-2">Feb</p>
+      <p data-slot="month-3">March</p>
+      <p data-slot="month-4">April</p>
+      <p data-slot="month-5">May</p>
+      <p data-slot="month-6">June</p>
+      <p data-slot="month-7">July</p>
+    </div>
+
+    
+    <div class="deck-footer" aria-hidden="true">
+      <div class="year-stack">
+        <p>20</p>
+        <p>25</p>
+      </div>
+      <div class="brand-copy">
+        <p class="brand-name">Real Balance Presentation</p>
+        <p class="brand-site">www.website.com</p>
+      </div>
+    </div>
+
+    <p class="page-number" data-slot="page-number">15</p>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+
+    .slide {
+      padding-top: 38pt;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .accent-line.top { margin-bottom: 20pt; }
+    .title {
+      max-width: 420pt;
+      text-align: center;
+      font-size: 34pt;
+      line-height: 1.28;
+      margin-bottom: 20pt;
+    }
+    .title strong { font-size: 42pt; }
+    .accent-line.bottom { margin-bottom: 34pt; }
+    .progress-shell {
+      position: relative;
+      width: 500pt;
+      height: 22pt;
+      margin-bottom: 0;
+    }
+    .track {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 8pt;
+      height: 14pt;
+      border-radius: 999pt;
+      background: rgba(255,255,255,0.52);
+      box-shadow: inset 0 0 0 1pt rgba(255,255,255,0.3), var(--shadow-card);
+    }
+    .fill {
+      position: absolute;
+      left: 0;
+      top: 8pt;
+      width: 72%;
+      height: 14pt;
+      border-radius: 999pt;
+      background: var(--accent);
+      box-shadow: var(--shadow-glow);
+    }
+    .tick {
+      position: absolute;
+      left: 54pt;
+      top: -2pt;
+      width: 2pt;
+      height: 34pt;
+      background: rgba(255,255,255,0.62);
+      border-radius: 999pt;
+    }
+    .badge {
+      position: absolute;
+      right: 106pt;
+      top: -8pt;
+      width: 46pt;
+      height: 46pt;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 36%, rgba(255,255,255,0.62) 0 22%, rgba(255,255,255,0.14) 23% 48%, rgba(255,255,255,0) 49% 100%), var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-glow);
+    }
+    .badge p {
+      font-size: 16pt;
+      color: var(--text-primary);
+      font-weight: 700;
+      line-height: 1;
+    }
+    .detail-card {
+      width: 540pt;
+      min-height: 124pt;
+      margin-top: -2pt;
+      border-radius: 24pt;
+      background: rgba(255,255,255,0.26);
+      box-shadow: var(--shadow-card), inset 0 0 0 1pt rgba(255,255,255,0.38);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      padding: 42pt 36pt 24pt;
+      position: relative;
+    }
+    .detail-card::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50pt;
+      width: 1pt;
+      height: 54pt;
+      background: rgba(255,255,255,0.18);
+    }
+    .detail-card h3 {
+      font-size: 22pt;
+      color: var(--accent-dark);
+      line-height: 1;
+      margin-bottom: 8pt;
+    }
+    .detail-card .label {
+      font-size: 12pt;
+      color: var(--text-primary);
+      margin-bottom: 8pt;
+    }
+    .detail-card .body {
+      font-size: 10.5pt;
+      line-height: 1.45;
+      max-width: 184pt;
+    }
+
+  </style>
+</head>
+<body class="light">
+
+  <div class="slide">
+    <div class="accent-line top"></div>
+    <h1 class="title" data-slot="title">The longest wedding veil was the same length as <strong data-slot="metric">63.5</strong> football fields.</h1>
+    <div class="accent-line bottom"></div>
+
+    <div class="progress-shell">
+      <div class="track"></div>
+      <div class="fill"></div>
+      <div class="tick"></div>
+      <div class="badge"><p data-slot="metric-2">82%</p></div>
+    </div>
+
+    <div class="detail-card">
+      <div>
+        <h3 data-slot="metric-3">$713.07 K USD</h3>
+        <p class="label" data-slot="label">Minimum goal</p>
+        <p class="body" data-slot="body">A wonderful serenity has taken possession.</p>
+      </div>
+      <div>
+        <h3 data-slot="metric-4">$900.07 K USD</h3>
+        <p class="label" data-slot="label-2">Hard cap</p>
+      </div>
+    </div>
+
+    
+    <div class="deck-footer" aria-hidden="true">
+      <div class="year-stack">
+        <p>20</p>
+        <p>25</p>
+      </div>
+      <div class="brand-copy">
+        <p class="brand-name">Real Balance Presentation</p>
+        <p class="brand-site">www.website.com</p>
+      </div>
+    </div>
+
+    <p class="page-number" data-slot="page-number">10</p>
+  </div>
+
+</body>
+</html>

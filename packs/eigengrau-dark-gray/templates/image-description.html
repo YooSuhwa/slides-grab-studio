@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+    body {
+      background: var(--panel-fill);
+      color: var(--text-primary);
+    }
+    .slide {
+      background: var(--panel-fill);
+    }
+    .visual {
+      position: absolute;
+      inset: 0;
+      background: var(--panel-fill);
+    }
+    .label {
+      position: absolute;
+      top: 50pt;
+      left: 52pt;
+      z-index: 3;
+      color: var(--text-overlay);
+    }
+    .caption {
+      position: absolute;
+      left: 52pt;
+      right: 52pt;
+      bottom: 42pt;
+      font-size: 11.5pt;
+      line-height: 1.45;
+      color: var(--text-overlay-bright);
+    }
+  </style>
+</head>
+<body>
+  <div class="slide">
+    <div class="visual" data-slot="image" data-image-placeholder></div>
+    <p class="deck-label label" data-slot="label">Section name</p>
+    <p class="caption optional" data-slot="caption"></p>
+  </div>
+</body>
+</html>

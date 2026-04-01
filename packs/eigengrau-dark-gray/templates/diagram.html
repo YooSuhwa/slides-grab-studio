@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="../theme.css">
+  <style>
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    .header {
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 60pt;
+      padding: 26pt 0 0 52pt;
+      background: var(--bg-primary);
+      border-bottom: 1.5pt dashed var(--divider);
+      z-index: 3;
+    }
+    .visual {
+      position: absolute;
+      inset: 60pt 0 0 0;
+      background: var(--panel-fill);
+    }
+  </style>
+</head>
+<body>
+  <div class="slide">
+    <div class="header">
+      <p class="deck-label" data-slot="label">Section name</p>
+    </div>
+    <div class="visual" data-slot="image" data-image-placeholder></div>
+  </div>
+</body>
+</html>
