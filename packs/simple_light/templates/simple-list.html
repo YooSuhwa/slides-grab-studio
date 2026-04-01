@@ -7,11 +7,11 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
     --font-sans: 'Pretendard', -apple-system, sans-serif;
-    --title-hero: 64pt;
-    --title-section: 44pt;
-    --title-slide: 32pt;
-    --text-subtitle: 20pt;
-    --text-body: 16pt;
+    --title-hero: 48pt;
+    --title-section: 32pt;
+    --title-slide: 24pt;
+    --text-subtitle: 16pt;
+    --text-body: 14pt;
     --text-caption: 11pt;
     --text-label: 10pt;
   }
@@ -22,7 +22,17 @@
     background: var(--bg-primary);
     padding: 48pt 64pt;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+  }
+  .left {
+    flex: 0 0 40%;
+    display: flex;
+    align-items: center;
+    padding-right: 32pt;
+  }
+  .right {
+    flex: 1;
   }
   h2 {
     font-size: var(--title-slide);
@@ -30,7 +40,6 @@
     color: var(--text-primary);
     letter-spacing: -0.01em;
     line-height: 1.2;
-    margin-bottom: 36pt;
   }
   .list { display: flex; flex-direction: column; gap: 24pt; }
   .item h3 {
@@ -48,19 +57,23 @@
 </style>
 </head>
 <body>
-  <h2>Simple list</h2>
-  <div class="list">
-    <div class="item">
-      <h3>First thing</h3>
-      <p>Add a quick description of each thing, with enough context to understand what's up.</p>
-    </div>
-    <div class="item">
-      <h3>Second thing</h3>
-      <p>Keep 'em short and sweet, so they're easy to scan and remember.</p>
-    </div>
-    <div class="item">
-      <h3>Third thing</h3>
-      <p>If you've got a bunch, add another row, or use multiple copies of this slide.</p>
+  <div class="left">
+    <h2>Simple list</h2>
+  </div>
+  <div class="right">
+    <div class="list">
+      <div class="item">
+        <h3>First thing</h3>
+        <p>Add a quick description of each thing, with enough context to understand what's up.</p>
+      </div>
+      <div class="item">
+        <h3>Second thing</h3>
+        <p>Keep 'em short and sweet, so they're easy to scan and remember.</p>
+      </div>
+      <div class="item">
+        <h3>Third thing</h3>
+        <p>If you've got a bunch, add another row, or use multiple copies of this slide.</p>
+      </div>
     </div>
   </div>
 </body>

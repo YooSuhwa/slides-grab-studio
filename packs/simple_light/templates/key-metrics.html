@@ -7,11 +7,11 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
     --font-sans: 'Pretendard', -apple-system, sans-serif;
-    --title-hero: 64pt;
-    --title-section: 44pt;
-    --title-slide: 32pt;
-    --text-subtitle: 20pt;
-    --text-body: 16pt;
+    --title-hero: 48pt;
+    --title-section: 32pt;
+    --title-slide: 24pt;
+    --text-subtitle: 16pt;
+    --text-body: 14pt;
     --text-caption: 11pt;
     --text-label: 10pt;
   }
@@ -22,7 +22,17 @@
     background: var(--bg-primary);
     padding: 48pt 64pt;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+  }
+  .left {
+    flex: 0 0 40%;
+    display: flex;
+    align-items: center;
+    padding-right: 32pt;
+  }
+  .right {
+    flex: 1;
   }
   h2 {
     font-size: var(--title-slide);
@@ -30,34 +40,35 @@
     color: var(--text-primary);
     letter-spacing: -0.01em;
     line-height: 1.2;
-    margin-bottom: 40pt;
   }
   .metrics {
     display: flex;
-    gap: 32pt;
-    flex: 1;
-    align-items: flex-start;
+    flex-direction: column;
+    gap: 24pt;
   }
   .metric {
-    flex: 1;
-    text-align: center;
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 16pt;
   }
   .metric .number {
-    font-size: 40pt;
+    font-size: 28pt;
     font-weight: 800;
     color: var(--text-primary);
     letter-spacing: -0.02em;
     line-height: 1.0;
-    margin-bottom: 12pt;
+    flex-shrink: 0;
+    min-width: 72pt;
   }
-  .metric h3 {
+  .metric-info h3 {
     font-size: var(--text-label);
     font-weight: 600;
     color: var(--text-primary);
     letter-spacing: 0.02em;
-    margin-bottom: 6pt;
+    margin-bottom: 4pt;
   }
-  .metric p {
+  .metric-info p {
     font-size: var(--text-caption);
     line-height: 1.6;
     color: var(--text-secondary);
@@ -66,22 +77,32 @@
 </style>
 </head>
 <body>
-  <h2>Key Metrics</h2>
-  <div class="metrics">
-    <div class="metric">
-      <div class="number">XX%</div>
-      <h3>Metric 1</h3>
-      <p>Add a description or highlight changes</p>
-    </div>
-    <div class="metric">
-      <div class="number">XX%</div>
-      <h3>Metric 2</h3>
-      <p>Add a description or highlight changes</p>
-    </div>
-    <div class="metric">
-      <div class="number">XX%</div>
-      <h3>Metric 3</h3>
-      <p>Add a description or highlight changes</p>
+  <div class="left">
+    <h2>Key Metrics</h2>
+  </div>
+  <div class="right">
+    <div class="metrics">
+      <div class="metric">
+        <div class="number">XX%</div>
+        <div class="metric-info">
+          <h3>Metric 1</h3>
+          <p>Add a description or highlight changes</p>
+        </div>
+      </div>
+      <div class="metric">
+        <div class="number">XX%</div>
+        <div class="metric-info">
+          <h3>Metric 2</h3>
+          <p>Add a description or highlight changes</p>
+        </div>
+      </div>
+      <div class="metric">
+        <div class="number">XX%</div>
+        <div class="metric-info">
+          <h3>Metric 3</h3>
+          <p>Add a description or highlight changes</p>
+        </div>
+      </div>
     </div>
   </div>
 </body>

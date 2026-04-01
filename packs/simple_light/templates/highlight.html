@@ -7,11 +7,11 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
     --font-sans: 'Pretendard', -apple-system, sans-serif;
-    --title-hero: 64pt;
-    --title-section: 44pt;
-    --title-slide: 32pt;
-    --text-subtitle: 20pt;
-    --text-body: 16pt;
+    --title-hero: 48pt;
+    --title-section: 32pt;
+    --title-slide: 24pt;
+    --text-subtitle: 16pt;
+    --text-body: 14pt;
     --text-caption: 11pt;
     --text-label: 10pt;
   }
@@ -21,11 +21,20 @@
     font-family: var(--font-sans);
     background: var(--bg-primary);
     display: flex;
+    flex-direction: row;
+    padding: 48pt 64pt;
+  }
+  .left {
+    flex: 0 0 40%;
+    display: flex;
+    align-items: center;
+    padding-right: 32pt;
+  }
+  .right {
+    flex: 1;
+    display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center;
-    padding: 60pt 80pt;
-    text-align: center;
   }
   h2 {
     font-size: var(--title-slide);
@@ -33,13 +42,11 @@
     color: var(--text-primary);
     letter-spacing: -0.01em;
     line-height: 1.2;
-    margin-bottom: 20pt;
   }
   p {
     font-size: var(--text-body);
     line-height: 1.6;
     color: var(--text-secondary);
-    max-width: 420pt;
   }
   a {
     display: inline-block;
@@ -53,8 +60,12 @@
 </style>
 </head>
 <body>
-  <h2>Highlight</h2>
-  <p>Use this slide to highlight a single, important thing. To keep it short and sweet, you might link away to relevant doc or file.</p>
-  <a href="#">View details →</a>
+  <div class="left">
+    <h2>Highlight</h2>
+  </div>
+  <div class="right">
+    <p>Use this slide to highlight a single, important thing. To keep it short and sweet, you might link away to relevant doc or file.</p>
+    <a href="#">View details →</a>
+  </div>
 </body>
 </html>
