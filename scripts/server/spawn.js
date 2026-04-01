@@ -42,7 +42,7 @@ export function spawnCodexEdit({ prompt, imagePath, model, cwd, onLog }) {
 /**
  * Spawn a Claude subprocess for slide editing.
  */
-export function spawnClaudeEdit({ prompt, imagePath, model, cwd, onLog }) {
+export function spawnClaudeEdit({ prompt, imagePath, imagePaths, model, cwd, onLog }) {
   const claudeBin = process.env.PPT_AGENT_CLAUDE_BIN || 'claude';
 
   const args = [
@@ -54,7 +54,12 @@ export function spawnClaudeEdit({ prompt, imagePath, model, cwd, onLog }) {
   ];
 
   let fullPrompt = prompt;
-  if (typeof imagePath === 'string' && imagePath.trim() !== '') {
+  if (Array.isArray(imagePaths) && imagePaths.length > 0) {
+    const lines = ['First, read the following PDF page images to understand the visual layout and content:'];
+    imagePaths.forEach((p, i) => lines.push(`- Page ${i + 1}: "${p}"`));
+    lines.push('', 'These images show the original document pages. Use them to understand charts, diagrams, tables, and visual layout.', '');
+    fullPrompt = lines.join('\n') + prompt;
+  } else if (typeof imagePath === 'string' && imagePath.trim() !== '') {
     fullPrompt = `First, read the annotated screenshot at "${imagePath.trim()}" to see the visual context of the bbox regions highlighted on the slide.\n\n${prompt}`;
   }
 
