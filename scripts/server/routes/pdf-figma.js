@@ -26,6 +26,7 @@ export function createPdfFigmaRouter(ctx) {
   // ── PDF Export ────────────────────────────────────────────────────
   let activePdfExport = false;
   const pdfExportFiles = new Map();
+  const MAX_EXPORT_ENTRIES = 10;
   const PDF_SCALE = 2;
 
   async function renderSlideToPdfBuffer(browser, slideFile) {
@@ -98,6 +99,10 @@ export function createPdfFigmaRouter(ctx) {
           broadcastSSE(ctx.sseClients, 'pdfExportProgress', { exportId, current: i + 1, total: slideFiles.length, file: slideFiles[i] });
         }
         const mergedPdf = await mergePdfBuffers(pdfBuffers);
+        if (pdfExportFiles.size >= MAX_EXPORT_ENTRIES) {
+          const oldest = pdfExportFiles.keys().next().value;
+          pdfExportFiles.delete(oldest);
+        }
         pdfExportFiles.set(exportId, Buffer.from(mergedPdf));
         broadcastSSE(ctx.sseClients, 'pdfExportFinished', { exportId, success: true, downloadUrl: `/api/pdf-export/${exportId}/download.pdf`, message: `Exported ${slideFiles.length} slides to PDF.` });
       } catch (err) {
@@ -107,7 +112,9 @@ export function createPdfFigmaRouter(ctx) {
         activePdfExport = false;
         setTimeout(() => { pdfExportFiles.delete(exportId); }, 5 * 60 * 1000);
       }
-    })();
+    })().catch((err) => {
+      console.error('[pdf-export] Unhandled error in async block:', err);
+    });
   });
 
   router.get('/api/pdf-export/:exportId/download.pdf', (req, res) => {
@@ -170,7 +177,9 @@ export function createPdfFigmaRouter(ctx) {
       } finally {
         activeFigmaExport = false;
       }
-    })();
+    })().catch((err) => {
+      console.error('[figma-export] Unhandled error in async block:', err);
+    });
   });
 
   router.options('/api/figma-export', (_req, res) => {

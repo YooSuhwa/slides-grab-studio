@@ -5,7 +5,7 @@ import { buildCodexExecArgs } from '../../src/editor/codex-edit.js';
 /**
  * Spawn a Codex subprocess for slide editing.
  */
-export function spawnCodexEdit({ prompt, imagePath, model, cwd, onLog }) {
+export function spawnCodexEdit({ prompt, imagePath, model, cwd, onLog, timeout = 300_000 }) {
   const codexBin = process.env.PPT_AGENT_CODEX_BIN || 'codex';
   const args = buildCodexExecArgs({ prompt, imagePath, model });
 
@@ -14,6 +14,13 @@ export function spawnCodexEdit({ prompt, imagePath, model, cwd, onLog }) {
 
     let stdout = '';
     let stderr = '';
+    let killed = false;
+
+    const timer = setTimeout(() => {
+      killed = true;
+      child.kill('SIGTERM');
+      setTimeout(() => { try { child.kill('SIGKILL'); } catch { /* already exited */ } }, 5000);
+    }, timeout);
 
     child.stdout.on('data', (chunk) => {
       const text = chunk.toString();
@@ -30,10 +37,16 @@ export function spawnCodexEdit({ prompt, imagePath, model, cwd, onLog }) {
     });
 
     child.on('close', (code) => {
-      resolvePromise({ code: code ?? 1, stdout, stderr });
+      clearTimeout(timer);
+      resolvePromise({
+        code: killed ? -1 : (code ?? 1),
+        stdout,
+        stderr: killed ? stderr + `\n[TIMEOUT after ${timeout}ms]` : stderr,
+      });
     });
 
     child.on('error', (error) => {
+      clearTimeout(timer);
       rejectPromise(error);
     });
   });
@@ -42,7 +55,7 @@ export function spawnCodexEdit({ prompt, imagePath, model, cwd, onLog }) {
 /**
  * Spawn a Claude subprocess for slide editing.
  */
-export function spawnClaudeEdit({ prompt, imagePath, imagePaths, model, cwd, onLog }) {
+export function spawnClaudeEdit({ prompt, imagePath, imagePaths, model, cwd, onLog, timeout = 600_000 }) {
   const claudeBin = process.env.PPT_AGENT_CLAUDE_BIN || 'claude';
 
   const args = [
@@ -79,6 +92,13 @@ export function spawnClaudeEdit({ prompt, imagePath, imagePaths, model, cwd, onL
 
     let stdout = '';
     let stderr = '';
+    let killed = false;
+
+    const timer = setTimeout(() => {
+      killed = true;
+      child.kill('SIGTERM');
+      setTimeout(() => { try { child.kill('SIGKILL'); } catch { /* already exited */ } }, 5000);
+    }, timeout);
 
     child.stdout.on('data', (chunk) => {
       const text = chunk.toString();
@@ -95,10 +115,16 @@ export function spawnClaudeEdit({ prompt, imagePath, imagePaths, model, cwd, onL
     });
 
     child.on('close', (code) => {
-      resolvePromise({ code: code ?? 1, stdout, stderr });
+      clearTimeout(timer);
+      resolvePromise({
+        code: killed ? -1 : (code ?? 1),
+        stdout,
+        stderr: killed ? stderr + `\n[TIMEOUT after ${timeout}ms]` : stderr,
+      });
     });
 
     child.on('error', (error) => {
+      clearTimeout(timer);
       rejectPromise(error);
     });
   });

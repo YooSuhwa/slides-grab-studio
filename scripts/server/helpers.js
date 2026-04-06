@@ -8,6 +8,7 @@ import {
 } from '../../src/editor/codex-edit.js';
 
 import { backupDeck } from '../../src/retheme.js';
+import { broadcastSSE } from './sse.js';
 
 const SLIDE_FILE_PATTERN = /^slide-.*\.html$/i;
 
@@ -143,16 +144,24 @@ export async function uniqueDeckName(baseName) {
 
 export async function getScreenshotBrowser(ctx) {
   if (!ctx.browserPromise) {
-    ctx.browserPromise = ctx.screenshotMod.createScreenshotBrowser();
+    ctx.browserPromise = ctx.screenshotMod.createScreenshotBrowser()
+      .catch((err) => {
+        ctx.browserPromise = null;
+        throw err;
+      });
   }
   return ctx.browserPromise;
 }
 
 export async function closeBrowser(ctx) {
-  if (ctx.browserPromise) {
-    const { browser } = await getScreenshotBrowser(ctx);
-    ctx.browserPromise = null;
+  if (!ctx.browserPromise) return;
+  const promise = ctx.browserPromise;
+  ctx.browserPromise = null;
+  try {
+    const { browser } = await promise;
     await browser.close();
+  } catch {
+    // browser was never created or already crashed — nothing to close
   }
 }
 
@@ -170,17 +179,36 @@ export async function withScreenshotPage(ctx, callback) {
 
 export function setupFileWatcher(ctx, dir) {
   if (ctx.watcher) { try { ctx.watcher.close(); } catch { /* ignore */ } }
+  clearTimeout(ctx.debounceTimer);
   if (!dir) return;
   ctx.watcher = fsWatch(dir, { persistent: false }, (_eventType, filename) => {
     if (!filename || !SLIDE_FILE_PATTERN.test(filename)) return;
     clearTimeout(ctx.debounceTimer);
     ctx.debounceTimer = setTimeout(() => {
-      const payload = `event: fileChanged\ndata: ${JSON.stringify({ file: filename })}\n\n`;
-      for (const res of ctx.sseClients) {
-        res.write(payload);
-      }
+      broadcastSSE(ctx.sseClients, 'fileChanged', { file: filename });
     }, 300);
   });
+  ctx.watcher.on('error', (err) => {
+    console.error('[editor] File watcher error:', err.message);
+  });
+}
+
+// ── Deck name sanitization ──────────────────────────────────────────
+
+export function sanitizeDeckName(rawName) {
+  if (typeof rawName !== 'string' || !rawName.trim()) return null;
+  const sanitized = basename(rawName.trim());
+  if (!sanitized || sanitized === '.' || sanitized === '..') return null;
+  return sanitized;
+}
+
+export function resolveDeckPath(rawName) {
+  const name = sanitizeDeckName(rawName);
+  if (!name) return null;
+  const decksRoot = resolve(process.cwd(), 'decks');
+  const deckPath = resolve(decksRoot, name);
+  if (!deckPath.startsWith(decksRoot + sep) && deckPath !== decksRoot) return null;
+  return { name, path: deckPath, decksRoot };
 }
 
 // ── Backup helper ───────────────────────────────────────────────────

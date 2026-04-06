@@ -19,7 +19,7 @@ export function createGenerateRouter(ctx) {
       return res.status(400).json({ error: 'Missing or invalid `topic`.' });
     }
 
-    if (ctx.activeGenerate) {
+    if (!ctx.generateMutex.tryAcquire()) {
       return res.status(409).json({ error: 'A generation is already in progress.' });
     }
 
@@ -62,7 +62,6 @@ export function createGenerateRouter(ctx) {
       : CLAUDE_MODELS[0];
 
     const runId = randomRunId();
-    ctx.activeGenerate = true;
 
     ctx.generateRunStore.startRun({
       runId,
@@ -149,9 +148,11 @@ export function createGenerateRouter(ctx) {
         });
         broadcastSSE(ctx.sseClients, 'generateFinished', { runId, success: false, message, slideCount: 0 });
       } finally {
-        ctx.activeGenerate = false;
+        ctx.generateMutex.release();
       }
-    })();
+    })().catch((err) => {
+      console.error('[generate] Unhandled error in async block:', err);
+    });
   });
 
   return router;

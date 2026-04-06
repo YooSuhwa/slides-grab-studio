@@ -2,7 +2,7 @@ import { readdir, readFile, writeFile, stat, rename, copyFile, mkdir, rm, mkdtem
 import { basename, join, resolve, relative } from 'node:path';
 import { tmpdir } from 'node:os';
 
-import { listSlideFiles, toPosixPath, setupFileWatcher, withScreenshotPage } from '../helpers.js';
+import { listSlideFiles, toPosixPath, setupFileWatcher, withScreenshotPage, sanitizeDeckName } from '../helpers.js';
 
 /**
  * Deck browser API routes.
@@ -58,10 +58,10 @@ export function createDecksRouter(ctx) {
 
   router.post('/api/decks/switch', async (req, res) => {
     const { deckName } = req.body ?? {};
-    if (typeof deckName !== 'string' || !deckName.trim()) {
-      return res.status(400).json({ error: 'Missing deckName.' });
+    const sanitized = sanitizeDeckName(deckName);
+    if (!sanitized) {
+      return res.status(400).json({ error: 'Missing or invalid deckName.' });
     }
-    const sanitized = deckName.trim();
     const newDir = resolve(process.cwd(), 'decks', sanitized);
     try {
       await stat(newDir);

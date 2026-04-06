@@ -65,6 +65,38 @@ Phase 2 머지 후 진행. 새 라우트 모듈에 엔드포인트 추가.
 
 ---
 
+## Phase 5: Stabilization
+
+서버 안정성, 리소스 누수, 보안 이슈 수정.
+
+### 5A. 인프라 (Phase 0)
+- [x] AsyncMutex 모듈 생성 (`scripts/server/mutex.js`)
+- [x] SSE broadcast 에러 핸들링 (`scripts/server/sse.js`)
+- [x] 브라우저 풀 실패 시 캐시 리셋 (`scripts/server/helpers.js`)
+
+### 5B. 크리티컬 버그 수정 (Phase 1)
+- [x] `activeGenerate` 불리언 → AsyncMutex 원자적 교체 (TOCTOU 레이스 컨디션 해소)
+- [x] Global Express error middleware 추가
+- [x] 포트 바인딩 에러 핸들러 추가
+- [x] `unhandledRejection` 프로세스 핸들러 추가
+
+### 5C. 리소스 누수 방지 (Phase 2)
+- [x] 서브프로세스 타임아웃 추가 (Claude 10분, Codex 5분)
+- [x] 익스포트 파일 Map 최대 크기 제한 (PDF/PPTX/SVG, 최대 10건)
+
+### 5D. 안전망 (Phase 3)
+- [x] 파일 워처 에러 핸들러 + debounce 정리 + safe SSE
+- [x] 모든 fire-and-forget IIFE에 `.catch()` 체인 추가
+
+### 5E. 보안 및 엣지케이스 (Phase 4)
+- [x] deckName path traversal 방지 (`sanitizeDeckName` / `resolveDeckPath`)
+- [x] 슬라이드 리넘버링 복구 실패 시 에러 로깅
+
+### 5F. 테스트
+- [x] 안정화 테스트 13건 작성 (뮤텍스, SSE, 브라우저 풀, 타임아웃, path traversal)
+
+---
+
 ## Notes
 - 각 태스크 완료 시 Quality Gate (테스트, 린트, 빌드) 통과 필수
 - Phase 경계에서 기존 기능 회귀 없음을 확인

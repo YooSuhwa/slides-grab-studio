@@ -63,12 +63,11 @@ export function createImportRouter(ctx) {
 
     if (!rawMd.trim()) return res.status(400).json({ error: 'Markdown content is empty.' });
     if (rawMd.length > 500_000) return res.status(400).json({ error: 'Content too large (max 500KB).' });
-    if (ctx.activeGenerate) return res.status(409).json({ error: 'A generation is already in progress.' });
+    if (!ctx.generateMutex.tryAcquire()) return res.status(409).json({ error: 'A generation is already in progress.' });
 
     const selectedModel = typeof model === 'string' && CLAUDE_MODELS.includes(model.trim())
       ? model.trim() : CLAUDE_MODELS[0];
     const runId = randomRunId();
-    ctx.activeGenerate = true;
 
     broadcastSSE(ctx.sseClients, 'planStarted', { runId, topic: '(MD Import)' });
     broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'plan', step: 'Converting markdown to slide outline' });
@@ -102,7 +101,7 @@ export function createImportRouter(ctx) {
     const sourceType = req.query.sourceType || req.headers['x-source-type'];
     const sourceUrl = req.query.url || req.headers['x-source-url'];
 
-    if (ctx.activeGenerate) return res.status(409).json({ error: 'A generation is already in progress.' });
+    if (!ctx.generateMutex.tryAcquire()) return res.status(409).json({ error: 'A generation is already in progress.' });
 
     let extractedText = '';
     let sourceLabel = '';
@@ -149,11 +148,13 @@ export function createImportRouter(ctx) {
         return res.status(400).json({ error: 'Specify sourceType (pdf, url, pdf-path) or upload a PDF.' });
       }
     } catch (err) {
+      ctx.generateMutex.release();
       if (visionTmpDir) await rm(visionTmpDir, { recursive: true, force: true }).catch(() => {});
       return res.status(400).json({ error: `Source parsing failed: ${err.message}` });
     }
 
     if (!extractedText.trim()) {
+      ctx.generateMutex.release();
       if (visionTmpDir) await rm(visionTmpDir, { recursive: true, force: true }).catch(() => {});
       return res.status(400).json({ error: 'Extracted text is empty — the source may not contain readable content.' });
     }
@@ -168,7 +169,6 @@ export function createImportRouter(ctx) {
       ? modelRaw.trim() : CLAUDE_MODELS[0];
 
     const runId = randomRunId();
-    ctx.activeGenerate = true;
 
     broadcastSSE(ctx.sseClients, 'planStarted', { runId, topic: `(Doc Import: ${sourceLabel})` });
     broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'plan', step: `Extracted text from ${sourceLabel}` });
@@ -224,7 +224,7 @@ export function createImportRouter(ctx) {
     if (files.length > MAX_IMPORT_FILES) {
       return res.status(400).json({ error: `Too many files (max ${MAX_IMPORT_FILES}).` });
     }
-    if (ctx.activeGenerate) {
+    if (!ctx.generateMutex.tryAcquire()) {
       return res.status(409).json({ error: 'A generation is already in progress.' });
     }
 
@@ -245,7 +245,6 @@ export function createImportRouter(ctx) {
       ? model.trim() : CLAUDE_MODELS[0];
 
     const runId = randomRunId();
-    ctx.activeGenerate = true;
 
     const fileNames = files.map((f) => f.name || 'unknown').join(', ');
     broadcastSSE(ctx.sseClients, 'planStarted', { runId, topic: `(Multi-file Import: ${files.length} files)` });
@@ -360,10 +359,12 @@ function runMultiFileImport(ctx, { runId, files, model, reqPackId, slideCount, u
       });
     } catch (err) {
       broadcastSSE(ctx.sseClients, 'planFinished', { runId, success: false, message: err instanceof Error ? err.message : String(err), outline: null });
-      ctx.activeGenerate = false;
+      ctx.generateMutex.release();
       if (visionTmpDir) await rm(visionTmpDir, { recursive: true, force: true }).catch(() => {});
     }
-  })();
+  })().catch((err) => {
+    console.error('[import/multi] Unhandled error in async block:', err);
+  });
 }
 
 // ── Shared import plan runner ───────────────────────────────────────
@@ -443,10 +444,12 @@ function runImportPlan(ctx, { runId, model, reqPackId, slideCount, useResearch, 
     } catch (err) {
       broadcastSSE(ctx.sseClients, 'planFinished', { runId, success: false, message: err instanceof Error ? err.message : String(err), outline: null });
     } finally {
-      ctx.activeGenerate = false;
+      ctx.generateMutex.release();
       if (visionTmpDir) {
         await rm(visionTmpDir, { recursive: true, force: true }).catch(() => {});
       }
     }
-  })();
+  })().catch((err) => {
+    console.error('[import/plan] Unhandled error in async block:', err);
+  });
 }

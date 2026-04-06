@@ -28,6 +28,7 @@ export function createExportRouter(ctx) {
   let activeSvgExport = false;
   const svgExportFiles = new Map();
   const svgExportZips = new Map();
+  const MAX_EXPORT_ENTRIES = 10;
 
   router.post('/api/svg-export', async (req, res) => {
     const { scope, slide, format = 'svg', scale = 1, width = SLIDE_PX.width, height = SLIDE_PX.height, outline = false } = req.body ?? {};
@@ -127,6 +128,11 @@ export function createExportRouter(ctx) {
         }
         archive.finalize();
         const zipBuffer = await zipDone;
+        if (svgExportZips.size >= MAX_EXPORT_ENTRIES) {
+          const oldest = svgExportZips.keys().next().value;
+          svgExportZips.delete(oldest);
+          svgExportFiles.delete(oldest);
+        }
         svgExportZips.set(exportId, zipBuffer);
         console.log(`[svg-export] ZIP created: ${zipBuffer.length} bytes, exportId=${exportId}`);
 
@@ -140,7 +146,9 @@ export function createExportRouter(ctx) {
         activeSvgExport = false;
         setTimeout(() => { svgExportZips.delete(exportId); svgExportFiles.delete(exportId); }, 5 * 60 * 1000);
       }
-    })();
+    })().catch((err) => {
+      console.error('[svg-export] Unhandled error in async block:', err);
+    });
   });
 
   router.get('/api/svg-export/:exportId/download.zip', (req, res) => {

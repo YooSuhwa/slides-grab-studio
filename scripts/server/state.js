@@ -6,6 +6,7 @@ import {
 } from '../../src/editor/codex-edit.js';
 
 import { normalizePackId } from '../../src/resolve.js';
+import { AsyncMutex } from './mutex.js';
 
 const CODEX_MODELS = ['gpt-5.4', 'gpt-5.3-codex', 'gpt-5.3-codex-spark'];
 const ALL_MODELS = [...CODEX_MODELS, ...CLAUDE_MODELS];
@@ -162,8 +163,8 @@ export function createServerState(opts, { PACKAGE_ROOT, express, screenshotMod }
     // Browser for screenshots
     browserPromise: null,
 
-    // Active generation lock
-    activeGenerate: false,
+    // Active generation mutex (replaces boolean flag to prevent TOCTOU race)
+    generateMutex: new AsyncMutex(),
 
     // Constants
     ALL_MODELS,

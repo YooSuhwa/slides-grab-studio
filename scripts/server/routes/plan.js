@@ -67,7 +67,7 @@ export function createPlanRouter(ctx) {
       return res.status(400).json({ error: 'Missing or invalid `topic`.' });
     }
 
-    if (ctx.activeGenerate) {
+    if (!ctx.generateMutex.tryAcquire()) {
       return res.status(409).json({ error: 'A generation is already in progress.' });
     }
 
@@ -76,7 +76,6 @@ export function createPlanRouter(ctx) {
       : CLAUDE_MODELS[0];
 
     const runId = randomRunId();
-    ctx.activeGenerate = true;
 
     broadcastSSE(ctx.sseClients, 'planStarted', { runId, topic: topic.trim() });
     broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'plan', step: 'Analyzing topic and structuring outline' });
@@ -174,9 +173,11 @@ export function createPlanRouter(ctx) {
         const message = err instanceof Error ? err.message : String(err);
         broadcastSSE(ctx.sseClients, 'planFinished', { runId, success: false, message, outline: null });
       } finally {
-        ctx.activeGenerate = false;
+        ctx.generateMutex.release();
       }
-    })();
+    })().catch((err) => {
+      console.error('[plan] Unhandled error in async block:', err);
+    });
   });
 
   // ── POST /api/plan/revise ───────────────────────────────────────────
@@ -187,18 +188,18 @@ export function createPlanRouter(ctx) {
       return res.status(400).json({ error: 'Missing feedback.' });
     }
 
-    if (ctx.activeGenerate) {
+    if (!ctx.generateMutex.tryAcquire()) {
       return res.status(409).json({ error: 'A generation is already in progress.' });
     }
 
     const slidesDirectory = ctx.getSlidesDir();
     if (!slidesDirectory) {
+      ctx.generateMutex.release();
       return res.status(400).json({ error: 'No outline to revise.' });
     }
 
     const selectedModel = CLAUDE_MODELS[0];
     const runId = randomRunId();
-    ctx.activeGenerate = true;
 
     const targetLabel = typeof targetSlide === 'number'
       ? `Revise Slide ${targetSlide}: ${feedback.trim().slice(0, 40)}`
@@ -266,9 +267,11 @@ export function createPlanRouter(ctx) {
         const message = err instanceof Error ? err.message : String(err);
         broadcastSSE(ctx.sseClients, 'planFinished', { runId, success: false, message, outline: null });
       } finally {
-        ctx.activeGenerate = false;
+        ctx.generateMutex.release();
       }
-    })();
+    })().catch((err) => {
+      console.error('[plan/revise] Unhandled error in async block:', err);
+    });
   });
 
   return router;

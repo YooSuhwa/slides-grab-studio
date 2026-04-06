@@ -26,6 +26,7 @@ export function createPptxExportRouter(ctx) {
 
   let activeExport = false;
   const pptxExportFiles = new Map();
+  const MAX_EXPORT_ENTRIES = 10;
 
   // ── Image-based export (default) ───────────────────────────────────
 
@@ -147,6 +148,10 @@ export function createPptxExportRouter(ctx) {
         }
 
         const arrayBuf = await pres.write({ outputType: 'arraybuffer' });
+        if (pptxExportFiles.size >= MAX_EXPORT_ENTRIES) {
+          const oldest = pptxExportFiles.keys().next().value;
+          pptxExportFiles.delete(oldest);
+        }
         pptxExportFiles.set(exportId, Buffer.from(arrayBuf));
 
         broadcastSSE(ctx.sseClients, 'pptxExportFinished', {
@@ -164,7 +169,9 @@ export function createPptxExportRouter(ctx) {
         activeExport = false;
         setTimeout(() => { pptxExportFiles.delete(exportId); }, 5 * 60 * 1000);
       }
-    })();
+    })().catch((err) => {
+      console.error('[pptx-export] Unhandled error in async block:', err);
+    });
   });
 
   router.get('/api/pptx-export/:exportId/download.pptx', (req, res) => {

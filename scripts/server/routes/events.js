@@ -25,7 +25,7 @@ export function createEventsRouter(ctx) {
   });
 
   router.get('/api/generate-status', (_req, res) => {
-    res.json({ active: !!ctx.activeGenerate });
+    res.json({ active: ctx.generateMutex.isLocked });
   });
 
   router.get('/api/runs', (_req, res) => {

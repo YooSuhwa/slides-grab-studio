@@ -5,7 +5,11 @@
 export function broadcastSSE(sseClients, event, data) {
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const res of sseClients) {
-    res.write(payload);
+    try {
+      res.write(payload);
+    } catch {
+      sseClients.delete(res);
+    }
   }
 }
 

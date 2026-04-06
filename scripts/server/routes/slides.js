@@ -40,11 +40,15 @@ async function renumberSlides(slidesDirectory, originalFiles, orderedSlots, newC
   } catch (err) {
     // Best-effort recovery: move files back from temp
     try {
-      await Promise.all(originalFiles.map(async (f) => {
+      const { readdir } = await import('node:fs/promises');
+      const remaining = await readdir(tmpDir);
+      await Promise.all(remaining.map(async (f) => {
         try { await rename(join(tmpDir, f), join(slidesDirectory, f)); } catch { /* already moved */ }
       }));
       await rm(tmpDir, { recursive: true, force: true });
-    } catch { /* best-effort */ }
+    } catch (recoveryErr) {
+      console.error('[slides] Renumber recovery failed. Files may be in:', tmpDir, recoveryErr);
+    }
     throw err;
   }
 }

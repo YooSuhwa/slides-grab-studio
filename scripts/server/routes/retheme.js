@@ -8,7 +8,7 @@ import { prepareRetheme, listBackups, restoreBackup } from '../../../src/retheme
 import { analyzeDeck } from '../../../src/review.js';
 
 import { broadcastSSE } from '../sse.js';
-import { randomRunId, spawnClaudeEdit, setupFileWatcher, uniqueDeckName } from '../helpers.js';
+import { randomRunId, spawnClaudeEdit, setupFileWatcher, uniqueDeckName, sanitizeDeckName } from '../helpers.js';
 
 /**
  * Retheme, review, backup, and restore routes.
@@ -29,7 +29,7 @@ export function createRethemeRouter(ctx) {
     if (!packId || typeof packId !== 'string') {
       return res.status(400).json({ error: 'packId required.' });
     }
-    if (ctx.activeGenerate) {
+    if (!ctx.generateMutex.tryAcquire()) {
       return res.status(409).json({ error: 'A generation is already in progress.' });
     }
 
@@ -38,9 +38,15 @@ export function createRethemeRouter(ctx) {
       return res.status(400).json({ error: 'Invalid pack ID.' });
     }
 
-    const deckDir = resolve(process.cwd(), 'decks', deckName);
+    const safeDeckName = sanitizeDeckName(deckName);
+    if (!safeDeckName) {
+      ctx.generateMutex.release();
+      return res.status(400).json({ error: 'Invalid deck name.' });
+    }
+    const deckDir = resolve(process.cwd(), 'decks', safeDeckName);
     if (!existsSync(deckDir)) {
-      return res.status(404).json({ error: `Deck not found: ${deckName}` });
+      ctx.generateMutex.release();
+      return res.status(404).json({ error: `Deck not found: ${safeDeckName}` });
     }
 
     const selectedModel = typeof reqModel === 'string' && CLAUDE_MODELS.includes(reqModel.trim())
@@ -52,7 +58,6 @@ export function createRethemeRouter(ctx) {
     const targetDeckDir = resolve(process.cwd(), 'decks', targetDeckName);
 
     const runId = randomRunId();
-    ctx.activeGenerate = true;
 
     broadcastSSE(ctx.sseClients, 'planStarted', { runId, topic: `(Retheme: ${deckName} → ${targetPack})` });
     res.json({ runId, deckName, targetDeckName, targetPack, model: selectedModel });
@@ -102,15 +107,18 @@ export function createRethemeRouter(ctx) {
         const message = err instanceof Error ? err.message : String(err);
         broadcastSSE(ctx.sseClients, 'planFinished', { runId, success: false, message });
       } finally {
-        ctx.activeGenerate = false;
+        ctx.generateMutex.release();
       }
-    })();
+    })().catch((err) => {
+      console.error('[retheme] Unhandled error in async block:', err);
+    });
   });
 
   // ── GET /api/backups ──────────────────────────────────────────────
   router.get('/api/backups', async (req, res) => {
     const slidesDirectory = ctx.getSlidesDir();
-    const deckName = (typeof req.query.deck === 'string' ? req.query.deck.trim() : '') || (slidesDirectory ? basename(slidesDirectory) : '');
+    const rawName = (typeof req.query.deck === 'string' ? req.query.deck.trim() : '') || (slidesDirectory ? basename(slidesDirectory) : '');
+    const deckName = sanitizeDeckName(rawName);
     if (!deckName) {
       return res.status(400).json({ error: 'No deck loaded.' });
     }
@@ -133,7 +141,7 @@ export function createRethemeRouter(ctx) {
     const { deckName, timestamp } = req.body ?? {};
     const slidesDirectory = ctx.getSlidesDir();
 
-    const name = deckName || (slidesDirectory ? basename(slidesDirectory) : '');
+    const name = sanitizeDeckName(deckName || (slidesDirectory ? basename(slidesDirectory) : ''));
     if (!name) {
       return res.status(400).json({ error: 'deckName required.' });
     }
@@ -162,7 +170,7 @@ export function createRethemeRouter(ctx) {
     const { deckName, audience, timeMinutes } = req.body ?? {};
     const slidesDirectory = ctx.getSlidesDir();
 
-    const name = deckName || (slidesDirectory ? basename(slidesDirectory) : '');
+    const name = sanitizeDeckName(deckName || (slidesDirectory ? basename(slidesDirectory) : ''));
     if (!name) {
       return res.status(400).json({ error: 'deckName required.' });
     }

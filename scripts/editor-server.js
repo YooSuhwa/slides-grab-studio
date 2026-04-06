@@ -252,6 +252,14 @@ async function startServer(opts) {
   app.use(createPptxExportRouter(ctx));
   app.use(createRethemeRouter(ctx));
 
+  // Global error handler — catches unhandled route errors
+  app.use((err, _req, res, _next) => {
+    console.error(`[editor] Unhandled route error:`, err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Internal server error.' });
+    }
+  });
+
   const slidesDirectory = ctx.getSlidesDir();
   if (slidesDirectory) setupFileWatcher(ctx, slidesDirectory);
 
@@ -268,6 +276,15 @@ async function startServer(opts) {
     process.stdout.write(`  Slides:      ${slidesDirectory || '(will be created)'}\n`);
     process.stdout.write(`  Figma WS:    ws://localhost:${opts.port}/figma-ws\n`);
     process.stdout.write('  ─────────────────────────────────────\n\n');
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      process.stderr.write(`[editor] Port ${opts.port} is already in use.\n`);
+    } else {
+      process.stderr.write(`[editor] Server error: ${err.message}\n`);
+    }
+    process.exit(1);
   });
 
   const wss = setupFigmaWebSocket(server, ctx);
@@ -302,6 +319,10 @@ if (opts.help) {
   printUsage();
   process.exit(0);
 }
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[editor] Unhandled promise rejection:', reason);
+});
 
 startServer(opts).catch((err) => {
   process.stderr.write(`[editor] Fatal: ${err.message}\n`);
