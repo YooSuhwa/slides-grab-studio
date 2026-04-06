@@ -1,0 +1,97 @@
+/* handcrafted-organic — Craft paper bg, nested circles, botanical dots */
+.preview-handcrafted-organic {
+  background: #FDF6EE;
+}
+
+/* Outer dashed circle — slightly rotated */
+.preview-handcrafted-organic .el-1 {
+  position: absolute;
+  top: 50%;
+  left: 45%;
+  width: 72px;
+  height: 72px;
+  transform: translate(-50%, -50%) rotate(8deg);
+  border: 2px dashed #B8A48C;
+  border-radius: 50%;
+  background: transparent;
+}
+
+/* Inner solid circle */
+.preview-handcrafted-organic .el-1::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  transform: translate(-50%, -50%);
+  border: 2px solid #8B7355;
+  border-radius: 50%;
+  background: rgba(200, 180, 150, 0.12);
+}
+
+/* Botanical accent dots — scattered leaf-like cluster */
+.preview-handcrafted-organic .el-2 {
+  position: absolute;
+  top: 28px;
+  right: 40px;
+  width: 6px;
+  height: 6px;
+  background: #7A9B6D;
+  border-radius: 50%;
+}
+
+.preview-handcrafted-organic .el-2::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: -8px;
+  width: 5px;
+  height: 5px;
+  background: #9AB88E;
+  border-radius: 50%;
+}
+
+.preview-handcrafted-organic .el-2::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 10px;
+  width: 4px;
+  height: 4px;
+  background: #A8C49A;
+  border-radius: 50%;
+}
+
+/* Text placeholder bars — handwritten style (slightly varying widths) */
+.preview-handcrafted-organic .el-3 {
+  position: absolute;
+  bottom: 30px;
+  left: 30px;
+  width: 70px;
+  height: 4px;
+  background: #C4B098;
+  border-radius: 2px;
+}
+
+.preview-handcrafted-organic .el-3::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 0;
+  width: 90px;
+  height: 5px;
+  background: #8B7355;
+  border-radius: 2px;
+}
+
+.preview-handcrafted-organic .el-3::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 0;
+  width: 55px;
+  height: 3px;
+  background: #D4C4AE;
+  border-radius: 2px;
+}

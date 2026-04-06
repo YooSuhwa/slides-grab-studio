@@ -1,0 +1,71 @@
+/* typographic-bold — Off-white bg, oversized text bars, red accent */
+.preview-typographic-bold {
+  background: #F0EDE8;
+}
+
+/* Large title bar — oversized, filling upper area */
+.preview-typographic-bold .el-1 {
+  position: absolute;
+  top: 28px;
+  left: 24px;
+  width: 200px;
+  height: 18px;
+  background: #2A2A2A;
+  border-radius: 2px;
+}
+
+/* Secondary text bar — slightly smaller */
+.preview-typographic-bold .el-2 {
+  position: absolute;
+  top: 58px;
+  left: 24px;
+  width: 150px;
+  height: 12px;
+  background: #2A2A2A;
+  border-radius: 2px;
+}
+
+/* Red accent bar — bold typographic accent */
+.preview-typographic-bold .el-3 {
+  position: absolute;
+  top: 86px;
+  left: 24px;
+  width: 60px;
+  height: 10px;
+  background: #E63030;
+  border-radius: 1px;
+}
+
+/* Additional text bars via pseudo-elements */
+.preview-typographic-bold .el-1::after {
+  content: '';
+  position: absolute;
+  top: 76px;
+  left: 0;
+  width: 180px;
+  height: 8px;
+  background: #C8C3BA;
+  border-radius: 1px;
+}
+
+.preview-typographic-bold .el-2::after {
+  content: '';
+  position: absolute;
+  top: 22px;
+  left: 0;
+  width: 120px;
+  height: 8px;
+  background: #C8C3BA;
+  border-radius: 1px;
+}
+
+.preview-typographic-bold .el-3::after {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: 0;
+  width: 100px;
+  height: 8px;
+  background: #C8C3BA;
+  border-radius: 1px;
+}

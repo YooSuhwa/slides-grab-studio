@@ -1,0 +1,74 @@
+/* duotone-split — Strict 50/50 vertical split with white divider */
+.preview-duotone-split {
+  background: #1A1A2E;
+}
+
+/* Left half — orange-red */
+.preview-duotone-split .el-1 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: #FF4500;
+}
+
+/* White divider line */
+.preview-duotone-split .el-2 {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 100%;
+  background: #FFFFFF;
+  transform: translateX(-1px);
+  z-index: 2;
+}
+
+/* Text placeholders on each side */
+.preview-duotone-split .el-3 {
+  position: absolute;
+  top: 55px;
+  left: 30px;
+  width: 80px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 1px;
+}
+
+.preview-duotone-split .el-3::before {
+  content: '';
+  position: absolute;
+  top: -18px;
+  left: 0;
+  width: 60px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 1px;
+}
+
+.preview-duotone-split .el-3::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 0;
+  width: 70px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 1px;
+}
+
+/* Right side text placeholders */
+.preview-duotone-split .el-1::after {
+  content: '';
+  position: absolute;
+  top: 60px;
+  left: calc(100% + 30px);
+  width: 80px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 1px;
+  box-shadow:
+    0 14px 0 rgba(255, 255, 255, 0.3),
+    0 28px 0 rgba(255, 255, 255, 0.2);
+}

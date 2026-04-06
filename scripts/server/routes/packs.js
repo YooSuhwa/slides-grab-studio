@@ -69,5 +69,15 @@ export function createPacksRouter(ctx) {
     res.sendFile(resolved.path);
   });
 
+  // Serve preview.css for gallery thumbnails
+  router.get('/api/packs/:id/preview.css', (req, res) => {
+    const pack = resolvePack(req.params.id);
+    if (!pack) return res.status(404).send('Pack not found');
+    const cssPath = join(pack.path, 'preview.css');
+    res.sendFile(cssPath, (err) => {
+      if (err) res.status(404).send('No preview.css');
+    });
+  });
+
   return router;
 }

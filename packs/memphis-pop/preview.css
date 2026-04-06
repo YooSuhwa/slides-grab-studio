@@ -1,0 +1,40 @@
+/* memphis-pop — Warm off-white bg, scattered geometric shapes */
+.preview-memphis-pop { background: #FFF5E0; }
+
+/* Red triangle */
+.preview-memphis-pop .el-1 {
+  position: absolute; top: 30px; left: 40px;
+  width: 0; height: 0;
+  border-left: 22px solid transparent; border-right: 22px solid transparent;
+  border-bottom: 38px solid #E8344A;
+}
+
+/* Blue circle outline */
+.preview-memphis-pop .el-2 {
+  position: absolute; top: 50px; right: 50px; width: 44px; height: 44px;
+  border: 3px solid #1E90FF; border-radius: 50%; background: transparent;
+}
+.preview-memphis-pop .el-2::before {
+  content: ''; position: absolute; top: -30px; left: -40px;
+  width: 16px; height: 16px; background: #22BB88; border-radius: 50%;
+}
+.preview-memphis-pop .el-2::after {
+  content: ''; position: absolute; bottom: -30px; left: -60px;
+  width: 80px; height: 12px;
+  background: repeating-linear-gradient(90deg, transparent 0px, transparent 6px, #F5D020 6px, #F5D020 10px);
+  clip-path: polygon(0% 100%, 5% 0%, 15% 100%, 25% 0%, 35% 100%, 45% 0%, 55% 100%, 65% 0%, 75% 100%, 85% 0%, 95% 100%, 100% 50%);
+}
+
+/* Black cross + yellow dot */
+.preview-memphis-pop .el-3 {
+  position: absolute; bottom: 28px; left: 60px; width: 18px; height: 4px;
+  background: #1A1A1A;
+}
+.preview-memphis-pop .el-3::before {
+  content: ''; position: absolute; top: -7px; left: 7px;
+  width: 4px; height: 18px; background: #1A1A1A;
+}
+.preview-memphis-pop .el-3::after {
+  content: ''; position: absolute; top: -20px; left: 120px;
+  width: 12px; height: 12px; background: #F5D020; border-radius: 50%;
+}

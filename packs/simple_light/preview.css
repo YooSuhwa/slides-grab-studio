@@ -1,0 +1,57 @@
+/* simple_light — White bg, bold black text bars, minimal */
+.preview-simple_light {
+  background: #ffffff;
+}
+
+.preview-simple_light .el-1 {
+  position: absolute;
+  top: 32px;
+  left: 28px;
+  width: 140px;
+  height: 14px;
+  background: #000000;
+  border-radius: 2px;
+}
+
+.preview-simple_light .el-2 {
+  position: absolute;
+  top: 58px;
+  left: 28px;
+  width: 95px;
+  height: 8px;
+  background: #6b6b6b;
+  border-radius: 1px;
+}
+
+.preview-simple_light .el-3 {
+  position: absolute;
+  bottom: 32px;
+  left: 28px;
+  width: 180px;
+  height: 48px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.preview-simple_light .el-3::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  width: 100px;
+  height: 6px;
+  background: #000000;
+  border-radius: 1px;
+}
+
+.preview-simple_light .el-3::after {
+  content: '';
+  position: absolute;
+  top: 26px;
+  left: 14px;
+  width: 60px;
+  height: 5px;
+  background: #e0e0e0;
+  border-radius: 1px;
+}

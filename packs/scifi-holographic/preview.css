@@ -1,0 +1,38 @@
+/* scifi-holographic — Deep space bg, concentric cyan circles, scan line, center dot */
+.preview-scifi-holographic { background: #03050D; }
+
+/* Three concentric rings */
+.preview-scifi-holographic .el-1 {
+  position: absolute; top: 50%; left: 50%; width: 110px; height: 110px;
+  border: 1px solid rgba(0,200,255,0.18); border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.preview-scifi-holographic .el-1::before {
+  content: ''; position: absolute; top: 50%; left: 50%; width: 72px; height: 72px;
+  border: 1px solid rgba(0,200,255,0.30); border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.preview-scifi-holographic .el-1::after {
+  content: ''; position: absolute; top: 50%; left: 50%; width: 38px; height: 38px;
+  border: 1px solid rgba(0,200,255,0.45); border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Horizontal scan lines */
+.preview-scifi-holographic .el-2 {
+  position: absolute; top: 50%; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(0,200,255,0.06) 15%, rgba(0,200,255,0.20) 40%, rgba(0,200,255,0.35) 50%, rgba(0,200,255,0.20) 60%, rgba(0,200,255,0.06) 85%, transparent 100%);
+  transform: translateY(-50%);
+}
+.preview-scifi-holographic .el-2::before {
+  content: ''; position: absolute; top: -24px; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent 20%, rgba(0,200,255,0.08) 40%, rgba(0,200,255,0.08) 60%, transparent 80%);
+}
+
+/* Center dot */
+.preview-scifi-holographic .el-3 {
+  position: absolute; top: 50%; left: 50%; width: 6px; height: 6px;
+  background: #00C8FF; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 6px 2px rgba(0,200,255,0.4);
+}

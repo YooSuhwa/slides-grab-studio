@@ -118,7 +118,20 @@ export function getPackInfo(packId) {
     colors = parseThemeColors(readFileSync(themePath, 'utf-8'));
   } catch { /* no theme */ }
 
-  return { id: packId, name: packIdToName(packId), colors };
+  // Read pack.json metadata if available
+  let meta = {};
+  try {
+    meta = JSON.parse(readFileSync(join(pack.path, 'pack.json'), 'utf-8'));
+  } catch { /* no pack.json */ }
+
+  return {
+    id: packId,
+    name: meta.name || packIdToName(packId),
+    colors,
+    mood: meta.mood || [],
+    bestFor: meta.bestFor || '',
+    order: meta.order || 999,
+  };
 }
 
 /**
@@ -172,6 +185,9 @@ export function listPacks() {
         id: entry.name,
         name: info?.name || entry.name,
         colors: info?.colors || {},
+        mood: info?.mood || [],
+        bestFor: info?.bestFor || '',
+        order: info?.order || 999,
         templates,
         ownTemplates: own,
         tier: ownCount > 0 ? 'custom' : 'skin',

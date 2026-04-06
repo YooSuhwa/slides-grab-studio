@@ -6,8 +6,108 @@
   <title>Pack Gallery - slides-grab-studio</title>
   <link rel="icon" type="image/png" href="/asset/buddy_logo_round.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap">
   <link rel="stylesheet" href="/gallery.css">
   <script>(function(){var t=localStorage.getItem('sg-theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia('(prefers-color-scheme: light)').matches)document.documentElement.setAttribute('data-theme','light')})();</script>
+  <style>
+    /* ── Gallery Grid ── */
+    .gallery-grid-new {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+      padding: 0;
+    }
+
+    /* ── Card ── */
+    .pack-card {
+      background: var(--card-bg, #1a1a1f);
+      border: 1px solid var(--card-border, rgba(255,255,255,0.08));
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .pack-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+    }
+
+    /* ── Preview area ── */
+    .preview {
+      position: relative;
+      overflow: hidden;
+      height: 130px;
+      border-radius: 12px 12px 0 0;
+    }
+    .preview .el {
+      position: absolute;
+    }
+
+    /* ── Card info ── */
+    .pack-info {
+      padding: 12px 14px 14px;
+    }
+    .pack-number {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      color: var(--text-muted, #666);
+      letter-spacing: 1px;
+      margin-bottom: 2px;
+    }
+    .pack-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary, #fff);
+      margin: 0 0 4px 0;
+      letter-spacing: 0.3px;
+    }
+    .pack-desc {
+      font-size: 12px;
+      color: var(--text-muted, #888);
+      line-height: 1.5;
+      margin: 0 0 10px 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .pack-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .pack-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.5px;
+      padding: 2px 8px;
+      border: 1px solid var(--tag-border, rgba(255,255,255,0.15));
+      border-radius: 3px;
+      color: var(--text-muted, #888);
+      text-transform: lowercase;
+    }
+
+    /* ── Light theme overrides ── */
+    [data-theme="light"] .pack-card {
+      --card-bg: #ffffff;
+      --card-border: rgba(0,0,0,0.08);
+    }
+    [data-theme="light"] .pack-card:hover {
+      box-shadow: 0 16px 48px rgba(0,0,0,0.12);
+    }
+    [data-theme="light"] .pack-name { --text-primary: #111; }
+    [data-theme="light"] .pack-desc { --text-muted: #666; }
+    [data-theme="light"] .pack-number { --text-muted: #999; }
+    [data-theme="light"] .pack-tag { --tag-border: rgba(0,0,0,0.12); --text-muted: #666; }
+
+    /* ── Loading ── */
+    .gallery-loading {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 0;
+      color: var(--text-muted, #888);
+    }
+  </style>
 </head>
 <body>
   <div class="gallery-container">
@@ -25,341 +125,110 @@
     </div>
 
     <div class="gallery-header">
-      <h1>Pack Gallery</h1>
-      <p class="gallery-subtitle">Browse all template packs and preview their designs</p>
+      <h1>Design Packs</h1>
+      <p class="gallery-subtitle">31 unique visual styles for your presentations</p>
     </div>
 
-    <div class="gallery-grid" id="gallery-grid">
+    <div class="gallery-grid-new" id="gallery-grid">
       <div class="gallery-loading">
         <div class="loading-spinner"></div>
         Loading packs...
       </div>
     </div>
-
-    <!-- Pack detail modal -->
-    <div class="gallery-modal-backdrop" id="gallery-modal-backdrop" hidden>
-      <div class="gallery-modal" role="dialog" aria-modal="true">
-        <div class="gallery-modal-header">
-          <span class="gallery-modal-name" id="gallery-modal-name"></span>
-          <span class="gallery-modal-label">Preview</span>
-          <button class="gallery-modal-close" id="gallery-modal-close" type="button" aria-label="Close">&times;</button>
-        </div>
-        <div class="gallery-modal-desc" id="gallery-modal-desc"></div>
-        <div class="gallery-modal-types" id="gallery-modal-types"></div>
-        <div class="gallery-modal-preview">
-          <div class="gallery-preview-wrapper-modal" id="gallery-preview-wrapper">
-            <div class="gallery-preview-skeleton" id="gallery-preview-skeleton">Loading preview...</div>
-            <iframe class="gallery-preview-iframe-modal" id="gallery-preview-iframe" sandbox="allow-same-origin" loading="lazy"></iframe>
-          </div>
-        </div>
-        <div class="gallery-modal-footer">
-          <a class="gallery-modal-use-btn" id="gallery-modal-use-btn" href="/">Use this pack &rarr;</a>
-        </div>
-      </div>
-    </div>
   </div>
 
   <script type="module">
-    import { initGalleryModal, openPackModal } from '/js/gallery-modal.js';
-
     const grid = document.getElementById('gallery-grid');
-    let commonTypes = {};
-
-    function safeColor(v, fallback) {
-      const s = typeof v === 'string' ? v.trim() : '';
-      return /^#[0-9a-fA-F]{3,8}$/.test(s) ? s : fallback;
-    }
-
-    const PACK_DESC = {
-      'simple_light': 'Default base template with clean layout',
-      'simple_dark': 'Dark minimal monochrome',
-      'corporate': 'Professional navy blue business',
-      'executive': 'Refined off-white with dark accents',
-      'modern-dark': 'Pure black with white typography',
-      'sage': 'Calm green-gray natural tones',
-      'warm': 'Warm cream with rust accents',
-      'aurora': 'Unique layouts with soft pastel gradients',
-      'eigengrau-dark-gray': 'Cinematic dark theme with cyan highlights',
-      'real-balance-hybrid': 'Modern asymmetric layouts with bold typography',
-    };
-
-    async function loadCommonTypes() {
-      try {
-        const res = await fetch('/packs-preview/common-types.json');
-        if (res.ok) commonTypes = await res.json();
-      } catch { /* silent */ }
-    }
 
     async function loadGallery() {
       try {
         const res = await fetch('/api/packs');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const packs = await res.json();
+
+        // Sort by order from pack.json
+        packs.sort((a, b) => (a.order || 999) - (b.order || 999));
+
+        // Load all preview CSS files
+        const cssPromises = packs.map(p =>
+          fetch(`/api/packs/${encodeURIComponent(p.id)}/preview.css`)
+            .then(r => r.ok ? r.text() : '')
+            .catch(() => '')
+        );
+        const cssTexts = await Promise.all(cssPromises);
+
+        // Inject all preview CSS into a single style tag
+        const styleEl = document.createElement('style');
+        styleEl.textContent = cssTexts.filter(Boolean).join('\n');
+        document.head.appendChild(styleEl);
+
         renderGallery(packs);
       } catch (err) {
-        grid.innerHTML = `
-          <div class="gallery-error">
-            <p>Failed to load packs: ${err.message}</p>
-          </div>
-        `;
+        grid.innerHTML = `<div class="gallery-loading"><p>Failed to load packs: ${err.message}</p></div>`;
       }
-    }
-
-    /** Featured template types for thumbnail strip (in priority order). */
-    const FEATURED_TYPES = ['content', 'section-divider', 'chart', 'highlight', 'two-columns', 'statistics', 'timeline'];
-
-    /** Swatch definitions with semantic labels. */
-    const SWATCH_DEFS = [
-      { key: 'bg-primary', label: 'BG', fallback: '#333' },
-      { key: 'accent', label: 'Accent', fallback: '#666' },
-      { key: 'text-primary', label: 'Text', fallback: '#fff' },
-      { key: 'text-secondary', label: 'Muted', fallback: '#aaa' },
-    ];
-
-    /** Auto-scale an iframe to fill its wrapper after load. */
-    function autoScaleIframe(iframe, wrapper) {
-      try {
-        const doc = iframe.contentDocument || iframe.contentWindow.document;
-        let w = 0, h = 0;
-        const slide = doc.querySelector('.slide');
-        if (slide) { const r = slide.getBoundingClientRect(); w = r.width; h = r.height; }
-        if (!(w > 0 && h > 0) && doc.body) {
-          const cs = iframe.contentWindow.getComputedStyle(doc.body);
-          w = parseFloat(cs.width); h = parseFloat(cs.height);
-        }
-        if (w > 0 && h > 0) {
-          iframe.style.width = w + 'px';
-          iframe.style.height = h + 'px';
-          const ww = wrapper.clientWidth || 400;
-          iframe.style.transform = `scale(${ww / w})`;
-        }
-      } catch (_) { /* cross-origin */ }
-      iframe.style.opacity = '1';
-    }
-
-    function makeClickable(el, pack) {
-      el.setAttribute('role', 'button');
-      el.setAttribute('tabindex', '0');
-      el.addEventListener('click', () => openPackModal(pack));
-      el.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPackModal(pack); }
-      });
-    }
-
-    /** Render a full-size card for custom template packs. */
-    function renderCustomCard(pack) {
-      const card = document.createElement('div');
-      card.className = 'gallery-card';
-
-      const colors = pack.colors || {};
-      const bg = safeColor(colors['bg-primary'], '#333');
-      const accent = safeColor(colors.accent, '#666');
-      const textPrimary = safeColor(colors['text-primary'], '#fff');
-      const textSecondary = safeColor(colors['text-secondary'], '#aaa');
-      // Show only pack's own templates for preview; fall back for skin packs
-      const templates = (pack.ownTemplates?.length ? pack.ownTemplates : pack.templates) || [];
-
-      // ── Cover preview ──
-      const previewWrapper = document.createElement('div');
-      previewWrapper.className = 'gallery-preview-wrapper';
-
-      if (templates.includes('cover')) {
-        const iframe = document.createElement('iframe');
-        iframe.className = 'gallery-preview-iframe';
-        iframe.src = `/packs-preview/${encodeURIComponent(pack.id)}/templates/cover.html`;
-        iframe.loading = 'lazy';
-        iframe.setAttribute('sandbox', 'allow-same-origin');
-        iframe.setAttribute('tabindex', '-1');
-        iframe.setAttribute('aria-hidden', 'true');
-        iframe.addEventListener('load', () => autoScaleIframe(iframe, previewWrapper));
-        previewWrapper.appendChild(iframe);
-      } else {
-        const preview = document.createElement('div');
-        preview.className = 'gallery-preview-fallback';
-        preview.style.background = bg;
-        preview.innerHTML = `
-          <div class="preview-title-bar" style="background:${textPrimary}"></div>
-          <div class="preview-accent-bar" style="background:${accent}"></div>
-          <div class="preview-body-bar" style="background:${textSecondary}"></div>`;
-        previewWrapper.appendChild(preview);
-      }
-
-      const overlay = document.createElement('div');
-      overlay.className = 'gallery-preview-overlay';
-      overlay.innerHTML = '<span class="gallery-preview-overlay-text">Click to explore all templates</span>';
-      previewWrapper.appendChild(overlay);
-
-      // ── Thumbnail strip (4 featured) ──
-      const featured = FEATURED_TYPES.filter(t => t !== 'cover' && templates.includes(t)).slice(0, 4);
-      let thumbStrip = null;
-      if (featured.length > 0) {
-        thumbStrip = document.createElement('div');
-        thumbStrip.className = 'gallery-thumb-strip';
-        for (const tmpl of featured) {
-          const item = document.createElement('div');
-          item.className = 'gallery-thumb-item';
-          const label = document.createElement('span');
-          label.className = 'gallery-thumb-label';
-          label.textContent = tmpl;
-          item.appendChild(label);
-          const tIframe = document.createElement('iframe');
-          tIframe.className = 'gallery-thumb-iframe';
-          tIframe.src = `/packs-preview/${encodeURIComponent(pack.id)}/templates/${encodeURIComponent(tmpl)}.html`;
-          tIframe.loading = 'lazy';
-          tIframe.setAttribute('sandbox', 'allow-same-origin');
-          tIframe.setAttribute('tabindex', '-1');
-          tIframe.setAttribute('aria-hidden', 'true');
-          tIframe.addEventListener('load', () => autoScaleIframe(tIframe, item));
-          item.appendChild(tIframe);
-          thumbStrip.appendChild(item);
-        }
-      }
-
-      // ── Info ──
-      const info = document.createElement('div');
-      info.className = 'gallery-card-info';
-
-      const nameRow = document.createElement('div');
-      nameRow.className = 'gallery-card-name-row';
-      const name = document.createElement('h2');
-      name.className = 'gallery-card-name';
-      name.textContent = pack.name || pack.id;
-      const badge = document.createElement('span');
-      badge.className = 'gallery-tier-badge custom';
-      badge.textContent = `${pack.ownTemplateCount || templates.length} unique`;
-      nameRow.append(name, badge);
-
-      const desc = document.createElement('p');
-      desc.className = 'gallery-card-desc';
-      desc.textContent = PACK_DESC[pack.id] || '';
-
-      const swatches = document.createElement('div');
-      swatches.className = 'gallery-swatches-labeled';
-      for (const def of SWATCH_DEFS) {
-        const c = safeColor(colors[def.key], def.fallback);
-        const item = document.createElement('div');
-        item.className = 'gallery-swatch-item';
-        item.innerHTML = `<div class="gallery-swatch-color" style="background:${c}" title="${c}"></div><span class="gallery-swatch-label">${def.label}</span>`;
-        swatches.appendChild(item);
-      }
-
-      info.append(nameRow);
-      if (desc.textContent) info.appendChild(desc);
-      info.appendChild(swatches);
-
-      card.appendChild(previewWrapper);
-      if (thumbStrip) card.appendChild(thumbStrip);
-      card.appendChild(info);
-      makeClickable(card, pack);
-      return card;
-    }
-
-    /** Render a compact card for theme skin packs. */
-    function renderSkinCard(pack) {
-      const card = document.createElement('div');
-      card.className = 'gallery-card-skin';
-
-      const colors = pack.colors || {};
-      const bg = safeColor(colors['bg-primary'], '#333');
-      const accent = safeColor(colors.accent, '#666');
-      const textPrimary = safeColor(colors['text-primary'], '#fff');
-      const textSecondary = safeColor(colors['text-secondary'], '#aaa');
-
-      // Color bar — horizontal gradient showing the palette
-      const colorBar = document.createElement('div');
-      colorBar.className = 'skin-color-bar';
-      colorBar.style.background = `linear-gradient(135deg, ${bg} 0%, ${bg} 50%, ${accent} 50%, ${accent} 100%)`;
-
-      // Text previews inside color bar
-      colorBar.innerHTML = `
-        <span class="skin-preview-title" style="color:${textPrimary}">Aa</span>
-        <span class="skin-preview-accent" style="background:${accent}"></span>
-      `;
-
-      // Info
-      const info = document.createElement('div');
-      info.className = 'skin-card-info';
-
-      const name = document.createElement('span');
-      name.className = 'skin-card-name';
-      name.textContent = pack.name || pack.id;
-
-      const desc = document.createElement('span');
-      desc.className = 'skin-card-desc';
-      desc.textContent = PACK_DESC[pack.id] || '';
-
-      // Swatches row
-      const swatches = document.createElement('div');
-      swatches.className = 'skin-swatches';
-      for (const def of SWATCH_DEFS) {
-        const c = safeColor(colors[def.key], def.fallback);
-        const dot = document.createElement('div');
-        dot.className = 'skin-swatch';
-        dot.style.background = c;
-        dot.title = `${def.label}: ${c}`;
-        swatches.appendChild(dot);
-      }
-
-      info.append(name, desc, swatches);
-      card.append(colorBar, info);
-      makeClickable(card, pack);
-      return card;
     }
 
     function renderGallery(packs) {
       grid.innerHTML = '';
 
-      const customs = packs.filter(p => p.tier === 'custom');
-      const skins = packs.filter(p => p.tier !== 'custom');
+      packs.forEach((pack, idx) => {
+        const card = document.createElement('div');
+        card.className = 'pack-card';
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
 
-      // ── Custom Templates Section ──
-      if (customs.length) {
-        const section = document.createElement('div');
-        section.className = 'gallery-section';
+        // Preview
+        const preview = document.createElement('div');
+        preview.className = `preview preview-${pack.id}`;
+        preview.innerHTML = '<div class="el el-1"></div><div class="el el-2"></div><div class="el el-3"></div>';
 
-        const header = document.createElement('div');
-        header.className = 'gallery-section-header';
-        header.innerHTML = `
-          <div class="gallery-section-title-row">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <h2>Custom Templates</h2>
-          </div>
-          <p>Unique layouts and design structures beyond the base template</p>`;
+        // Info
+        const info = document.createElement('div');
+        info.className = 'pack-info';
 
-        const customGrid = document.createElement('div');
-        customGrid.className = 'gallery-grid-custom';
-        for (const pack of customs) customGrid.appendChild(renderCustomCard(pack));
+        const number = document.createElement('div');
+        number.className = 'pack-number';
+        number.textContent = String(idx + 1).padStart(2, '0') + ' —';
 
-        section.append(header, customGrid);
-        grid.appendChild(section);
-      }
+        const name = document.createElement('h3');
+        name.className = 'pack-name';
+        name.textContent = pack.name || pack.id;
 
-      // ── Theme Skins Section ──
-      if (skins.length) {
-        const section = document.createElement('div');
-        section.className = 'gallery-section';
+        const desc = document.createElement('p');
+        desc.className = 'pack-desc';
+        desc.textContent = pack.bestFor || '';
 
-        const header = document.createElement('div');
-        header.className = 'gallery-section-header';
-        header.innerHTML = `
-          <div class="gallery-section-title-row">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a7 7 0 0 0 0 20 7 7 0 0 1 0-20"/><path d="M12 2a7 7 0 0 1 0 20"/></svg>
-            <h2>Theme Skins</h2>
-          </div>
-          <p>Same base layouts, different color palettes and typography</p>`;
+        const tags = document.createElement('div');
+        tags.className = 'pack-tags';
+        const moods = pack.mood || [];
+        moods.slice(0, 4).forEach(m => {
+          const tag = document.createElement('span');
+          tag.className = 'pack-tag';
+          tag.textContent = m;
+          tags.appendChild(tag);
+        });
 
-        const skinGrid = document.createElement('div');
-        skinGrid.className = 'gallery-grid-skins';
-        for (const pack of skins) skinGrid.appendChild(renderSkinCard(pack));
+        info.append(number, name);
+        if (desc.textContent) info.appendChild(desc);
+        if (moods.length) info.appendChild(tags);
 
-        section.append(header, skinGrid);
-        grid.appendChild(section);
-      }
+        card.append(preview, info);
+
+        // Click → select pack and go to editor
+        card.addEventListener('click', () => {
+          window.location.href = `/?pack=${encodeURIComponent(pack.id)}`;
+        });
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            window.location.href = `/?pack=${encodeURIComponent(pack.id)}`;
+          }
+        });
+
+        grid.appendChild(card);
+      });
     }
 
-    // Load common types first (tiny), then init modal + gallery in parallel
-    await loadCommonTypes();
-    initGalleryModal(commonTypes);
     await loadGallery();
 
     // Theme toggle

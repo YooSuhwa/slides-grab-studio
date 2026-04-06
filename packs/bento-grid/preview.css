@@ -1,0 +1,80 @@
+/* bento-grid — Off-white bg, asymmetric grid cells in different colors */
+.preview-bento-grid {
+  background: #F8F8F2;
+  padding: 10px;
+}
+
+.preview-bento-grid .el-1 {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 130px;
+  height: 80px;
+  background: #1A1A2E;
+  border-radius: 12px;
+}
+
+.preview-bento-grid .el-1::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: 16px;
+  width: 60px;
+  height: 7px;
+  background: #FFFFFF;
+  border-radius: 3px;
+}
+
+.preview-bento-grid .el-1::after {
+  content: '';
+  position: absolute;
+  top: 34px;
+  left: 16px;
+  width: 40px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 2px;
+}
+
+.preview-bento-grid .el-2 {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 116px;
+  height: 36px;
+  background: #E8FF3B;
+  border-radius: 10px;
+}
+
+.preview-bento-grid .el-2::after {
+  content: '';
+  position: absolute;
+  top: 56px;
+  left: 0;
+  width: 116px;
+  height: 36px;
+  background: #FF6B6B;
+  border-radius: 10px;
+}
+
+.preview-bento-grid .el-3 {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  width: 130px;
+  height: 48px;
+  background: #4ECDC4;
+  border-radius: 10px;
+}
+
+.preview-bento-grid .el-3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: -142px;
+  width: 116px;
+  height: 48px;
+  background: #1A1A2E;
+  border-radius: 10px;
+  opacity: 0.3;
+}

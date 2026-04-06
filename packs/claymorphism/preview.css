@@ -1,0 +1,68 @@
+/* claymorphism — Warm pastel gradient, rounded shapes, colored soft shadows */
+.preview-claymorphism {
+  background: linear-gradient(145deg, #FFECD2 0%, #FCB69F 100%);
+}
+
+.preview-claymorphism .el-1 {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140px;
+  height: 72px;
+  background: linear-gradient(145deg, #ffffff 0%, #f0e6dd 100%);
+  border-radius: 22px;
+  box-shadow:
+    8px 8px 20px rgba(200, 140, 100, 0.35),
+    -4px -4px 12px rgba(255, 255, 255, 0.8),
+    inset 0 2px 4px rgba(255, 255, 255, 0.6);
+}
+
+.preview-claymorphism .el-1::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  width: 70px;
+  height: 8px;
+  background: #3D2C2C;
+  border-radius: 4px;
+}
+
+.preview-claymorphism .el-1::after {
+  content: '';
+  position: absolute;
+  top: 34px;
+  left: 20px;
+  width: 45px;
+  height: 6px;
+  background: #6B5050;
+  border-radius: 3px;
+  opacity: 0.5;
+}
+
+.preview-claymorphism .el-2 {
+  position: absolute;
+  bottom: 20px;
+  left: 36px;
+  width: 50px;
+  height: 28px;
+  background: #A8EDEA;
+  border-radius: 14px;
+  box-shadow:
+    4px 4px 12px rgba(100, 180, 170, 0.4),
+    -2px -2px 6px rgba(255, 255, 255, 0.7);
+}
+
+.preview-claymorphism .el-3 {
+  position: absolute;
+  bottom: 18px;
+  right: 36px;
+  width: 60px;
+  height: 28px;
+  background: #FED6E3;
+  border-radius: 14px;
+  box-shadow:
+    4px 4px 12px rgba(200, 140, 160, 0.4),
+    -2px -2px 6px rgba(255, 255, 255, 0.7);
+}

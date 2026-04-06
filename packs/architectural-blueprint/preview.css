@@ -1,0 +1,40 @@
+/* architectural-blueprint — Blueprint blue bg, grid lines, geometric outlines, dimension line */
+.preview-architectural-blueprint { background: #0D2240; }
+
+/* Fine grid */
+.preview-architectural-blueprint .el-1 {
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(0deg, rgba(100,180,255,0.12) 0px, rgba(100,180,255,0.12) 1px, transparent 1px, transparent 16px),
+    repeating-linear-gradient(90deg, rgba(100,180,255,0.12) 0px, rgba(100,180,255,0.12) 1px, transparent 1px, transparent 16px);
+}
+
+/* Rectangle with diagonal cross */
+.preview-architectural-blueprint .el-2 {
+  position: absolute; top: 30px; left: 40px; width: 100px; height: 70px;
+  border: 1.5px solid rgba(100,200,255,0.5);
+}
+.preview-architectural-blueprint .el-2::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - 0.5px), rgba(100,200,255,0.25) 50%, transparent calc(50% + 0.5px)),
+    linear-gradient(to top right, transparent calc(50% - 0.5px), rgba(100,200,255,0.25) 50%, transparent calc(50% + 0.5px));
+}
+.preview-architectural-blueprint .el-2::after {
+  content: ''; position: absolute; top: -20px; right: -30px;
+  width: 30px; height: 30px; border: 1.5px solid rgba(100,200,255,0.4); border-radius: 50%;
+}
+
+/* Dimension line with arrow ticks */
+.preview-architectural-blueprint .el-3 {
+  position: absolute; top: 114px; left: 40px; width: 100px; height: 1px;
+  background: rgba(100,200,255,0.5);
+}
+.preview-architectural-blueprint .el-3::before {
+  content: ''; position: absolute; top: -4px; left: 0;
+  border: 4px solid transparent; border-right: 6px solid rgba(100,200,255,0.5);
+}
+.preview-architectural-blueprint .el-3::after {
+  content: ''; position: absolute; top: -4px; right: 0;
+  border: 4px solid transparent; border-left: 6px solid rgba(100,200,255,0.5);
+}

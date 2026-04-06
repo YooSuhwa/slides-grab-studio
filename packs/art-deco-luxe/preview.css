@@ -1,0 +1,35 @@
+/* art-deco-luxe — Deep black-brown bg, double gold inset border, diamond center, fan ornaments */
+.preview-art-deco-luxe { background: #0E0A05; }
+
+/* Double gold inset border */
+.preview-art-deco-luxe .el-1 {
+  position: absolute; inset: 8px;
+  border: 1.5px solid #B8960C;
+  box-shadow: inset 0 0 0 4px #0E0A05, inset 0 0 0 5.5px #B8960C;
+}
+
+/* Diamond shape at center */
+.preview-art-deco-luxe .el-2 {
+  position: absolute; top: 50%; left: 50%; width: 28px; height: 28px;
+  background: #B8960C;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.preview-art-deco-luxe .el-2::before {
+  content: ''; position: absolute; inset: 4px; background: #0E0A05;
+}
+
+/* Fan quarter-circle ornament — bottom-left */
+.preview-art-deco-luxe .el-3 {
+  position: absolute; bottom: 8px; left: 8px; width: 40px; height: 40px;
+  overflow: hidden;
+}
+.preview-art-deco-luxe .el-3::before {
+  content: ''; position: absolute; bottom: 0; left: 0; width: 80px; height: 80px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle at 0% 100%, transparent 0px, transparent 6px, rgba(184,150,12,0.3) 6px, rgba(184,150,12,0.3) 7.5px);
+}
+.preview-art-deco-luxe .el-3::after {
+  content: ''; position: absolute; top: -118px; right: -200px; width: 80px; height: 80px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle at 100% 0%, transparent 0px, transparent 6px, rgba(184,150,12,0.3) 6px, rgba(184,150,12,0.3) 7.5px);
+}

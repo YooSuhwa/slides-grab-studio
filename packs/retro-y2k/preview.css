@@ -1,0 +1,87 @@
+/* retro-y2k — Navy bg, rainbow stripe bars, star shapes, double-shadow text bar */
+.preview-retro-y2k {
+  background: #000080;
+}
+
+.preview-retro-y2k .el-1 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: linear-gradient(
+    90deg,
+    #FF0000 0%, #FF8800 14%, #FFFF00 28%,
+    #00FF00 42%, #00FFFF 57%, #0088FF 71%,
+    #8800FF 85%, #FF00FF 100%
+  );
+}
+
+.preview-retro-y2k .el-1::after {
+  content: '';
+  position: absolute;
+  bottom: -150px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: linear-gradient(
+    90deg,
+    #FF00FF 0%, #8800FF 14%, #0088FF 28%,
+    #00FFFF 42%, #00FF00 57%, #FFFF00 71%,
+    #FF8800 85%, #FF0000 100%
+  );
+}
+
+.preview-retro-y2k .el-2 {
+  position: absolute;
+  top: 28px;
+  right: 30px;
+  width: 24px;
+  height: 24px;
+  background: #FFFF00;
+  clip-path: polygon(
+    50% 0%, 61% 35%, 98% 35%, 68% 57%,
+    79% 91%, 50% 70%, 21% 91%, 32% 57%,
+    2% 35%, 39% 35%
+  );
+}
+
+.preview-retro-y2k .el-2::after {
+  content: '';
+  position: absolute;
+  top: 40px;
+  left: -6px;
+  width: 16px;
+  height: 16px;
+  background: #00FFFF;
+  clip-path: polygon(
+    50% 0%, 61% 35%, 98% 35%, 68% 57%,
+    79% 91%, 50% 70%, 21% 91%, 32% 57%,
+    2% 35%, 39% 35%
+  );
+}
+
+.preview-retro-y2k .el-3 {
+  position: absolute;
+  top: 55px;
+  left: 28px;
+  width: 130px;
+  height: 14px;
+  background: #FFFFFF;
+  border-radius: 2px;
+  box-shadow:
+    3px 3px 0 #FF00FF,
+    6px 6px 0 #00FFFF;
+}
+
+.preview-retro-y2k .el-3::after {
+  content: '';
+  position: absolute;
+  top: 24px;
+  left: 0;
+  width: 80px;
+  height: 8px;
+  background: #CCCCFF;
+  border-radius: 2px;
+  opacity: 0.6;
+}

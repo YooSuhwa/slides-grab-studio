@@ -1,0 +1,51 @@
+/* aurora-neon-glow — Near-black bg, neon glow blobs, gradient text bar */
+.preview-aurora-neon-glow {
+  background: #050510;
+}
+
+.preview-aurora-neon-glow .el-1 {
+  position: absolute;
+  top: -10px;
+  left: 30px;
+  width: 120px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(0, 255, 136, 0.5) 0%, transparent 65%);
+  filter: blur(18px);
+  border-radius: 50%;
+}
+
+.preview-aurora-neon-glow .el-2 {
+  position: absolute;
+  bottom: -10px;
+  right: 20px;
+  width: 140px;
+  height: 110px;
+  background:
+    radial-gradient(circle at 30% 50%, rgba(123, 0, 255, 0.5) 0%, transparent 60%),
+    radial-gradient(circle at 70% 50%, rgba(0, 180, 255, 0.45) 0%, transparent 55%);
+  filter: blur(20px);
+  border-radius: 50%;
+}
+
+.preview-aurora-neon-glow .el-3 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 130px;
+  height: 12px;
+  background: linear-gradient(90deg, #00FF88, #7B00FF, #00B4FF);
+  border-radius: 6px;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.3), 0 0 40px rgba(123, 0, 255, 0.2);
+}
+
+.preview-aurora-neon-glow .el-3::after {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 10px;
+  width: 70px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}

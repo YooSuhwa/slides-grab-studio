@@ -1,0 +1,66 @@
+/* nordic-minimalism — Warm cream bg, organic blob, small dots, thin serif text bar */
+.preview-nordic-minimalism {
+  background: #F4F1EC;
+}
+
+.preview-nordic-minimalism .el-1 {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  width: 110px;
+  height: 90px;
+  background: rgba(217, 207, 196, 0.3);
+  border-radius: 60% 40% 50% 45% / 50% 60% 40% 55%;
+}
+
+.preview-nordic-minimalism .el-2 {
+  position: absolute;
+  bottom: 42px;
+  left: 36px;
+  width: 5px;
+  height: 5px;
+  background: #3D3530;
+  border-radius: 50%;
+}
+
+.preview-nordic-minimalism .el-2::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  width: 5px;
+  height: 5px;
+  background: #8A7A6A;
+  border-radius: 50%;
+}
+
+.preview-nordic-minimalism .el-2::after {
+  content: '';
+  position: absolute;
+  left: 28px;
+  width: 5px;
+  height: 5px;
+  background: #D9CFC4;
+  border-radius: 50%;
+}
+
+.preview-nordic-minimalism .el-3 {
+  position: absolute;
+  top: 48px;
+  left: 36px;
+  width: 100px;
+  height: 7px;
+  background: #3D3530;
+  border-radius: 1px;
+}
+
+.preview-nordic-minimalism .el-3::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 0;
+  width: 65px;
+  height: 5px;
+  background: #8A7A6A;
+  border-radius: 1px;
+  opacity: 0.5;
+}

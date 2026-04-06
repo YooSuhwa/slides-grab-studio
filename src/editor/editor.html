@@ -2781,9 +2781,7 @@
       overflow-y: auto;
     }
     .pack-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      display: block;
     }
     /* Section label */
     .pack-group-label {
@@ -2806,9 +2804,27 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 6px;
     }
+    .pack-grid-all {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      max-height: 420px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
     @media (max-width: 520px) {
       .pack-grid-custom { grid-template-columns: 1fr; }
       .pack-grid-skins { grid-template-columns: repeat(2, 1fr); }
+      .pack-grid-all { grid-template-columns: repeat(2, 1fr); }
+    }
+    .pack-preview .el { position: absolute; }
+    .pack-mood-text {
+      font-size: 9px;
+      color: var(--text-3);
+      opacity: 0.5;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     /* Base card styles */
     .pack-card {
@@ -2837,7 +2853,7 @@
     /* Custom card cover preview */
     .pack-preview {
       width: 100%;
-      aspect-ratio: 16/9;
+      height: 70px;
       overflow: hidden;
       position: relative;
     }

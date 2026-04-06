@@ -1,0 +1,80 @@
+/* pastel-soft-ui — Tricolor pastel gradient, frosted card, soft dots */
+.preview-pastel-soft-ui {
+  background: linear-gradient(135deg, #FFB6C1 0%, #87CEEB 50%, #98E8C1 100%);
+}
+
+/* Frosted white card — centered */
+.preview-pastel-soft-ui .el-1 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 160px;
+  height: 90px;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.70);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+/* Text placeholders inside card */
+.preview-pastel-soft-ui .el-1::after {
+  content: '';
+  position: absolute;
+  top: 22px;
+  left: 20px;
+  width: 80px;
+  height: 8px;
+  background: rgba(100, 100, 120, 0.25);
+  border-radius: 4px;
+  box-shadow:
+    0 16px 0 rgba(100, 100, 120, 0.15),
+    60px 16px 0 rgba(100, 100, 120, 0.1);
+}
+
+/* Soft colored dot — pink */
+.preview-pastel-soft-ui .el-2 {
+  position: absolute;
+  top: 18px;
+  left: 28px;
+  width: 14px;
+  height: 14px;
+  background: rgba(255, 130, 160, 0.55);
+  border-radius: 50%;
+}
+
+/* Soft colored dot — blue */
+.preview-pastel-soft-ui .el-2::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 24px;
+  width: 10px;
+  height: 10px;
+  background: rgba(100, 170, 230, 0.50);
+  border-radius: 50%;
+}
+
+/* Soft colored dot — mint */
+.preview-pastel-soft-ui .el-3 {
+  position: absolute;
+  bottom: 16px;
+  right: 32px;
+  width: 12px;
+  height: 12px;
+  background: rgba(100, 210, 170, 0.50);
+  border-radius: 50%;
+}
+
+.preview-pastel-soft-ui .el-3::after {
+  content: '';
+  position: absolute;
+  top: -26px;
+  left: 18px;
+  width: 8px;
+  height: 8px;
+  background: rgba(200, 160, 230, 0.40);
+  border-radius: 50%;
+}

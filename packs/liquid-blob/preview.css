@@ -1,0 +1,40 @@
+/* liquid-blob — Deep ocean gradient, three overlapping blurred circles */
+.preview-liquid-blob {
+  background: linear-gradient(135deg, #0F2027, #203A43, #2C5364);
+}
+
+/* Teal blob — large, center-left */
+.preview-liquid-blob .el-1 {
+  position: absolute;
+  top: 30px;
+  left: 60px;
+  width: 100px;
+  height: 100px;
+  background: rgba(0, 210, 190, 0.35);
+  border-radius: 50%;
+  filter: blur(20px);
+}
+
+/* Blue blob — medium, center-right */
+.preview-liquid-blob .el-2 {
+  position: absolute;
+  top: 20px;
+  left: 120px;
+  width: 90px;
+  height: 90px;
+  background: rgba(0, 120, 255, 0.30);
+  border-radius: 50%;
+  filter: blur(18px);
+}
+
+/* Violet blob — smaller, offset right */
+.preview-liquid-blob .el-3 {
+  position: absolute;
+  top: 50px;
+  left: 160px;
+  width: 80px;
+  height: 80px;
+  background: rgba(120, 0, 255, 0.30);
+  border-radius: 50%;
+  filter: blur(16px);
+}

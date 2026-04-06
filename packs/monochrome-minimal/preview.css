@@ -1,0 +1,64 @@
+/* monochrome-minimal — Near-white bg, thin circle, descending bars, extreme whitespace */
+.preview-monochrome-minimal {
+  background: #FAFAFA;
+}
+
+/* Thin circle outline — centered */
+.preview-monochrome-minimal .el-1 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 64px;
+  height: 64px;
+  border: 1.5px solid #CCCCCC;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: transparent;
+}
+
+/* Descending-width horizontal bars — below center */
+.preview-monochrome-minimal .el-2 {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  width: 80px;
+  height: 3px;
+  background: #BBBBBB;
+  border-radius: 1px;
+  transform: translateX(-50%);
+}
+
+.preview-monochrome-minimal .el-2::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 50px;
+  height: 3px;
+  background: #D0D0D0;
+  border-radius: 1px;
+  transform: translateX(-50%);
+}
+
+.preview-monochrome-minimal .el-2::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 32px;
+  height: 3px;
+  background: #DDDDDD;
+  border-radius: 1px;
+  transform: translateX(-50%);
+}
+
+/* Small dot accent at top */
+.preview-monochrome-minimal .el-3 {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  width: 4px;
+  height: 4px;
+  background: #999999;
+  border-radius: 50%;
+}

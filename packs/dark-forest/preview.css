@@ -1,0 +1,36 @@
+/* dark-forest — Radial dark gradient, tree silhouettes, glowing moon, star dots */
+.preview-dark-forest { background: radial-gradient(ellipse at 50% 30%, #0D2B14, #060E08); }
+
+/* Tree silhouettes — three triangles along bottom */
+.preview-dark-forest .el-1 {
+  position: absolute; bottom: 0; left: 50px;
+  width: 0; height: 0;
+  border-left: 28px solid transparent; border-right: 28px solid transparent;
+  border-bottom: 55px solid #04180A;
+}
+.preview-dark-forest .el-1::before {
+  content: ''; position: absolute; bottom: -55px; left: -68px;
+  width: 0; height: 0;
+  border-left: 22px solid transparent; border-right: 22px solid transparent;
+  border-bottom: 44px solid #051A0B;
+}
+.preview-dark-forest .el-1::after {
+  content: ''; position: absolute; bottom: -55px; left: 20px;
+  width: 0; height: 0;
+  border-left: 34px solid transparent; border-right: 34px solid transparent;
+  border-bottom: 66px solid #031507;
+}
+
+/* Glowing moon */
+.preview-dark-forest .el-2 {
+  position: absolute; top: 20px; right: 36px; width: 28px; height: 28px;
+  background: #E8F4D0; border-radius: 50%;
+  box-shadow: 0 0 12px 4px rgba(232,244,208,0.3), 0 0 30px 10px rgba(232,244,208,0.1);
+}
+
+/* Star dots */
+.preview-dark-forest .el-3 {
+  position: absolute; top: 18px; left: 40px; width: 3px; height: 3px;
+  background: rgba(232,244,208,0.7); border-radius: 50%;
+  box-shadow: 30px 8px 0 0 rgba(232,244,208,0.5), 80px -4px 0 0 rgba(232,244,208,0.6), 120px 12px 0 0 rgba(232,244,208,0.4), 160px 2px 0 0 rgba(232,244,208,0.5), 55px 20px 0 0 rgba(232,244,208,0.3), 140px 26px 0 -0.5px rgba(232,244,208,0.45);
+}

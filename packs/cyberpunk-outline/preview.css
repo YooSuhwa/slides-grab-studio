@@ -1,0 +1,79 @@
+/* cyberpunk-outline — Near-black bg, cyan grid, outline text bar, corner brackets */
+.preview-cyberpunk-outline {
+  background: #0D0D0D;
+  background-image:
+    linear-gradient(rgba(0, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Outline-only text bar — transparent fill, cyan stroke */
+.preview-cyberpunk-outline .el-1 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+  border: 1.5px solid #00FFFF;
+  background: transparent;
+  border-radius: 0;
+}
+
+/* Inner faux-text line inside the bar */
+.preview-cyberpunk-outline .el-1::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  width: 80px;
+  height: 3px;
+  background: rgba(0, 255, 255, 0.5);
+  transform: translateY(-50%);
+}
+
+/* Top-left corner bracket */
+.preview-cyberpunk-outline .el-2 {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 18px;
+  height: 18px;
+  border-top: 2px solid #00FFFF;
+  border-left: 2px solid #00FFFF;
+  background: transparent;
+}
+
+/* Bottom-right corner bracket */
+.preview-cyberpunk-outline .el-2::after {
+  content: '';
+  position: absolute;
+  bottom: -128px;
+  right: -236px;
+  width: 18px;
+  height: 18px;
+  border-bottom: 2px solid #00FFFF;
+  border-right: 2px solid #00FFFF;
+}
+
+/* Subtle scan-line accent */
+.preview-cyberpunk-outline .el-3 {
+  position: absolute;
+  top: 44px;
+  left: 50%;
+  width: 60px;
+  height: 2px;
+  background: rgba(0, 255, 255, 0.25);
+  transform: translateX(-50%);
+}
+
+.preview-cyberpunk-outline .el-3::after {
+  content: '';
+  position: absolute;
+  top: 76px;
+  left: 50%;
+  width: 40px;
+  height: 2px;
+  background: rgba(0, 255, 255, 0.15);
+  transform: translateX(-50%);
+}

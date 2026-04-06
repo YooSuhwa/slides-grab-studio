@@ -1,0 +1,41 @@
+/* brutalist-newspaper — Aged paper bg, dark masthead bar, double rules, two-column divider */
+.preview-brutalist-newspaper { background: #F2EFE8; }
+
+.preview-brutalist-newspaper .el-1 {
+  position: absolute; top: 0; left: 0; right: 0; height: 30px;
+  background: #1A1208;
+}
+.preview-brutalist-newspaper .el-1::before {
+  content: ''; position: absolute; top: 10px; left: 50%;
+  transform: translateX(-50%); width: 100px; height: 10px;
+  background: #F2EFE8; border-radius: 1px;
+}
+
+/* Double horizontal rule */
+.preview-brutalist-newspaper .el-2 {
+  position: absolute; top: 38px; left: 16px; right: 16px; height: 0;
+  border-top: 2px solid #1A1208; border-bottom: 1px solid #1A1208;
+  padding-top: 3px;
+}
+.preview-brutalist-newspaper .el-2::before {
+  content: ''; position: absolute; top: 12px; left: 0;
+  width: 110px; height: 8px; background: #1A1208; border-radius: 1px;
+}
+.preview-brutalist-newspaper .el-2::after {
+  content: ''; position: absolute; top: 26px; left: 0;
+  width: 80px; height: 5px; background: rgba(26,18,8,0.35); border-radius: 1px;
+}
+
+/* Column divider + text lines */
+.preview-brutalist-newspaper .el-3 {
+  position: absolute; top: 72px; bottom: 14px; left: 50%;
+  width: 1px; background: #1A1208;
+}
+.preview-brutalist-newspaper .el-3::before {
+  content: ''; position: absolute; top: 0; right: 16px; width: 100px; height: 60px;
+  background: repeating-linear-gradient(to bottom, rgba(26,18,8,0.25) 0px, rgba(26,18,8,0.25) 4px, transparent 4px, transparent 9px);
+}
+.preview-brutalist-newspaper .el-3::after {
+  content: ''; position: absolute; top: 0; left: 16px; width: 100px; height: 60px;
+  background: repeating-linear-gradient(to bottom, rgba(26,18,8,0.25) 0px, rgba(26,18,8,0.25) 4px, transparent 4px, transparent 9px);
+}

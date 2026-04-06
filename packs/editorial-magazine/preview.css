@@ -1,0 +1,82 @@
+/* editorial-magazine — 55/45 split white/dark, red rule, serif-style text bars */
+.preview-editorial-magazine {
+  background: #FFFFFF;
+}
+
+/* Dark right panel — 45% */
+.preview-editorial-magazine .el-1 {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 45%;
+  height: 100%;
+  background: #1A1A1A;
+}
+
+/* Faux image placeholder inside dark panel */
+.preview-editorial-magazine .el-1::after {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 16px;
+  right: 16px;
+  bottom: 20px;
+  background: #2C2C2C;
+  border-radius: 1px;
+}
+
+/* Short red rule — editorial accent */
+.preview-editorial-magazine .el-2 {
+  position: absolute;
+  top: 45px;
+  left: 24px;
+  width: 40px;
+  height: 3px;
+  background: #E63030;
+  border-radius: 0;
+}
+
+/* Title text bar — serif style (wider, taller) */
+.preview-editorial-magazine .el-2::after {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 0;
+  width: 100px;
+  height: 12px;
+  background: #1A1A1A;
+  border-radius: 1px;
+}
+
+/* Body text bars — stacked thin lines */
+.preview-editorial-magazine .el-3 {
+  position: absolute;
+  top: 82px;
+  left: 24px;
+  width: 90px;
+  height: 4px;
+  background: #AAAAAA;
+  border-radius: 0.5px;
+}
+
+.preview-editorial-magazine .el-3::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 0;
+  width: 80px;
+  height: 4px;
+  background: #CCCCCC;
+  border-radius: 0.5px;
+}
+
+.preview-editorial-magazine .el-3::after {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 0;
+  width: 70px;
+  height: 4px;
+  background: #CCCCCC;
+  border-radius: 0.5px;
+}
