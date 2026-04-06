@@ -12,8 +12,10 @@ export function appendOutlinePrompt(promptLines, packId, { includePresenterNote 
   promptLines.push('## Meta');
   promptLines.push('- deck-name: <kebab-case-name>');
   promptLines.push('- slide-count: N');
-  if (packId) {
+  if (packId && packId !== 'auto') {
     promptLines.push(`- pack: ${packId}`);
+  } else if (packId === 'auto') {
+    promptLines.push('- pack: <AI가 아래 매트릭스에서 주제에 맞는 팩을 선택하여 pack ID 기입>');
   }
   promptLines.push('');
   promptLines.push('## Slides');
@@ -49,7 +51,7 @@ export function appendOutlinePrompt(promptLines, packId, { includePresenterNote 
   promptLines.push('');
 
   const allTypeNames = Object.keys(getCommonTypes());
-  if (packId) {
+  if (packId && packId !== 'auto') {
     const packTemplates = listPackTemplates(packId, { includeFallback: true });
     promptLines.push(`사용할 팩: ${packId}`);
     promptLines.push(`이 팩이 보유한 type: ${packTemplates.join(', ')}`);
@@ -57,6 +59,28 @@ export function appendOutlinePrompt(promptLines, packId, { includePresenterNote 
     promptLines.push('');
     promptLines.push('팩이 보유한 템플릿을 최대한 사용하세요.');
     promptLines.push('팩에 없는 type의 슬라이드는, AI가 팩의 theme 색상으로 직접 디자인합니다.');
+  } else if (packId === 'auto') {
+    promptLines.push(`전체 공통 type: ${allTypeNames.join(', ')}`);
+    promptLines.push('');
+    promptLines.push('## 팩 자동 선택 — Style Recommendation Matrix');
+    promptLines.push('주제를 분석하여 아래에서 가장 적합한 팩을 선택하고, Meta의 pack 필드에 해당 pack ID를 기입하세요.');
+    promptLines.push('');
+    promptLines.push('| 발표 목적 | 추천 팩 (pack ID) |');
+    promptLines.push('|-----------|---------|');
+    promptLines.push('| 테크 / AI / 스타트업 | glassmorphism, aurora-neon-glow, cyberpunk-outline, scifi-holographic |');
+    promptLines.push('| 기업 / 컨설팅 / 금융 | swiss-international, monochrome-minimal, editorial-magazine, architectural-blueprint |');
+    promptLines.push('| 교육 / 연구 / 역사 | dark-academia, nordic-minimalism, brutalist-newspaper |');
+    promptLines.push('| 브랜드 / 마케팅 | gradient-mesh, typographic-bold, duotone-split, risograph-print |');
+    promptLines.push('| 제품 / 앱 / UX | bento-grid, claymorphism, pastel-soft-ui, liquid-blob |');
+    promptLines.push('| 엔터테인먼트 / 게이밍 | retro-y2k, dark-neon-miami, vaporwave, memphis-pop |');
+    promptLines.push('| 에코 / 웰니스 / 문화 | handcrafted-organic, nordic-minimalism, dark-forest |');
+    promptLines.push('| IT 인프라 / 아키텍처 | isometric-3d-flat, cyberpunk-outline, architectural-blueprint |');
+    promptLines.push('| 포트폴리오 / 아트 / 크리에이티브 | monochrome-minimal, editorial-magazine, risograph-print, maximalist-collage |');
+    promptLines.push('| 피치덱 / 전략 | neo-brutalism, duotone-split, bento-grid, art-deco-luxe |');
+    promptLines.push('| 럭셔리 / 이벤트 / 갈라 | art-deco-luxe, monochrome-minimal, dark-academia |');
+    promptLines.push('| 바이오 / 혁신 / 과학 | liquid-blob, scifi-holographic, aurora-neon-glow |');
+    promptLines.push('');
+    promptLines.push('**확신이 없으면 `simple_light`를 사용하세요.**');
   } else {
     promptLines.push(`type은 다음 중 하나: ${allTypeNames.join(', ')}`);
   }

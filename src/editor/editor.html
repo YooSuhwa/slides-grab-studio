@@ -2732,14 +2732,53 @@
         letter-spacing: 0.5px;
         transition: all var(--transition);
       }
-      .nav-icon-btn {
-        width: 28px;
-        height: 28px;
+      .nav-bar .nav-icon-btn {
+        width: 30px;
+        height: 30px;
         padding: 0;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: var(--radius-sm);
+        color: var(--text-1);
+      }
+      .nav-bar .nav-icon-btn:hover {
+        background: var(--surface-hover);
+        border-color: var(--border-hover);
+        color: var(--text-0);
+      }
+      .nav-bar .nav-icon-btn svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+      .nav-bar .nav-icon-btn.btn-new-deck {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .nav-bar .nav-icon-btn.btn-new-deck:hover {
+        background: var(--accent-2);
+        border-color: var(--accent-2);
+        color: #fff;
+      }
+      .nav-bar .nav-icon-btn.nav-emphasis {
+        background: rgba(252, 94, 32, 0.12);
+        border: 1px solid rgba(252, 94, 32, 0.35);
+        color: var(--accent-2);
+      }
+      .nav-bar .nav-icon-btn.nav-emphasis:hover {
+        background: rgba(252, 94, 32, 0.22);
+        border-color: rgba(252, 94, 32, 0.5);
+        color: #fff;
+      }
+      .nav-bar .nav-icon-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        pointer-events: none;
       }
       .nav-bar-btn:hover {
         background: var(--accent-2);
@@ -3166,6 +3205,18 @@
         font-size: 12px;
         font-weight: 700;
         z-index: 2;
+      }
+      /* AI 추천 카드 */
+      .pack-preview-auto {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255,255,255,0.8);
+      }
+      [data-theme="light"] .pack-preview-auto {
+        background: linear-gradient(135deg, #e0e7ff 0%, #f0e6ff 100%);
+        color: rgba(100,80,160,0.6);
       }
       .pack-preview {
         width: 100%;
@@ -4893,14 +4944,20 @@
       [data-theme="light"] .nav-bar-btn.figma-btn:hover {
         background: var(--surface-3);
       }
-      [data-theme="light"] .nav-bar-btn.ghost.nav-emphasis {
+      [data-theme="light"] .nav-bar-btn.ghost.nav-emphasis,
+      [data-theme="light"] .nav-bar .nav-icon-btn.nav-emphasis {
         background: rgba(252, 94, 32, 0.06);
         border-color: rgba(252, 94, 32, 0.2);
       }
-      [data-theme="light"] .nav-bar-btn.ghost.nav-emphasis:hover {
+      [data-theme="light"] .nav-bar-btn.ghost.nav-emphasis:hover,
+      [data-theme="light"] .nav-bar .nav-icon-btn.nav-emphasis:hover {
         background: rgba(252, 94, 32, 0.12);
         border-color: rgba(252, 94, 32, 0.35);
         color: var(--accent);
+      }
+      [data-theme="light"] .nav-bar .nav-icon-btn:hover {
+        background: var(--surface-2);
+        border-color: var(--border-strong);
       }
       [data-theme="light"] .bbox-empty-guide-text {
         /* uses theme tokens — inherits from base styles */
@@ -5106,7 +5163,7 @@
         <div class="nav-controls">
           <button
             id="btn-prev"
-            class="nav-icon-btn"
+            class="nav-bar-btn ghost nav-icon-btn"
             title="Previous slide (↑)"
             aria-label="Previous slide"
           >
@@ -5117,7 +5174,7 @@
           >
           <button
             id="btn-next"
-            class="nav-icon-btn"
+            class="nav-bar-btn ghost nav-icon-btn"
             title="Next slide (↓)"
             aria-label="Next slide"
           >

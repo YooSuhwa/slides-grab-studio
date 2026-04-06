@@ -232,14 +232,18 @@ async function buildFromOutlinePrompt(ctx, slidesDirectory, slidesDir, reqGenPac
 }
 
 function buildFromScratchPrompt(topic, requirements, slideCountRange, slidesDir, reqGenPackId, existingDeckNames = []) {
-  const countLabel = typeof slideCountRange === 'string' && slideCountRange.trim() ? slideCountRange.trim() : '8~12';
+  const countLabel = typeof slideCountRange === 'string' && slideCountRange.trim() ? slideCountRange.trim() : '';
   const genPackId = normalizePackId(reqGenPackId);
   const packTemplateList = genPackId ? listPackTemplates(genPackId, { includeFallback: true }) : [];
   const hasDeckDir = !!slidesDir;
 
   const promptLines = [`주제: ${(topic || '').trim()}`];
   if (typeof requirements === 'string' && requirements.trim()) promptLines.push(`요구사항: ${requirements.trim()}`);
-  promptLines.push(`슬라이드 수: ${countLabel}장`);
+  if (countLabel) {
+    promptLines.push(`슬라이드 수: ${countLabel}장`);
+  } else {
+    promptLines.push('슬라이드 수: 주제에 적합한 분량으로 자유롭게 결정하세요 (보통 8~12장)');
+  }
   if (hasDeckDir) promptLines.push(`작업 디렉토리: ${slidesDir}`);
 
   appendPackInstructions(promptLines, genPackId, packTemplateList);
@@ -286,6 +290,37 @@ function buildFromScratchPrompt(topic, requirements, slideCountRange, slidesDir,
 
 function appendPackInstructions(promptLines, genPackId, packTemplateList) {
   if (!genPackId) return;
+
+  if (genPackId === 'auto') {
+    promptLines.push('', '## 템플릿 팩: AI 자동 선택');
+    promptLines.push('사용자가 팩을 지정하지 않았습니다. 주제와 청중에 가장 어울리는 팩을 아래 매트릭스에서 선택하세요.');
+    promptLines.push('');
+    promptLines.push('### Style Recommendation Matrix');
+    promptLines.push('| 발표 목적 | 추천 팩 |');
+    promptLines.push('|-----------|---------|');
+    promptLines.push('| 테크 / AI / 스타트업 | glassmorphism, aurora-neon-glow, cyberpunk-outline, scifi-holographic |');
+    promptLines.push('| 기업 / 컨설팅 / 금융 | swiss-international, monochrome-minimal, editorial-magazine, architectural-blueprint |');
+    promptLines.push('| 교육 / 연구 / 역사 | dark-academia, nordic-minimalism, brutalist-newspaper |');
+    promptLines.push('| 브랜드 / 마케팅 | gradient-mesh, typographic-bold, duotone-split, risograph-print |');
+    promptLines.push('| 제품 / 앱 / UX | bento-grid, claymorphism, pastel-soft-ui, liquid-blob |');
+    promptLines.push('| 엔터테인먼트 / 게이밍 | retro-y2k, dark-neon-miami, vaporwave, memphis-pop |');
+    promptLines.push('| 에코 / 웰니스 / 문화 | handcrafted-organic, nordic-minimalism, dark-forest |');
+    promptLines.push('| IT 인프라 / 아키텍처 | isometric-3d-flat, cyberpunk-outline, architectural-blueprint |');
+    promptLines.push('| 포트폴리오 / 아트 / 크리에이티브 | monochrome-minimal, editorial-magazine, risograph-print, maximalist-collage |');
+    promptLines.push('| 피치덱 / 전략 | neo-brutalism, duotone-split, bento-grid, art-deco-luxe |');
+    promptLines.push('| 럭셔리 / 이벤트 / 갈라 | art-deco-luxe, monochrome-minimal, dark-academia |');
+    promptLines.push('| 바이오 / 혁신 / 과학 | liquid-blob, scifi-holographic, aurora-neon-glow |');
+    promptLines.push('');
+    promptLines.push('### 선택 절차');
+    promptLines.push('1. 주제를 분석하여 위 매트릭스에서 가장 적합한 카테고리를 찾으세요.');
+    promptLines.push('2. 해당 카테고리의 추천 팩 중 하나를 선택하세요.');
+    promptLines.push('3. 선택한 팩의 design.md를 읽으세요: `cat packs/<선택한-pack-id>/design.md`');
+    promptLines.push('4. design.md의 mood, signature elements, CSS patterns를 따라 슬라이드를 생성하세요.');
+    promptLines.push('');
+    promptLines.push('**확신이 없으면 `simple_light`를 사용하세요.**');
+    return;
+  }
+
   promptLines.push('', `사용할 템플릿 팩: ${genPackId}`);
   if (packTemplateList.length > 0) promptLines.push(`이 팩의 보유 템플릿: ${packTemplateList.join(', ')}`);
   promptLines.push('', '각 슬라이드 생성 시:');

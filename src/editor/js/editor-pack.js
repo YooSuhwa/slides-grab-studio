@@ -59,8 +59,12 @@ export function setSelectedPack(packId) {
 function updateToggleText() {
   const el = document.getElementById('pack-toggle-current');
   if (!el) return;
-  const pack = packsData.find(p => p.id === selectedPackId);
-  el.textContent = pack?.name || selectedPackId;
+  if (selectedPackId === 'auto') {
+    el.textContent = 'AI 추천';
+  } else {
+    const pack = packsData.find(p => p.id === selectedPackId);
+    el.textContent = pack?.name || selectedPackId;
+  }
 }
 
 /** Create a gallery-style pack card (number + name + desc + tags) */
@@ -120,6 +124,31 @@ function renderPackGrid() {
   const packGrid = document.createElement('div');
   packGrid.className = 'pack-grid-all';
 
+  // AI 추천 카드 (첫 번째)
+  const autoCard = document.createElement('button');
+  autoCard.className = 'pack-card pack-card-auto' + (selectedPackId === 'auto' ? ' selected' : '');
+  autoCard.dataset.packId = 'auto';
+  autoCard.type = 'button';
+  autoCard.innerHTML = `
+    <div class="pack-preview pack-preview-auto">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.7">
+        <path d="M12 2l2.4 7.4H22l-6.2 4.5L18.2 21 12 16.5 5.8 21l2.4-7.1L2 9.4h7.6z"/>
+      </svg>
+    </div>
+    <div class="pack-card-info">
+      <div class="pack-card-name">AI 추천</div>
+      <div class="pack-card-desc">주제에 가장 어울리는 템플릿을 AI가 선택</div>
+    </div>
+  `;
+  autoCard.addEventListener('click', () => {
+    selectedPackId = 'auto';
+    creationState.packId = 'auto';
+    updatePackSelection();
+    updateToggleText();
+  });
+  packGrid.appendChild(autoCard);
+
+  // 나머지 팩 카드
   packsData.forEach((pack, idx) => {
     const card = createPackCard(pack, idx);
     card.addEventListener('click', () => {
