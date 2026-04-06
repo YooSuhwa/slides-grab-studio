@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #FF4500;      /* Orange-red left panel */
+  --bg-secondary: #1A1A2E;    /* Navy right panel */
+  --bg-elevated: #2A2A4E;     /* Lighter navy for cards */
+  --text-primary: #FFFFFF;    /* All headings */
+  --text-secondary: rgba(255, 255, 255, 0.75); /* Body, captions */
+  --accent: #FF4500;          /* Cross-panel color echo */
+  --border: #FFFFFF;          /* Center divider line */
+
+  /* Font */
+  --font-sans: 'Bebas Neue', sans-serif;
+
+  /* Typography scale */
+  --title-hero: 56pt;
+  --title-section: 48pt;
+  --title-slide: 40pt;
+  --text-subtitle: 16pt;
+  --text-body: 11pt;
+  --text-caption: 9pt;
+  --text-label: 8pt;
+}

@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #FFFFFF;             /* Pure white */
+  --bg-secondary: #F5F5F5;           /* Alternate section background */
+  --bg-elevated: #FFFFFF;            /* Cards — no fill */
+  --text-primary: #111111;           /* Near-black text */
+  --text-secondary: #444444;         /* Captions, supporting text */
+  --accent: #E8000D;                 /* Signal red */
+  --border: #DDDDDD;                /* Horizontal rules, dividers */
+
+  /* Font */
+  --font-sans: 'Helvetica Neue', 'Arial', -apple-system, sans-serif;
+
+  /* Typography scale */
+  --title-hero: 44pt;
+  --title-section: 36pt;
+  --title-slide: 28pt;
+  --text-subtitle: 14pt;
+  --text-body: 13pt;
+  --text-caption: 10pt;
+  --text-label: 9pt;
+}

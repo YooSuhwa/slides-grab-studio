@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #F4F1EC;             /* Warm cream */
+  --bg-secondary: #EBE6DF;           /* Slightly warmer variant */
+  --bg-elevated: rgba(217,207,196,0.3); /* Subtle card fill */
+  --text-primary: #3D3530;           /* Dark warm brown */
+  --text-secondary: #8A7A6A;         /* Medium stone */
+  --accent: #3D3530;                 /* Same as text — no bright accent */
+  --border: #D9CFC4;                 /* Warm stone */
+
+  /* Font */
+  --font-sans: 'Inter', 'Lato', -apple-system, sans-serif;
+
+  /* Typography scale */
+  --title-hero: 44pt;
+  --title-section: 36pt;
+  --title-slide: 28pt;
+  --text-subtitle: 16pt;
+  --text-body: 14pt;
+  --text-caption: 10pt;
+  --text-label: 9pt;
+}

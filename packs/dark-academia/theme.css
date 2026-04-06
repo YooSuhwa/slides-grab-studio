@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #1A1208;             /* Deep aged leather brown */
+  --bg-secondary: #0E0A05;           /* Darker variant */
+  --bg-elevated: rgba(61,46,16,0.4); /* Translucent amber panel */
+  --text-primary: #C9A84C;           /* Antique gold — titles */
+  --text-secondary: #D4BF9A;         /* Warm parchment — body */
+  --accent: #C9A84C;                 /* Gold accent */
+  --border: #3D2E10;                 /* Dark warm brown border */
+
+  /* Font */
+  --font-sans: 'EB Garamond', 'Georgia', serif;
+
+  /* Typography scale */
+  --title-hero: 44pt;
+  --title-section: 36pt;
+  --title-slide: 28pt;
+  --text-subtitle: 18pt;
+  --text-body: 15pt;
+  --text-caption: 10pt;
+  --text-label: 9pt;
+}

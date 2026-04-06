@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #060E08;             /* Near-black forest edge */
+  --bg-secondary: #0D2B14;           /* Dark forest center */
+  --bg-elevated: #0A3D1A;            /* Tree silhouette / elevated panel */
+  --text-primary: rgba(200,255,180,0.85); /* Sage-white titles */
+  --text-secondary: rgba(200,255,180,0.65); /* Body text */
+  --accent: #E8F4D0;                 /* Moon glow, star highlights */
+  --border: rgba(180,255,200,0.12);  /* Subtle foliage border */
+
+  /* Font */
+  --font-sans: 'Playfair Display', 'DM Serif Display', 'EB Garamond', 'Georgia', serif;
+
+  /* Typography scale */
+  --title-hero: 26pt;
+  --title-section: 22pt;
+  --title-slide: 20pt;
+  --text-subtitle: 15pt;
+  --text-body: 14pt;
+  --text-caption: 9pt;
+  --text-label: 8pt;
+}

@@ -1,0 +1,22 @@
+:root {
+  --bg-primary: #0A0014;      /* Deep purple-black void */
+  --bg-secondary: #140028;    /* Slightly lighter panels */
+  --bg-elevated: #1E003C;     /* Card / panel backgrounds */
+  --text-primary: #FFFFFF;    /* Headline text */
+  --text-secondary: rgba(255, 255, 255, 0.7); /* Body text */
+  --accent: #FF0080;          /* Hot pink neon */
+  --border: rgba(255, 0, 128, 0.4); /* Neon border lines */
+
+  /* Font */
+  --font-sans: 'Space Mono', monospace;
+  --font-display: 'Bebas Neue', sans-serif;
+
+  /* Typography scale */
+  --title-hero: 52pt;
+  --title-section: 44pt;
+  --title-slide: 36pt;
+  --text-subtitle: 16pt;
+  --text-body: 12pt;
+  --text-caption: 10pt;
+  --text-label: 9pt;
+}

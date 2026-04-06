@@ -1,0 +1,22 @@
+:root {
+  --bg-primary: #1E1E2E;      /* Dark navy background */
+  --bg-secondary: #282840;    /* Slightly lighter panels */
+  --bg-elevated: #32325A;     /* Highlighted regions */
+  --text-primary: #FFFFFF;    /* All headline and body text */
+  --text-secondary: rgba(255, 255, 255, 0.65); /* Dimmed labels */
+  --accent: #A594FF;          /* Highlight purple — connectors, metrics */
+  --border: rgba(124, 111, 255, 0.4); /* Block outlines, grid lines */
+
+  /* Font */
+  --font-sans: 'Space Mono', monospace;
+  --font-display: 'Bebas Neue', 'Barlow Condensed', sans-serif;
+
+  /* Typography scale */
+  --title-hero: 40pt;
+  --title-section: 36pt;
+  --title-slide: 28pt;
+  --text-subtitle: 14pt;
+  --text-body: 11pt;
+  --text-caption: 10pt;
+  --text-label: 9pt;
+}

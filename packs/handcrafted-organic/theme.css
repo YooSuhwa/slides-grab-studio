@@ -1,0 +1,22 @@
+:root {
+  --bg-primary: #FDF6EE;      /* Kraft paper background */
+  --bg-secondary: #F5ECDE;    /* Darker paper for sections */
+  --bg-elevated: rgba(255, 255, 255, 0.6); /* Card / inset fill */
+  --text-primary: #6B4C2A;    /* Warm deep brown */
+  --text-secondary: #A87850;  /* Medium brown captions */
+  --accent: #8B9A6B;          /* Sage green botanical */
+  --border: #C8A882;          /* Tan dashed borders */
+
+  /* Font */
+  --font-sans: 'EB Garamond', Georgia, serif;
+  --font-display: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+
+  /* Typography scale */
+  --title-hero: 34pt;
+  --title-section: 28pt;
+  --title-slide: 22pt;
+  --text-subtitle: 16pt;
+  --text-body: 14pt;
+  --text-caption: 9pt;
+  --text-label: 8pt;
+}

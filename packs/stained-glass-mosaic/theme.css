@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #0A0A12;             /* Dark grout / slide background */
+  --bg-secondary: #1A3A6E;           /* Royal blue — dominant cell */
+  --bg-elevated: rgba(0,0,0,0.70);   /* Translucent text overlay */
+  --text-primary: #FFFFFF;           /* Headings on overlay */
+  --text-secondary: rgba(255,255,255,0.88); /* Body text on overlay */
+  --accent: #F5D020;                 /* Golden highlight accent */
+  --border: #0A0A12;                 /* Grout lines between cells */
+
+  /* Font */
+  --font-sans: 'Cormorant Garamond', 'Trajan', 'Georgia', serif;
+
+  /* Typography scale */
+  --title-hero: 22pt;
+  --title-section: 18pt;
+  --title-slide: 16pt;
+  --text-subtitle: 14pt;
+  --text-body: 13pt;
+  --text-caption: 10pt;
+  --text-label: 9pt;
+}

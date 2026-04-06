@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #FFECD2;             /* Warm peach gradient start */
+  --bg-secondary: #FCB69F;           /* Coral gradient end */
+  --bg-elevated: #A8EDEA;            /* Mint clay card */
+  --text-primary: #3D2C2C;           /* Dark warm brown */
+  --text-secondary: #6B5050;         /* Medium brown body text */
+  --accent: #FED6E3;                 /* Soft pink accent */
+  --border: transparent;             /* No visible borders */
+
+  /* Font */
+  --font-sans: 'Nunito', 'DM Sans', -apple-system, sans-serif;
+
+  /* Typography scale */
+  --title-hero: 44pt;
+  --title-section: 36pt;
+  --title-slide: 28pt;
+  --text-subtitle: 16pt;
+  --text-body: 15pt;
+  --text-caption: 11pt;
+  --text-label: 10pt;
+}

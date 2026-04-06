@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #0D2240;             /* Blueprint blue background */
+  --bg-secondary: #0A1A35;           /* Deeper blue panel */
+  --bg-elevated: #112D50;            /* Elevated content block */
+  --text-primary: rgba(150,220,255,0.80); /* Bright cyan title */
+  --text-secondary: rgba(100,200,255,0.60); /* Body text, annotations */
+  --accent: #64C8FF;                 /* Shape outlines, highlights */
+  --border: rgba(100,180,255,0.22);  /* Major grid lines, dividers */
+
+  /* Font */
+  --font-sans: 'Space Mono', monospace;
+
+  /* Typography scale */
+  --title-hero: 13pt;
+  --title-section: 12pt;
+  --title-slide: 11pt;
+  --text-subtitle: 10pt;
+  --text-body: 9pt;
+  --text-caption: 8pt;
+  --text-label: 7pt;
+}

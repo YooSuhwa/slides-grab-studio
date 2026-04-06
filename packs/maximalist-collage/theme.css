@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #E8DDD0;             /* Antique cream background */
+  --bg-secondary: #D8CFC0;           /* Darker cream variation */
+  --bg-elevated: #1A1A1A;            /* Near-black content blocks */
+  --text-primary: #1A1A1A;           /* Text on light backgrounds */
+  --text-secondary: rgba(0,0,0,0.50); /* Ghost text, secondary captions */
+  --accent: #E83030;                 /* Bold red — primary accent */
+  --border: #1A1A1A;                 /* Block edges */
+
+  /* Font */
+  --font-sans: 'Bebas Neue', 'Anton', sans-serif;
+
+  /* Typography scale */
+  --title-hero: 30pt;
+  --title-section: 26pt;
+  --title-slide: 24pt;
+  --text-subtitle: 16pt;
+  --text-body: 14pt;
+  --text-caption: 8pt;
+  --text-label: 7pt;
+}

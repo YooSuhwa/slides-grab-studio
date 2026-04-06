@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #03050D;             /* Deep space background */
+  --bg-secondary: #060A14;           /* Slightly lighter panel */
+  --bg-elevated: rgba(0,200,255,0.08); /* Faint cyan highlight panel */
+  --text-primary: rgba(0,200,255,0.60); /* Title text — monochrome cyan */
+  --text-secondary: rgba(0,200,255,0.45); /* Body text */
+  --accent: #00C8FF;                 /* Base cyan (at varying opacities) */
+  --border: rgba(0,200,255,0.25);    /* Ring outlines, dividers */
+
+  /* Font */
+  --font-sans: 'Space Mono', monospace;
+
+  /* Typography scale */
+  --title-hero: 11pt;
+  --title-section: 10pt;
+  --title-slide: 10pt;
+  --text-subtitle: 9pt;
+  --text-body: 9pt;
+  --text-caption: 8pt;
+  --text-label: 7pt;
+}

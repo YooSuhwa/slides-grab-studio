@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #0F0F2D;             /* Deep dark indigo base */
+  --bg-secondary: #1A1A4E;           /* Secondary dark panel */
+  --bg-elevated: rgba(255,255,255,0.15); /* Glass card fill */
+  --text-primary: #FFFFFF;           /* Headings — pure white */
+  --text-secondary: #E0E0F0;        /* Body text — soft lavender white */
+  --accent: #67E8F9;                 /* Cyan glow accent */
+  --border: rgba(255,255,255,0.25);  /* Glass card border */
+
+  /* Font */
+  --font-sans: 'Segoe UI', 'Calibri', -apple-system, sans-serif;
+
+  /* Typography scale */
+  --title-hero: 44pt;
+  --title-section: 36pt;
+  --title-slide: 28pt;
+  --text-subtitle: 18pt;
+  --text-body: 15pt;
+  --text-caption: 11pt;
+  --text-label: 10pt;
+}

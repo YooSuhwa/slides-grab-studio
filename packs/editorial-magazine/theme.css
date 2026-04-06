@@ -1,0 +1,22 @@
+:root {
+  --bg-primary: #FFFFFF;      /* White editorial column */
+  --bg-secondary: #1A1A1A;    /* Dark editorial block */
+  --bg-elevated: #F5F5F0;     /* Warm off-white for insets */
+  --text-primary: #1A1A1A;    /* Headlines, body on white */
+  --text-secondary: #BBBBBB;  /* Captions, labels, subheads */
+  --accent: #E63030;          /* Red rule line only */
+  --border: #E0E0E0;          /* Subtle dividers */
+
+  /* Font */
+  --font-sans: 'Georgia', serif;
+  --font-display: 'Playfair Display', Georgia, serif;
+
+  /* Typography scale */
+  --title-hero: 48pt;
+  --title-section: 40pt;
+  --title-slide: 34pt;
+  --text-subtitle: 14pt;
+  --text-body: 12pt;
+  --text-caption: 9pt;
+  --text-label: 8pt;
+}

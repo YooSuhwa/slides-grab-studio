@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #0E0A05;             /* Near-black warm background */
+  --bg-secondary: #1A150A;           /* Secondary dark panel */
+  --bg-elevated: #241E10;            /* Elevated content block */
+  --text-primary: #D4AA2A;           /* Rich gold — titles */
+  --text-secondary: #8A7020;         /* Muted gold — subtitles, body */
+  --accent: #B8960C;                 /* Antique gold — borders, ornaments */
+  --border: #B8960C;                 /* Gold border frame */
+
+  /* Font */
+  --font-sans: 'Cormorant Garamond', 'Trajan', 'Didot', 'Georgia', serif;
+
+  /* Typography scale */
+  --title-hero: 36pt;
+  --title-section: 30pt;
+  --title-slide: 26pt;
+  --text-subtitle: 14pt;
+  --text-body: 13pt;
+  --text-caption: 9pt;
+  --text-label: 8pt;
+}

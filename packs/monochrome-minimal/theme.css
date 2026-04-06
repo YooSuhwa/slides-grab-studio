@@ -1,0 +1,22 @@
+:root {
+  --bg-primary: #FAFAFA;      /* Near-white background */
+  --bg-secondary: #0A0A0A;    /* Dark mode background */
+  --bg-elevated: #F0F0F0;     /* Subtle section fill */
+  --text-primary: #1A1A1A;    /* Headlines */
+  --text-secondary: #888888;  /* Mid-gray body text */
+  --accent: #1A1A1A;          /* No separate accent — weight/size only */
+  --border: #E0E0E0;          /* Thin rules, circles, dividers */
+
+  /* Font */
+  --font-sans: 'Helvetica Neue', 'Arial', sans-serif;
+  --font-display: 'Futura', 'DM Sans', 'Helvetica Neue', 'Arial', sans-serif;
+
+  /* Typography scale */
+  --title-hero: 36pt;
+  --title-section: 28pt;
+  --title-slide: 24pt;
+  --text-subtitle: 14pt;
+  --text-body: 12pt;
+  --text-caption: 9pt;
+  --text-label: 8pt;
+}

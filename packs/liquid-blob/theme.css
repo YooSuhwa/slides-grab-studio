@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #0F2027;             /* Deep ocean gradient start */
+  --bg-secondary: #203A43;           /* Gradient mid-tone */
+  --bg-elevated: #2C5364;            /* Gradient end / elevated surface */
+  --text-primary: #F0FFFE;           /* Near-white teal tint */
+  --text-secondary: rgba(240,255,254,0.75); /* Soft body text */
+  --accent: #00D2BE;                 /* Teal glow accent */
+  --border: rgba(0,210,190,0.25);    /* Subtle teal border */
+
+  /* Font */
+  --font-sans: 'Bebas Neue', 'Anton', sans-serif;
+
+  /* Typography scale */
+  --title-hero: 44pt;
+  --title-section: 28pt;
+  --title-slide: 22pt;
+  --text-subtitle: 16pt;
+  --text-body: 13pt;
+  --text-caption: 10pt;
+  --text-label: 9pt;
+}

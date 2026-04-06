@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #F8F8F2;             /* Warm off-white slide background */
+  --bg-secondary: #1A1A2E;           /* Dark anchor cell */
+  --bg-elevated: #E8FF3B;            /* Highlight yellow cell */
+  --text-primary: #1A1A2E;           /* Dark text on light cells */
+  --text-secondary: #555555;         /* Supporting text */
+  --accent: #FF6B6B;                 /* Coral accent */
+  --border: transparent;             /* No visible borders */
+
+  /* Font */
+  --font-sans: 'SF Pro Display', 'Inter', -apple-system, sans-serif;
+
+  /* Typography scale */
+  --title-hero: 48pt;
+  --title-section: 32pt;
+  --title-slide: 24pt;
+  --text-subtitle: 16pt;
+  --text-body: 13pt;
+  --text-caption: 11pt;
+  --text-label: 10pt;
+}

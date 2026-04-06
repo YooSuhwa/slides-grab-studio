@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #050510;             /* Near-black void */
+  --bg-secondary: #020208;           /* Darker variant */
+  --bg-elevated: rgba(5,5,16,0.75);  /* Dark legibility panel */
+  --text-primary: #FFFFFF;           /* Headings — pure white */
+  --text-secondary: #D0D0F0;        /* Body — soft blue-white */
+  --accent: #00FF88;                 /* Neon green */
+  --border: rgba(0,255,136,0.15);    /* Neon-tinted border */
+
+  /* Font */
+  --font-sans: 'Bebas Neue', 'Barlow Condensed', -apple-system, sans-serif;
+
+  /* Typography scale */
+  --title-hero: 52pt;
+  --title-section: 44pt;
+  --title-slide: 32pt;
+  --text-subtitle: 18pt;
+  --text-body: 13pt;
+  --text-caption: 10pt;
+  --text-label: 9pt;
+}

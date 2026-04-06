@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #FCE4F3;      /* Blush pink gradient start */
+  --bg-secondary: #E8F4FF;    /* Baby blue gradient mid */
+  --bg-elevated: rgba(255, 255, 255, 0.70); /* Frosted card fill */
+  --text-primary: #3D3D5C;    /* Soft navy headlines */
+  --text-secondary: #7B7B9E;  /* Muted body text */
+  --accent: #E88FC4;          /* Highlight pink */
+  --border: rgba(255, 255, 255, 0.90); /* Card borders */
+
+  /* Font */
+  --font-sans: 'Nunito', 'DM Sans', sans-serif;
+
+  /* Typography scale */
+  --title-hero: 36pt;
+  --title-section: 32pt;
+  --title-slide: 28pt;
+  --text-subtitle: 16pt;
+  --text-body: 14pt;
+  --text-caption: 11pt;
+  --text-label: 10pt;
+}

@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #000080;             /* Classic Y2K navy */
+  --bg-secondary: #0020C2;           /* Electric blue variant */
+  --bg-elevated: rgba(0,0,128,0.6);  /* Semi-transparent navy panel */
+  --text-primary: #FFFFFF;           /* Pure white headings */
+  --text-secondary: #CCCCFF;         /* Soft lavender body */
+  --accent: #FFFF00;                 /* Yellow star/highlight */
+  --border: rgba(0,255,255,0.4);     /* Cyan-tinted border */
+
+  /* Font */
+  --font-sans: 'Bebas Neue', 'Impact', -apple-system, sans-serif;
+
+  /* Typography scale */
+  --title-hero: 48pt;
+  --title-section: 40pt;
+  --title-slide: 32pt;
+  --text-subtitle: 16pt;
+  --text-body: 13pt;
+  --text-caption: 11pt;
+  --text-label: 10pt;
+}

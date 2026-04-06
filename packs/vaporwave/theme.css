@@ -1,0 +1,22 @@
+:root {
+  --bg-primary: #1A0533;      /* Deep purple gradient top */
+  --bg-secondary: #2D0057;    /* Medium purple gradient mid */
+  --bg-elevated: #3D0070;     /* Card / panel backgrounds */
+  --text-primary: #FFFFFF;    /* Main text (before gradient) */
+  --text-secondary: rgba(255, 255, 255, 0.65); /* Body text */
+  --accent: #FF6B9D;          /* Hot pink highlights */
+  --border: rgba(255, 100, 200, 0.4); /* Neon borders, grid */
+
+  /* Font */
+  --font-sans: 'Space Mono', monospace;
+  --font-display: 'Bebas Neue', sans-serif;
+
+  /* Typography scale */
+  --title-hero: 52pt;
+  --title-section: 40pt;
+  --title-slide: 34pt;
+  --text-subtitle: 14pt;
+  --text-body: 10pt;
+  --text-caption: 9pt;
+  --text-label: 8pt;
+}

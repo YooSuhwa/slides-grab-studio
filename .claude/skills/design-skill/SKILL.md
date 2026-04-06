@@ -29,12 +29,63 @@ Delivers minimal, refined design based on existing templates and theme system.
 
 When deciding font sizes for a slide:
 
-1. **Pack has the template** → 해당 템플릿의 타이포그래피 스케일을 **기본값으로 사용**
-2. **Pack doesn't have the template** → 팩의 theme.css와 기존 템플릿의 스케일을 참고하여 매칭
-3. **No pack specified or empty pack** → `references/design-system-full.md`의 스케일 사용
+1. **Pack의 design.md** → Font Pairing 섹션의 크기/웨이트를 **기준으로 사용**
+2. **design.md가 없으면** → 팩의 theme.css 스케일을 참고
+3. **No pack specified** → `references/design-system-full.md`의 스케일 사용
 
 단, 콘텐츠의 특성(긴 한글 제목, 대형 숫자 강조, 다크 배경 등)에 따라
 스케일을 자연스럽게 조정할 수 있다. 팩의 스케일은 "범위"이지 "고정값"이 아니다.
+
+---
+
+## Design Knowledge System (design.md + Type Skills)
+
+슬라이드 디자인은 **세 계층의 디자인 지식**을 합성하여 생성한다:
+
+### 1. Pack design.md — 팩의 디자인 철학
+
+각 팩의 `packs/<pack-id>/design.md`에 정의된 디자인 사양서:
+- **Mood**: 분위기, 톤 (예: "clean, restrained, typographic")
+- **Signature Elements**: 이 팩을 이 팩답게 만드는 시각 요소
+- **CSS Patterns**: 검증된 CSS 스니펫 (카드, 액센트, 스플릿 레이아웃 등)
+- **Font Pairing**: 정확한 폰트 조합, 크기, 웨이트
+- **Avoid**: 이 팩에서 절대 하면 안 되는 것
+
+**사용법**: 슬라이드 생성 시작 전에 반드시 `cat packs/<pack-id>/design.md`로 읽는다.
+
+### 2. Type Skills — 타입별 레이아웃 원칙
+
+각 슬라이드 타입의 `skills/types/<type>.md`에 정의된 레이아웃 원칙:
+- **Layout Principles**: 구조적 배치 규칙 (수평/수직, 비율, 간격)
+- **Typography**: 타입별 적절한 폰트 스케일 가이드
+- **Content Rules**: 콘텐츠 밀도, 분량 제한
+- **Variations**: 콘텐츠 양/종류에 따른 적응 규칙
+- **Avoid**: 이 타입에서 하면 안 되는 것
+
+**사용법**: 각 슬라이드를 디자인할 때 해당 타입의 스킬을 참조한다.
+
+### 3. theme.css — CSS 변수 값
+
+Each pack has a `theme.css` with CSS variables (`:root { --bg-primary, --text-primary, --accent, ... }`).
+- View: `slides-grab show-theme <pack-id>`
+- Use `var()` references instead of hardcoded colors
+
+### Design Resolution (3-tier)
+
+슬라이드를 생성할 때 아래 순서로 디자인 지식을 합성한다:
+
+```
+1. design.md 읽기 → 팩의 mood, signature, avoid, CSS patterns 파악
+2. type skill 읽기 → 해당 슬라이드 타입의 레이아웃 원칙 파악
+3. theme.css 읽기 → 구체적 색상, 폰트, 스케일 값 확인
+4. 세 계층을 합성하여 HTML 생성:
+   - design.md의 mood와 signature를 따르면서
+   - type skill의 레이아웃 원칙을 적용하고
+   - theme.css의 값을 CSS 변수로 사용
+```
+
+**design.md가 없는 팩**: theme.css만 참고하여 디자인. `simple_light`의 design.md를 기본 참조로 사용 가능.
+**type skill이 없는 타입**: `packs/common-types.json`의 설명을 참고하여 자유 디자인.
 
 ---
 
@@ -47,39 +98,30 @@ All packs share a common set of template type names defined in `packs/common-typ
 ### How to use packs
 
 1. **Check available packs**: `slides-grab list-packs`
-2. **View pack details**: `slides-grab show-pack <pack-id>` (colors, owned templates, missing types)
-3. **View a template**: `slides-grab show-template <type> --pack <pack-id>`
-4. **Follow the pack's design language** consistently across all slides.
+2. **Read design spec**: `cat packs/<pack-id>/design.md` (mood, signature, CSS patterns, avoid)
+3. **View pack colors**: `slides-grab show-theme <pack-id>`
+4. **Read type skill**: `cat skills/types/<type>.md` (layout principles for each slide type)
+5. **Follow the pack's design language** consistently across all slides.
 
-### Pack Resolution (2-tier)
+### Pack Resolution
 
-1. **Pack has the template** -> use it directly via `show-template <type> --pack <pack-id>`
-2. **Pack doesn't have the template** -> design from scratch using the pack's `theme.css` colors
-   - Do NOT fall back to simple_light HTML structure
-   - Use `slides-grab show-theme <pack-id>` to get CSS variables
-   - Create a layout that fits the pack's visual language
+1. **Pack has design.md** → 디자인 사양서의 mood, signature, CSS patterns를 따라 생성
+2. **Pack doesn't have design.md** → theme.css 색상 + simple_light design.md를 기본 참조로 사용
+3. **HTML 템플릿은 선택적 참조** → `show-template <type> --pack <pack-id>`로 참고할 수 있지만, 복사가 아닌 원칙 이해 목적
 
 ---
 
-## Template-Guided Design Rule
+## Design Principles
 
-팩에 해당 type 템플릿이 있으면, **색상 체계와 레이아웃 패턴을 참고**한다.
-단, 템플릿을 그대로 복사하지 말고 콘텐츠에 맞게 자유롭게 변형한다:
+**핵심: 복사가 아니라 합성이다.**
 
-- 아웃라인에 스타일 힌트("배경은 어둡게", "대형 숫자 중심" 등)가 있으면 우선 적용
+- design.md의 mood와 avoid를 먼저 내면화한다
+- type skill의 레이아웃 원칙을 콘텐츠에 맞게 적용한다
+- design.md의 CSS 스니펫을 기반으로 시각 효과를 구현한다
 - accent 색상(--accent)을 적극 활용: 섹션 라벨, 핵심 수치, 강조 문구
 - 슬라이드마다 콘텐츠에 최적화된 레이아웃을 선택. 같은 패턴을 3장 이상 반복하지 않기
-- 팩에 없는 type은 theme.css 색상으로 자유롭게 디자인
 
-**핵심: 팩은 "색상+분위기 가이드"이지, "레이아웃 강제"가 아니다.**
-
-### Theme CSS Variables
-
-Each pack has a `theme.css` with CSS variables (`:root { --bg-primary, --text-primary, --accent, ... }`).
-
-- View: `slides-grab show-theme <pack-id>`
-- Templates include `:root` block inline for standalone rendering
-- Use `var()` references instead of hardcoded colors
+**팩은 "디자인 철학"이고, 타입 스킬은 "구조적 지식"이다. 둘을 합쳐서 콘텐츠에 맞는 슬라이드를 창작한다.**
 
 ---
 
@@ -152,4 +194,5 @@ This skill is **Stage 2**. It works from the `slide-outline.md` approved by the 
 3. **Image contract**: Store local assets in `<slides-dir>/assets/` and reference as `./assets/<file>`. Download remote images before saving. Allow `data:` URLs for self-contained slides. Never use absolute filesystem paths.
 4. **Colors**: Always include `#` prefix in CSS
 5. **Text rules**: Never place text directly in div/span
+6. **Korean text wrapping**: Always set `word-break: keep-all; overflow-wrap: break-word;` on body. Additionally, use `&nbsp;` to join words that must not be separated: verb+auxiliary (전달하지\&nbsp;않는다), short word chains (왜\&nbsp;그\&nbsp;값인지), negations (창작이\&nbsp;아니라). Natural break points are after commas and periods — prevent breaks only within semantic units.
 6. **SVG export**: Emoji/special characters are auto-rasterized to PNG in SVG export — quality is sufficient for slides. Use emoji freely for visual richness. Only use inline SVG icons from `references/charts-icons-library.md` when precise color control or large hero icons (24pt+) are needed.

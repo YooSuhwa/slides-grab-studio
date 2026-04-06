@@ -1,0 +1,22 @@
+:root {
+  --bg-primary: #0D0D0D;      /* Near-black void */
+  --bg-secondary: #141414;    /* Slightly lighter panels */
+  --bg-elevated: #1A1A1A;     /* Card / data block fills */
+  --text-primary: #00FFC8;    /* Neon cyan headlines */
+  --text-secondary: rgba(0, 255, 200, 0.6); /* Dimmed cyan body */
+  --accent: #00FFC8;          /* Glow, outlines, brackets */
+  --border: rgba(0, 255, 200, 0.3); /* Box outlines, dividers */
+
+  /* Font */
+  --font-sans: 'Space Mono', monospace;
+  --font-display: 'Bebas Neue', sans-serif;
+
+  /* Typography scale */
+  --title-hero: 60pt;
+  --title-section: 52pt;
+  --title-slide: 44pt;
+  --text-subtitle: 14pt;
+  --text-body: 10pt;
+  --text-caption: 9pt;
+  --text-label: 8pt;
+}

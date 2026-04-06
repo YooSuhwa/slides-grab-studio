@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #F0EDE8;      /* Off-white warm paper */
+  --bg-secondary: #0A0A0A;    /* Black inverted mode */
+  --bg-elevated: #E8E4DE;     /* Subtle block fill */
+  --text-primary: #1A1A1A;    /* Headline text */
+  --text-secondary: #AAAAAA;  /* Footnotes, captions */
+  --accent: #E63030;          /* Signal red — single word only */
+  --border: #D0CCC6;          /* Minimal dividers */
+
+  /* Font */
+  --font-sans: 'Bebas Neue', 'Anton', sans-serif;
+
+  /* Typography scale */
+  --title-hero: 96pt;
+  --title-section: 80pt;
+  --title-slide: 56pt;
+  --text-subtitle: 14pt;
+  --text-body: 9pt;
+  --text-caption: 8pt;
+  --text-label: 7pt;
+}

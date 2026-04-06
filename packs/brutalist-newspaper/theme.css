@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #F2EFE8;             /* Aged paper background */
+  --bg-secondary: #E8E2D8;           /* Alternate section fill */
+  --bg-elevated: #1A1208;            /* Masthead bar, inverted blocks */
+  --text-primary: #1A1208;           /* Headlines, dark ink */
+  --text-secondary: #3A3020;         /* Body text, datelines */
+  --accent: #1A1208;                 /* Rules, dividers — monochromatic */
+  --border: #1A1208;                 /* Column dividers, horizontal rules */
+
+  /* Font */
+  --font-sans: 'Georgia', 'Times New Roman', serif;
+
+  /* Typography scale */
+  --title-hero: 28pt;
+  --title-section: 24pt;
+  --title-slide: 20pt;
+  --text-subtitle: 13pt;
+  --text-body: 10pt;
+  --text-caption: 8pt;
+  --text-label: 7pt;
+}

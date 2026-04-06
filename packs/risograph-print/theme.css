@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #F7F2E8;             /* Warm aged paper */
+  --bg-secondary: #EDE8DC;           /* Darker paper variant */
+  --bg-elevated: rgba(255,255,255,0.60); /* Card overlay on paper */
+  --text-primary: #1A1A1A;           /* Headlines, primary text */
+  --text-secondary: #3A3530;         /* Body text */
+  --accent: #E8344A;                 /* Riso red — primary accent */
+  --border: #1A1A1A;                 /* Card borders */
+
+  /* Font */
+  --font-sans: 'Bebas Neue', 'Anton', sans-serif;
+
+  /* Typography scale */
+  --title-hero: 40pt;
+  --title-section: 34pt;
+  --title-slide: 28pt;
+  --text-subtitle: 14pt;
+  --text-body: 10pt;
+  --text-caption: 9pt;
+  --text-label: 8pt;
+}

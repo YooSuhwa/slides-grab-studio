@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #F5F500;             /* Electric yellow */
+  --bg-secondary: #FFFFFF;           /* White card/alt background */
+  --bg-elevated: #000000;            /* Inverted dark blocks */
+  --text-primary: #000000;           /* Pure black text */
+  --text-secondary: #333333;         /* Supporting text */
+  --accent: #FF3B30;                 /* Red highlight / CTA */
+  --border: #000000;                 /* All borders — pure black */
+
+  /* Font */
+  --font-sans: 'Arial Black', 'Impact', 'Bebas Neue', -apple-system, sans-serif;
+
+  /* Typography scale */
+  --title-hero: 52pt;
+  --title-section: 44pt;
+  --title-slide: 36pt;
+  --text-subtitle: 18pt;
+  --text-body: 14pt;
+  --text-caption: 11pt;
+  --text-label: 10pt;
+}

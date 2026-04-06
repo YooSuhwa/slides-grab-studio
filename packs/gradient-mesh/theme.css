@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #2A0845;             /* Deep purple base under mesh */
+  --bg-secondary: #1A0530;           /* Darker variant */
+  --bg-elevated: rgba(0,0,0,0.25);   /* Legibility panel */
+  --text-primary: #FFFFFF;           /* All text — pure white */
+  --text-secondary: rgba(255,255,255,0.8); /* Captions, lighter text */
+  --accent: #FF6EC7;                 /* Pink mesh reference */
+  --border: rgba(255,255,255,0.2);   /* Subtle dividers */
+
+  /* Font */
+  --font-sans: 'Bebas Neue', 'Barlow Condensed', -apple-system, sans-serif;
+
+  /* Typography scale */
+  --title-hero: 64pt;
+  --title-section: 48pt;
+  --title-slide: 36pt;
+  --text-subtitle: 18pt;
+  --text-body: 15pt;
+  --text-caption: 11pt;
+  --text-label: 10pt;
+}

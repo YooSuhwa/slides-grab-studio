@@ -1,0 +1,21 @@
+:root {
+  --bg-primary: #FFF5E0;             /* Warm off-white background */
+  --bg-secondary: #FFFFFF;           /* Card backgrounds */
+  --bg-elevated: #1A1A1A;            /* Dark inverted blocks */
+  --text-primary: #1A1A1A;           /* Headlines, primary text */
+  --text-secondary: #3A3530;         /* Body text, descriptions */
+  --accent: #E8344A;                 /* Crimson — primary accent */
+  --border: #1A1A1A;                 /* Card borders */
+
+  /* Font */
+  --font-sans: 'Bebas Neue', 'Futura', 'DM Sans', sans-serif;
+
+  /* Typography scale */
+  --title-hero: 40pt;
+  --title-section: 34pt;
+  --title-slide: 28pt;
+  --text-subtitle: 16pt;
+  --text-body: 13pt;
+  --text-caption: 10pt;
+  --text-label: 9pt;
+}

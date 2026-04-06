@@ -75,6 +75,17 @@ Complete the outline stage when the user explicitly approves.
 
 ---
 
+## Slide Composition Rules
+
+### Section Dividers (간지)
+- Insert a **section-divider** slide before each new topic/section begins.
+- A section-divider signals "we're moving to a new subject" and gives the audience a mental reset.
+- Typical deck flow: Cover → (Contents) → **Section Divider** → Content slides → **Section Divider** → Content slides → ... → Closing
+- Do NOT insert a section-divider between the cover and the first content section (the cover already serves that purpose).
+- Do NOT insert a section-divider right before the closing slide.
+
+---
+
 ## Expected slide-outline.md Format
 
 ```markdown
