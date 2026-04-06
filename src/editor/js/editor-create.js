@@ -294,6 +294,10 @@ export function onGenerateFinished(payload) {
     }
     appendCreationLog(`\n[Failed] ${payload.message}\n`);
     setStatus(`생성 실패: ${payload.message}`);
+    // Show partial result button if some slides were created despite failure
+    if (payload.partialSlideCount > 0) {
+      showViewResultButton(payload.partialSlideCount, inOutline);
+    }
   }
 }
 

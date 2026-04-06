@@ -116,29 +116,59 @@ export function createGenerateRouter(ctx) {
           slidesDirectory = await detectNewDeck(ctx);
         }
 
+        // Count slides on disk (even on failure — partial results may exist)
         let slideCount = 0;
+        let validSlideCount = 0;
         try {
           slidesDirectory = ctx.getSlidesDir();
           if (slidesDirectory) {
             const files = await listSlideFiles(slidesDirectory);
             slideCount = files.length;
+            // Validate each file has minimal HTML structure (>100 bytes with <body or <html)
+            for (const f of files) {
+              try {
+                const content = await readFile(join(slidesDirectory, f), 'utf-8');
+                if (content.length > 100 && (/<body[\s>]/i.test(content) || /<html[\s>]/i.test(content))) {
+                  validSlideCount++;
+                }
+              } catch { /* skip unreadable files */ }
+            }
           }
         } catch { /* ignore */ }
+
+        // Determine final status: success only if Claude exited 0 AND valid slides exist
+        const finalSuccess = success && validSlideCount > 0;
 
         const resolvedPath = slidesDirectory
           ? toPosixPath(relative(process.cwd(), slidesDirectory) || slidesDirectory)
           : '';
-        const message = success
-          ? `${slideCount} slides generated.`
-          : `Generation failed (exit code ${result.code}).`;
+
+        let message;
+        if (finalSuccess) {
+          message = validSlideCount < slideCount
+            ? `${validSlideCount}/${slideCount} valid slides generated (${slideCount - validSlideCount} malformed).`
+            : `${slideCount} slides generated.`;
+        } else if (success && validSlideCount === 0) {
+          message = slideCount > 0
+            ? `Generation completed but ${slideCount} slides are malformed.`
+            : 'Generation completed but no slides were created.';
+        } else {
+          message = slideCount > 0
+            ? `Generation failed (exit code ${result.code}). ${slideCount} partial slides on disk.`
+            : `Generation failed (exit code ${result.code}).`;
+        }
 
         ctx.generateRunStore.finishRun(runId, {
-          status: success ? 'success' : 'failed',
+          status: finalSuccess ? 'success' : 'failed',
           code: result.code,
           message,
         });
 
-        broadcastSSE(ctx.sseClients, 'generateFinished', { runId, success, message, slideCount, deckPath: resolvedPath });
+        broadcastSSE(ctx.sseClients, 'generateFinished', {
+          runId, success: finalSuccess, message, slideCount: validSlideCount,
+          partialSlideCount: !finalSuccess && slideCount > 0 ? slideCount : undefined,
+          deckPath: resolvedPath,
+        });
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         ctx.generateRunStore.finishRun(runId, {
@@ -161,20 +191,24 @@ export function createGenerateRouter(ctx) {
 // ── Prompt builders ─────────────────────────────────────────────────
 
 async function buildFromOutlinePrompt(ctx, slidesDirectory, slidesDir, reqGenPackId, runId) {
-  try {
-    const backupPath = await backupSlides(slidesDirectory);
-    if (backupPath) {
-      broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: 'Backed up existing slides' });
-    }
-  } catch (err) {
-    console.error('Slide backup failed:', err);
+  const backupPath = await backupSlides(slidesDirectory);
+  if (backupPath) {
+    broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: 'Backed up existing slides' });
   }
 
   const outlinePath = join(slidesDirectory, 'slide-outline.md');
   let outlineContent = '';
   try {
     outlineContent = await readFile(outlinePath, 'utf-8');
-  } catch { /* no outline file */ }
+  } catch {
+    throw new Error('Outline file not found: slide-outline.md');
+  }
+  if (!outlineContent.trim()) {
+    throw new Error('Outline file is empty.');
+  }
+  if (!/^###\s+Slide\s+\d+/im.test(outlineContent)) {
+    throw new Error('Outline has no slide definitions (expected "### Slide N" headers).');
+  }
 
   const outlinePackMatch = outlineContent.match(/^-\s*pack:\s*(.+)/im);
   const genPackId = normalizePackId(reqGenPackId) || normalizePackId(outlinePackMatch?.[1]);
