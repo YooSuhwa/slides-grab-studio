@@ -1,0 +1,17 @@
+{
+  "name": "아이겐그라우",
+  "mood": [
+    "dark",
+    "structured",
+    "intellectual",
+    "precise"
+  ],
+  "bestFor": "테크 프레젠테이션, 디자인 리뷰, 프로덕트 분석",
+  "order": 34,
+  "description": "어둠 속 회색, 구조적 대시 디바이더와 파스텔 악센트",
+  "tags": [
+    "테크",
+    "디자인",
+    "분석"
+  ]
+}

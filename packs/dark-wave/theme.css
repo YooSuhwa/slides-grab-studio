@@ -1,0 +1,27 @@
+:root {
+  --bg-primary: #1a1a1a;      /* Deep charcoal background */
+  --bg-secondary: #2a2a2a;    /* Secondary panels */
+  --bg-elevated: #333333;     /* Elevated cards */
+  --text-primary: #ffffff;    /* Bold white headlines */
+  --text-secondary: rgba(255, 255, 255, 0.55); /* Subdued body text */
+  --accent: #FC5E20;          /* Vivid orange — highlights, numbers, markers */
+  --border: rgba(255, 255, 255, 0.1); /* Subtle white border */
+
+  /* Extended tokens */
+  --bg-dark: #111111;         /* Deepest black for cover/section slides */
+  --accent-glow: rgba(252, 94, 32, 0.5);       /* Orange glow (strong) */
+  --accent-glow-soft: rgba(252, 94, 32, 0.15);  /* Orange glow (ambient) */
+  --line-color: rgba(252, 94, 32, 0.5);         /* Gradient line divider */
+
+  /* Font */
+  --font-sans: 'Inter', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  /* Typography scale */
+  --title-hero: 52pt;
+  --title-section: 40pt;
+  --title-slide: 28pt;
+  --text-subtitle: 16pt;
+  --text-body: 14pt;
+  --text-caption: 11pt;
+  --text-label: 10pt;
+}

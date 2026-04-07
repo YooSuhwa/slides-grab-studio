@@ -1,0 +1,17 @@
+{
+  "name": "브랜드 코퍼레이트",
+  "mood": [
+    "corporate",
+    "professional",
+    "structured",
+    "clean"
+  ],
+  "bestFor": "회사소개서, 사업제안서, IR 자료",
+  "order": 32,
+  "description": "오렌지 악센트의 기업 프레젠테이션",
+  "tags": [
+    "기업",
+    "회사소개",
+    "비즈니스"
+  ]
+}

@@ -1,0 +1,82 @@
+/* dark-wave — Deep black bg, glossy wave curve, orange glow dot, gradient line */
+.preview-dark-wave {
+  background: #1a1a1a;
+}
+
+/* Red-to-orange gradient line at top — content slide divider */
+.preview-dark-wave .el-1 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #FC5E20 0%, #FF3D00 40%, #FC5E20 100%);
+  border-radius: 0 0 1px 1px;
+}
+
+/* Glossy wave — CSS pseudo-element curve with dark gradient */
+.preview-dark-wave .el-2 {
+  position: absolute;
+  bottom: 0;
+  right: -20px;
+  width: 160px;
+  height: 100px;
+  background: radial-gradient(ellipse at 30% 80%, #2a2a2a 0%, transparent 70%);
+  border-radius: 60% 0 0 0;
+  opacity: 0.7;
+}
+
+/* Glossy highlight on the wave */
+.preview-dark-wave .el-2::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 20px;
+  width: 80px;
+  height: 40px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06) 0%, transparent 60%);
+  border-radius: 40% 0 0 0;
+}
+
+/* Secondary wave layer for depth */
+.preview-dark-wave .el-2::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  right: 30px;
+  width: 120px;
+  height: 70px;
+  background: radial-gradient(ellipse at 50% 70%, #222222 0%, transparent 65%);
+  border-radius: 50% 0 0 0;
+  opacity: 0.5;
+}
+
+/* Orange glow dot — section marker with radial glow */
+.preview-dark-wave .el-3 {
+  position: absolute;
+  top: 50%;
+  left: 28px;
+  width: 8px;
+  height: 8px;
+  background: #FC5E20;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  box-shadow:
+    0 0 6px rgba(252, 94, 32, 0.6),
+    0 0 16px rgba(252, 94, 32, 0.3),
+    0 0 32px rgba(252, 94, 32, 0.12);
+}
+
+/* Small topic bar next to the glow dot */
+.preview-dark-wave .el-3::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  width: 56px;
+  height: 6px;
+  background: #ffffff;
+  border-radius: 1px;
+  transform: translateY(-50%);
+  opacity: 0.85;
+}

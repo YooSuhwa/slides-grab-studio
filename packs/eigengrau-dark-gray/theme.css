@@ -1,0 +1,28 @@
+:root {
+  --bg-primary: #16161d;      /* Eigengrau — the dark gray of perfect darkness */
+  --bg-secondary: #29293d;    /* Dark navy-purple panels */
+  --bg-elevated: #2f2f45;     /* Card / panel backgrounds — slightly lighter than secondary */
+  --text-primary: #f8f8ff;    /* Ghost white with lavender tint */
+  --text-secondary: #87878e;  /* Muted steel-gray for labels and body */
+  --accent: #9ed7f4;          /* Steel-blue for quotes and highlights */
+  --border: #4e4e61;          /* Dashed divider lines */
+
+  /* Extended tokens */
+  --panel-soft: #1d1d27;      /* Subtle panel background */
+  --text-soft: #d2d2ff;       /* Soft lavender text */
+  --accent-mint: #a9ebcc;     /* Checkmarks, positive indicators */
+  --accent-yellow: #fde4a3;   /* Timeline bars */
+  --accent-pink: #ffd3d1;     /* Tertiary accents */
+
+  /* Font */
+  --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  /* Typography scale */
+  --title-hero: 68pt;
+  --title-section: 44pt;
+  --title-slide: 32pt;
+  --text-subtitle: 20pt;
+  --text-body: 15pt;
+  --text-caption: 10.5pt;
+  --text-label: 10pt;
+}

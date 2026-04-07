@@ -1,0 +1,105 @@
+/* brand — White bg, orange vertical bar, dark title, gray card with orange header */
+.preview-brand {
+  background: #ffffff;
+}
+
+/* Orange vertical bar — section title marker */
+.preview-brand .el-1 {
+  position: absolute;
+  top: 28px;
+  left: 24px;
+  width: 4px;
+  height: 40px;
+  background: #FC5E20;
+  border-radius: 1px;
+}
+
+/* Dark charcoal title bar beside the orange bar */
+.preview-brand .el-1::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 14px;
+  width: 120px;
+  height: 12px;
+  background: #373742;
+  border-radius: 2px;
+}
+
+/* Subtitle text below title */
+.preview-brand .el-1::before {
+  content: '';
+  position: absolute;
+  top: 24px;
+  left: 14px;
+  width: 80px;
+  height: 7px;
+  background: #5A5A65;
+  border-radius: 1px;
+}
+
+/* Card with orange header band */
+.preview-brand .el-2 {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  width: 80px;
+  height: 52px;
+  background: #f3f3f3;
+  border-radius: 0 0 4px 4px;
+}
+
+.preview-brand .el-2::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  width: 80px;
+  height: 10px;
+  background: #FC5E20;
+  border-radius: 4px 4px 0 0;
+}
+
+.preview-brand .el-2::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 50px;
+  height: 5px;
+  background: #373742;
+  border-radius: 1px;
+}
+
+/* Second card beside first */
+.preview-brand .el-3 {
+  position: absolute;
+  bottom: 24px;
+  left: 114px;
+  width: 80px;
+  height: 52px;
+  background: #f3f3f3;
+  border-radius: 0 0 4px 4px;
+}
+
+.preview-brand .el-3::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  width: 80px;
+  height: 10px;
+  background: #FC5E20;
+  border-radius: 4px 4px 0 0;
+}
+
+.preview-brand .el-3::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 50px;
+  height: 5px;
+  background: #373742;
+  border-radius: 1px;
+}

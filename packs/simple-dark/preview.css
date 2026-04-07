@@ -1,0 +1,59 @@
+/* simple-dark — Pure black bg, bold white title, lighter subtitle, nothing else */
+.preview-simple-dark {
+  background: #000000;
+}
+
+/* Bold white title bar */
+.preview-simple-dark .el-1 {
+  position: absolute;
+  top: 40px;
+  left: 32px;
+  width: 150px;
+  height: 16px;
+  background: #ffffff;
+  border-radius: 2px;
+}
+
+/* Lighter subtitle bar */
+.preview-simple-dark .el-2 {
+  position: absolute;
+  top: 68px;
+  left: 32px;
+  width: 90px;
+  height: 8px;
+  background: #999999;
+  border-radius: 1px;
+}
+
+/* Faint dark card — barely visible on black */
+.preview-simple-dark .el-3 {
+  position: absolute;
+  bottom: 28px;
+  left: 32px;
+  width: 170px;
+  height: 36px;
+  background: #1a1a1a;
+  border-radius: 6px;
+}
+
+.preview-simple-dark .el-3::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  width: 90px;
+  height: 6px;
+  background: #ffffff;
+  border-radius: 1px;
+}
+
+.preview-simple-dark .el-3::after {
+  content: '';
+  position: absolute;
+  top: 22px;
+  left: 14px;
+  width: 55px;
+  height: 4px;
+  background: #999999;
+  border-radius: 1px;
+}

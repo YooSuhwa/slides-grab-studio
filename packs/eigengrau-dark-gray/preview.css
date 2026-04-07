@@ -1,0 +1,74 @@
+/* eigengrau-dark-gray — Eigengrau bg, vertical dashed divider, muted label, accent-blue text */
+.preview-eigengrau-dark-gray {
+  background: #16161d;
+}
+
+/* Vertical dashed center divider — the pack's signature structural element */
+.preview-eigengrau-dark-gray .el-1 {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  width: 0;
+  height: 94px;
+  border-left: 1.5px dashed #4e4e61;
+  transform: translateX(-50%);
+}
+
+/* Muted uppercase label bar — top-left "SECTION" indicator */
+.preview-eigengrau-dark-gray .el-2 {
+  position: absolute;
+  top: 16px;
+  left: 18px;
+  width: 52px;
+  height: 6px;
+  background: #87878e;
+  border-radius: 1px;
+}
+
+/* Title placeholder below label */
+.preview-eigengrau-dark-gray .el-2::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 0;
+  width: 72px;
+  height: 10px;
+  background: #f8f8ff;
+  border-radius: 1px;
+  opacity: 0.85;
+}
+
+/* Accent-blue text bar on the right half — quote or highlight content */
+.preview-eigengrau-dark-gray .el-3 {
+  position: absolute;
+  top: 50%;
+  right: 22px;
+  width: 68px;
+  height: 8px;
+  background: #9ed7f4;
+  border-radius: 1px;
+  transform: translateY(-50%);
+}
+
+/* Smaller secondary line below the accent bar */
+.preview-eigengrau-dark-gray .el-3::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 0;
+  width: 48px;
+  height: 5px;
+  background: rgba(158, 215, 244, 0.4);
+  border-radius: 1px;
+}
+
+/* Horizontal dashed top divider */
+.preview-eigengrau-dark-gray .el-1::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -115px;
+  width: 230px;
+  height: 0;
+  border-top: 1.5px dashed #4e4e61;
+}

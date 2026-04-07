@@ -1,0 +1,59 @@
+/* real-balance-hybrid — Off-white bg, soft yellow circle, dark squircle card, yellow accent card */
+.preview-real-balance-hybrid {
+  background: #efefef;
+}
+
+.preview-real-balance-hybrid .el-1 {
+  position: absolute;
+  bottom: -20px;
+  left: -10px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle at 50% 50%, #f4d53d 0%, rgba(244, 213, 61, 0.15) 60%, transparent 80%);
+  border-radius: 50%;
+}
+
+.preview-real-balance-hybrid .el-2 {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  width: 90px;
+  height: 64px;
+  background: #202020;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.preview-real-balance-hybrid .el-2::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  width: 40px;
+  height: 5px;
+  background: #f3f0e6;
+  border-radius: 2px;
+  opacity: 0.8;
+}
+
+.preview-real-balance-hybrid .el-3 {
+  position: absolute;
+  top: 50px;
+  left: 30px;
+  width: 60px;
+  height: 42px;
+  background: #f4d53d;
+  border-radius: 12px;
+  box-shadow: 0 5px 14px rgba(242, 208, 51, 0.3);
+}
+
+.preview-real-balance-hybrid .el-3::after {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 24px;
+  height: 4px;
+  background: #2c2c2c;
+  border-radius: 2px;
+}

@@ -1,0 +1,34 @@
+:root {
+  --bg-primary: #fefefe;             /* Clean white — content slides */
+  --bg-secondary: #ececeb;           /* Light warm gray — panels, placeholders */
+  --bg-elevated: #e4e4e2;            /* Slightly darker gray — card fills */
+  --text-primary: #111111;           /* Near-black — titles and headings */
+  --text-secondary: #7a7a78;         /* Medium gray — body text, captions */
+  --accent: #2da7ff;                 /* Aurora blue — links, highlights */
+  --border: #dededb;                 /* Subtle warm gray border */
+
+  /* Extended tokens — Aurora dark slide system */
+  --aurora-dark: #030405;            /* Dark slide base background */
+  --aurora-blue: #2f95ff;            /* Blue gradient point */
+  --aurora-amber: #ae8464;           /* Amber/warm gradient point */
+  --aurora-violet: #7e5cff;          /* Violet gradient point */
+  --aurora-green: #31a06d;           /* Green gradient point */
+  --aurora-teal: #20d6c9;            /* Teal gradient point */
+  --aurora-lime: #c2db78;            /* Lime gradient point */
+  --aurora-magenta: #d65db1;         /* Magenta gradient point */
+  --text-on-dark: #ffffff;           /* White text on dark aurora slides */
+  --text-on-dark-muted: rgba(255, 255, 255, 0.55); /* Muted white text */
+  --panel-placeholder: #ececeb;      /* Gray rounded placeholder panels */
+
+  /* Font */
+  --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Typography scale */
+  --title-hero: 66pt;
+  --title-section: 46pt;
+  --title-slide: 32pt;
+  --text-subtitle: 18pt;
+  --text-body: 14pt;
+  --text-caption: 11pt;
+  --text-label: 8pt;
+}
