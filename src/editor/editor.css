@@ -1738,7 +1738,7 @@
       background: var(--panel);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 4px;
+      padding: 6px;
       min-width: 140px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.4);
       z-index: 200;
@@ -1755,7 +1755,8 @@
       align-items: center;
       gap: 8px;
       width: 100%;
-      padding: 8px 12px;
+      padding: 10px 14px;
+      margin-bottom: 4px;
       background: none;
       border: none;
       color: var(--text-0);
@@ -1768,6 +1769,10 @@
 
     .export-dropdown-item:hover {
       background: var(--border);
+    }
+
+    .export-dropdown-item:last-child {
+      margin-bottom: 0;
     }
 
     .export-dropdown-item:disabled {

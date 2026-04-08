@@ -588,7 +588,7 @@ if (rethemeBtn && rethemeModal) {
     if (packsRes?.ok) {
       const packs = await packsRes.json();
       rethemePackSelect.innerHTML = packs
-        .map(p => `<option value="${p.id}">${p.name} (${p.templates?.length || 0} templates)</option>`)
+        .map(p => `<option value="${p.id}">${p.name}</option>`)
         .join('');
     }
 
@@ -652,7 +652,7 @@ if (rethemeBtn && rethemeModal) {
       }
 
       const data = await res.json();
-      showPlanLoading(true, `Retheme: ${data.targetDeckName} → ${data.targetPack}`);
+      showPlanLoading(true, `Retheme → ${data.targetPack}`);
     } catch (err) {
       setStatus(`Retheme 실패: ${err.message}`);
     }
@@ -947,6 +947,7 @@ async function init() {
         deckNameEl.style.display = '';
       }
     }
+    state.deckName = config.deckName || '';
 
     const res = await fetch('/api/slides');
     if (!res.ok) {

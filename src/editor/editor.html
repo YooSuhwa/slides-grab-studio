@@ -1921,7 +1921,7 @@
         background: var(--panel);
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 4px;
+        padding: 6px;
         min-width: 140px;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
         z-index: 200;
@@ -1938,7 +1938,8 @@
         align-items: center;
         gap: 8px;
         width: 100%;
-        padding: 8px 12px;
+        padding: 10px 14px;
+        margin-bottom: 4px;
         background: none;
         border: none;
         color: var(--text-0);
@@ -1947,6 +1948,10 @@
         cursor: pointer;
         border-radius: var(--radius-sm);
         transition: background var(--transition);
+      }
+
+      .export-dropdown-item:last-child {
+        margin-bottom: 0;
       }
 
       .export-dropdown-item:hover {
@@ -4355,9 +4360,9 @@
       /* ── Plan Loading Overlay (Phase 1) ── */
 
       .plan-loading {
-        position: absolute;
+        position: fixed;
         inset: 0;
-        z-index: 50;
+        z-index: 9999;
         display: none;
         flex-direction: column;
         align-items: center;
@@ -5261,6 +5266,14 @@
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         </button>
+        <button
+          class="nav-bar-btn ghost nav-icon-btn"
+          id="btn-retheme"
+          title="Retheme Deck"
+          aria-label="Retheme Deck"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 1 0 20 2 2 0 0 1 0-4 2 2 0 0 0 0-4 2 2 0 0 1 0-4 10 10 0 0 1 0-8z"/><circle cx="5" cy="13" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="16" cy="8" r="1"/><circle cx="19" cy="13" r="1"/></svg>
+        </button>
         <div class="export-dropdown-wrapper">
           <button
             class="nav-bar-btn ghost nav-icon-btn"
@@ -5302,14 +5315,6 @@
             >
               <span class="figma-conn-dot" id="figma-conn-dot"></span>
               Send to Figma
-            </button>
-            <div class="export-dropdown-divider"></div>
-            <button
-              class="export-dropdown-item"
-              id="btn-retheme"
-              role="menuitem"
-            >
-              Retheme Deck
             </button>
           </div>
         </div>
@@ -5404,26 +5409,28 @@
             aria-label="Slide thumbnails"
           ></div>
         </div>
-        <div class="creation-panel" id="creation-panel">
-          <div class="plan-loading" id="plan-loading">
-            <div class="plan-loading-track">
-              <img
-                src="/asset/buddy_logo.png"
-                class="plan-loading-bunny"
-                alt=""
-              />
-              <div class="plan-loading-ground"></div>
-            </div>
-            <div class="plan-loading-body">
-              <span class="plan-loading-label" id="plan-loading-label"
-                >Generating outline</span
-              >
-              <span class="plan-loading-timer" id="plan-loading-timer"
-                >0:00</span
-              >
-              <span class="plan-loading-step" id="plan-loading-step"></span>
-            </div>
+        <!-- Plan loading overlay — outside creation-panel so it shows during retheme too -->
+        <div class="plan-loading" id="plan-loading">
+          <div class="plan-loading-track">
+            <img
+              src="/asset/buddy_logo.png"
+              class="plan-loading-bunny"
+              alt=""
+            />
+            <div class="plan-loading-ground"></div>
           </div>
+          <div class="plan-loading-body">
+            <span class="plan-loading-label" id="plan-loading-label"
+              >Generating outline</span
+            >
+            <span class="plan-loading-timer" id="plan-loading-timer"
+              >0:00</span
+            >
+            <span class="plan-loading-step" id="plan-loading-step"></span>
+          </div>
+        </div>
+
+        <div class="creation-panel" id="creation-panel">
           <div class="creation-content">
             <div class="creation-header" id="creation-header">
               <h2 style="font-size: 28px; font-weight: 800; margin-bottom: 8px">
@@ -6293,6 +6300,23 @@
         <p style="margin: 0 0 12px; opacity: 0.7; font-size: 13px">
           Export all slides to a PowerPoint file.
         </p>
+
+        <div class="pptx-export-mode-selector" style="margin: 0 0 16px">
+          <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; margin-bottom:8px">
+            <input type="radio" name="pptx-export-mode" value="image" checked style="margin-top:3px">
+            <span>
+              <strong>Image</strong>
+              <span style="display:block; font-size:12px; opacity:0.6">픽셀 퍼펙트 — 이미지로 내보내기</span>
+            </span>
+          </label>
+          <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer">
+            <input type="radio" name="pptx-export-mode" value="structured" style="margin-top:3px">
+            <span>
+              <strong>Editable</strong>
+              <span style="display:block; font-size:12px; opacity:0.6">편집 가능한 텍스트/도형으로 내보내기</span>
+            </span>
+          </label>
+        </div>
 
         <div class="svg-export-progress" id="pptx-export-progress">
           <div class="svg-export-progress-bar">
