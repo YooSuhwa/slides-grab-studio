@@ -9,7 +9,7 @@
 
 import { readFile, readdir, writeFile, mkdir, copyFile, stat, unlink } from 'node:fs/promises';
 import { join, basename } from 'node:path';
-import { getPackInfo, listPackTemplates, resolvePackTheme, getCommonTypes } from './resolve.js';
+import { getPackInfo, listPackTemplates, resolvePackTheme, resolvePack, getCommonTypes } from './resolve.js';
 
 /**
  * Read the slide-outline.md from a deck, if it exists.
@@ -136,11 +136,12 @@ export function swapOutlinePack(outline, newPackId) {
  * @param {string} opts.targetPackId - Target pack ID
  * @param {string} opts.deckName - Deck folder name
  * @param {string} opts.themeCss - Target pack's theme.css content
+ * @param {string} [opts.designMd] - Target pack's design.md content
  * @param {string[]} opts.packTemplates - Available templates in target pack
  * @param {string[]} opts.allTypes - All common types
  * @returns {string}
  */
-export function buildRethemePrompt({ outline, targetPackId, deckName, themeCss, packTemplates, allTypes }) {
+export function buildRethemePrompt({ outline, targetPackId, deckName, themeCss, designMd, packTemplates, allTypes }) {
   const lines = [
     `기존 프레젠테이션을 "${targetPackId}" 팩으로 리디자인하세요.`,
     '',
@@ -149,8 +150,22 @@ export function buildRethemePrompt({ outline, targetPackId, deckName, themeCss, 
     '=== 아웃라인 끝 ===',
     '',
     `타겟 팩: ${targetPackId}`,
-    `팩이 보유한 템플릿: ${packTemplates.join(', ')}`,
     `전체 type: ${allTypes.join(', ')}`,
+  ];
+
+  if (designMd) {
+    lines.push(
+      '',
+      '=== 팩 디자인 스펙 (design.md) ===',
+      designMd,
+      '=== 디자인 스펙 끝 ===',
+      '',
+      '★ 위 design.md의 CSS Patterns, Color Usage, Layout Principles, Avoid 섹션을 반드시 따르세요.',
+      '★ 특히 커버/클로징 슬라이드는 design.md의 Cover 패턴을 정확히 구현하세요.',
+    );
+  }
+
+  lines.push(
     '',
     '타겟 팩의 theme.css:',
     '```css',
@@ -159,7 +174,7 @@ export function buildRethemePrompt({ outline, targetPackId, deckName, themeCss, 
     '',
     '규칙:',
     '1. 아웃라인의 각 슬라이드를 새 팩의 색상 체계와 타이포그래피로 HTML 파일을 생성하세요.',
-    '2. 팩의 템플릿은 레이아웃 참고용입니다. 콘텐츠에 맞게 자유롭게 변형하세요.',
+    '2. design.md에 정의된 CSS 패턴과 레이아웃 원칙을 우선 적용하세요.',
     '3. 아웃라인에 스타일 힌트(배경색, 레이아웃 지시 등)가 있으면 팩 기본 스타일보다 우선 적용하세요.',
     '4. accent 색상(--accent)을 적극 활용: 섹션 라벨, 핵심 수치, 강조 문구, CTA 등.',
     '5. 슬라이드마다 콘텐츠에 최적화된 레이아웃을 선택하세요. 같은 패턴을 반복하지 마세요.',
@@ -170,14 +185,13 @@ export function buildRethemePrompt({ outline, targetPackId, deckName, themeCss, 
     '10. theme.css와 base.css는 link 태그로 참조하지 말고, 스타일을 인라인으로 포함하세요.',
     '',
     '디자인 가이드:',
-    '- 커버/오프닝에 "어둡게" 지시가 있으면 다크 배경(#1a1a1a 등) + 흰/accent 텍스트',
     '- 섹션 디바이더에 "PART N" 등 라벨을 accent 색상으로 추가',
     '- 큰 숫자/메트릭은 accent 색상으로 강조',
     '- 인용구는 출처를 accent 색상으로 표시',
     '- 요약 슬라이드는 카드보다 번호 리스트가 더 효과적일 수 있음',
     '',
     '중요: HTML 슬라이드 파일만 생성하세요. 다른 파일은 수정하지 마세요.',
-  ];
+  );
 
   return lines.join('\n');
 }
@@ -206,6 +220,16 @@ export async function prepareRetheme({ deckDir, targetPackId, targetDeckName }) 
     themeCss = await readFile(themeResult.path, 'utf-8');
   }
 
+  // Get design.md (pack design specification)
+  let designMd = '';
+  const packResolved = resolvePack(targetPackId);
+  if (packResolved) {
+    const designPath = join(packResolved.path, 'design.md');
+    try {
+      designMd = await readFile(designPath, 'utf-8');
+    } catch { /* design.md is optional */ }
+  }
+
   // Get pack templates
   const packTemplates = listPackTemplates(targetPackId, { includeFallback: true });
   const allTypes = Object.keys(getCommonTypes());
@@ -229,6 +253,7 @@ export async function prepareRetheme({ deckDir, targetPackId, targetDeckName }) 
     targetPackId,
     deckName,
     themeCss,
+    designMd,
     packTemplates,
     allTypes,
   });
