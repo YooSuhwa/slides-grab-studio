@@ -1,6 +1,10 @@
 import { spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 
 import { buildCodexExecArgs } from '../../src/editor/codex-edit.js';
+import { resolveTemplate, resolvePackTheme } from '../../src/resolve.js';
 
 /**
  * Spawn a Codex subprocess for slide editing.
@@ -174,4 +178,162 @@ function unwrapFunctionBody(code) {
   const wrapped = code.match(/^function\s+\w*\s*\([^)]*\)\s*\{([\s\S]*)\}\s*$/);
   if (wrapped) return wrapped[1].trim();
   return code;
+}
+
+// ── OpenAI API direct call for slide generation ─────────────────────
+
+const OPENAI_SYSTEM_PROMPT = `You are an expert presentation slide generator. You create complete, production-ready HTML slide files.
+
+CRITICAL OUTPUT FORMAT: When creating files, output EACH file using this exact delimiter:
+
+=== FILE: <relative-path> ===
+<complete file content>
+=== END FILE ===
+
+Rules:
+- Output ONLY the file blocks. No explanations, no commentary.
+- The relative path must match what was requested (e.g. decks/my-deck/slide-01.html).
+- Include ALL requested files — do not skip any slides.
+- Each HTML slide must be a COMPLETE standalone document with <!DOCTYPE html>, full <head>, and <body>.
+- Generate RICH, detailed content for every slide — real paragraphs, bullet points, data, descriptions. Never leave slides with just a title or subtitle.
+- Follow the template's visual structure but fill it with substantive, informative content.
+- Slide dimensions: 720pt × 405pt (set on <body> via width/height).
+- Use Pretendard font via CDN: https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css`;
+
+/**
+ * Detect if a model is an OpenAI reasoning model (o-series).
+ * Reasoning models use max_completion_tokens instead of max_tokens.
+ */
+function isReasoningModel(model) {
+  return /^o\d/.test(model);
+}
+
+/**
+ * Replace `slides-grab show-template <type> --pack <packId>` references
+ * in the prompt with the actual template HTML content.
+ */
+function inlineTemplateRefs(prompt) {
+  return prompt.replace(
+    /slides-grab show-template (\S+)(?: --pack (\S+))?/g,
+    (match, name, packId) => {
+      try {
+        const result = resolveTemplate(name, packId);
+        if (result) {
+          const html = readFileSync(result.path, 'utf-8');
+          return `[Template "${name}" from pack "${result.pack}"]\n\`\`\`html\n${html}\n\`\`\``;
+        }
+      } catch { /* template not found */ }
+      return match;
+    },
+  );
+}
+
+/**
+ * Replace `slides-grab show-theme <packId>` references
+ * in the prompt with the actual theme CSS content.
+ */
+function inlineThemeRefs(prompt) {
+  return prompt.replace(
+    /slides-grab show-theme (\S+)/g,
+    (match, packId) => {
+      try {
+        const result = resolvePackTheme(packId);
+        if (result) {
+          const css = readFileSync(result.path, 'utf-8');
+          return `[Theme CSS for pack "${result.pack}"]\n\`\`\`css\n${css}\n\`\`\``;
+        }
+      } catch { /* theme not found */ }
+      return match;
+    },
+  );
+}
+
+/**
+ * Parse file blocks from OpenAI response.
+ * Format: === FILE: <path> === ... === END FILE ===
+ */
+function parseFileBlocks(text) {
+  const files = [];
+  const regex = /=== FILE: (.+?) ===\n([\s\S]*?)(?:\n=== END FILE ===)/g;
+  let m;
+  while ((m = regex.exec(text)) !== null) {
+    const filePath = m[1].trim();
+    const content = m[2];
+    if (filePath && content != null) {
+      files.push({ path: filePath, content });
+    }
+  }
+  return files;
+}
+
+/**
+ * Call OpenAI Chat Completions API directly for slide generation.
+ * Replaces spawnCodexEdit — same interface as spawnClaudeEdit.
+ */
+export async function spawnOpenAIEdit({ prompt, model, cwd, onLog, timeout = 300_000 }) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    const msg = 'OPENAI_API_KEY is not set. Add it to .env file.';
+    onLog?.('stderr', msg);
+    return { code: 1, stdout: '', stderr: msg };
+  }
+
+  const selectedModel = (model || 'gpt-4o').trim();
+  onLog?.('stdout', `[OpenAI API] Calling ${selectedModel}...\n`);
+
+  // Pre-process prompt: inline template and theme references
+  let enhancedPrompt = inlineTemplateRefs(prompt);
+  enhancedPrompt = inlineThemeRefs(enhancedPrompt);
+
+  try {
+    const { default: OpenAI } = await import('openai');
+    const client = new OpenAI({ apiKey, timeout });
+
+    const isReasoning = isReasoningModel(selectedModel);
+    const messages = isReasoning
+      ? [{ role: 'user', content: OPENAI_SYSTEM_PROMPT + '\n\n---\n\n' + enhancedPrompt }]
+      : [
+          { role: 'system', content: OPENAI_SYSTEM_PROMPT },
+          { role: 'user', content: enhancedPrompt },
+        ];
+
+    const response = await client.chat.completions.create({
+      model: selectedModel,
+      messages,
+      ...(isReasoning
+        ? { max_completion_tokens: 65536 }
+        : { temperature: 0.3, max_tokens: 16384 }),
+    });
+
+    const text = response.choices[0]?.message?.content || '';
+    onLog?.('stdout', text);
+
+    // Parse and write files
+    const files = parseFileBlocks(text);
+    const written = [];
+
+    for (const { path: filePath, content } of files) {
+      const fullPath = join(cwd, filePath);
+      await mkdir(dirname(fullPath), { recursive: true });
+      await writeFile(fullPath, content, 'utf-8');
+      written.push(filePath);
+    }
+
+    if (written.length > 0) {
+      const summary = `\n[OpenAI API] Wrote ${written.length} file(s): ${written.join(', ')}\n`;
+      onLog?.('stdout', summary);
+      console.log(summary);
+    } else {
+      const warn = '\n[OpenAI API] Warning: No file blocks found in response.\n';
+      onLog?.('stderr', warn);
+      console.warn(warn);
+    }
+
+    return { code: written.length > 0 ? 0 : 1, stdout: text, stderr: '' };
+  } catch (err) {
+    const msg = `[OpenAI API] Error: ${err.message}\n`;
+    onLog?.('stderr', msg);
+    console.error(msg);
+    return { code: 1, stdout: '', stderr: msg };
+  }
 }

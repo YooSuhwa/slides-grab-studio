@@ -143,9 +143,14 @@ export function buildCodexExecArgs({ prompt, imagePath, model }) {
 }
 
 export const CLAUDE_MODELS = ['claude-opus-4-6', 'claude-sonnet-4-6'];
+export const CODEX_MODELS = ['gpt-4o', 'o4-mini'];
 
 export function isClaudeModel(model) {
   return typeof model === 'string' && CLAUDE_MODELS.includes(model.trim());
+}
+
+export function isCodexModel(model) {
+  return typeof model === 'string' && CODEX_MODELS.includes(model.trim());
 }
 
 export function buildClaudeExecArgs({ prompt, imagePath, model }) {

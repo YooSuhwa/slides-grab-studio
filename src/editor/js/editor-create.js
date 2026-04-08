@@ -11,7 +11,7 @@ import {
   importDropzone, importFileInput, importBrowse,
   importFileList, importFileListItems, importAddMore,
   importSlideCount,
-  importModel, importSubmit, importPrompt, importUrlInput, importUrlGo,
+  importModel, importSubmit, importPrompt, importUrlInput,
   btnPresent, btnDuplicateSlide, btnDeleteSlide,
 } from './editor-dom.js';
 import { getSelectedPack } from './editor-pack.js';
@@ -163,9 +163,8 @@ export async function loadCreationModelOptions() {
     if (!res.ok) return;
     const payload = await res.json();
     const models = Array.isArray(payload.models) ? payload.models : [];
-    const claudeModels = models.filter((m) => m.startsWith('claude-'));
     if (creationModel) {
-      creationModel.innerHTML = claudeModels
+      creationModel.innerHTML = models
         .map((m) => `<option value="${m}">${m}</option>`)
         .join('');
     }
@@ -617,8 +616,19 @@ export async function submitImport(content) {
 
 if (importSubmit) {
   importSubmit.addEventListener('click', () => {
+    // URL takes priority if entered
+    const urlValue = importUrlInput?.value?.trim();
+    if (urlValue) {
+      if (!/^https?:\/\//i.test(urlValue)) {
+        setStatus('https:// 또는 http:// 로 시작하는 URL을 입력하세요.');
+        return;
+      }
+      submitDocImport({ source: urlValue, sourceType: 'url' });
+      return;
+    }
+
     if (_importedFiles.length === 0) {
-      setStatus('먼저 파일을 선택해 주세요.');
+      setStatus('URL을 입력하거나 파일을 선택해 주세요.');
       return;
     }
     if (_importedFiles.length >= 2) {
@@ -639,28 +649,12 @@ if (importSubmit) {
   });
 }
 
-// URL import
-function handleUrlImport() {
-  const url = importUrlInput?.value?.trim();
-  if (!url) {
-    setStatus('URL을 입력해 주세요.');
-    return;
-  }
-  if (!/^https?:\/\//i.test(url)) {
-    setStatus('https:// 또는 http:// 로 시작하는 URL을 입력하세요.');
-    return;
-  }
-  submitDocImport({ source: url, sourceType: 'url' });
-}
-
-if (importUrlGo) {
-  importUrlGo.addEventListener('click', handleUrlImport);
-}
+// URL import — Enter key triggers Import & Plan button
 if (importUrlInput) {
   importUrlInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleUrlImport();
+      importSubmit?.click();
     }
   });
 }
@@ -672,9 +666,8 @@ export async function loadImportModelOptions() {
     if (!res.ok) return;
     const payload = await res.json();
     const models = Array.isArray(payload.models) ? payload.models : [];
-    const claudeModels = models.filter((m) => m.startsWith('claude-'));
     if (importModel) {
-      importModel.innerHTML = claudeModels
+      importModel.innerHTML = models
         .map((m) => `<option value="${m}">${m}</option>`)
         .join('');
     }

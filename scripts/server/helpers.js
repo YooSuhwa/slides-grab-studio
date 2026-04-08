@@ -5,6 +5,7 @@ import { watch as fsWatch } from 'node:fs';
 import {
   SLIDE_SIZE,
   normalizeSelection,
+  isClaudeModel,
 } from '../../src/editor/codex-edit.js';
 
 import { backupDeck } from '../../src/retheme.js';
@@ -15,7 +16,15 @@ const SLIDE_FILE_PATTERN = /^slide-.*\.html$/i;
 // ── Re-exports from sub-modules ─────────────────────────────────────
 
 export { appendOutlinePrompt, parseOutline } from './outline.js';
-export { spawnCodexEdit, spawnClaudeEdit } from './spawn.js';
+
+import { spawnClaudeEdit, spawnCodexEdit, spawnOpenAIEdit } from './spawn.js';
+export { spawnClaudeEdit, spawnCodexEdit, spawnOpenAIEdit };
+
+export function spawnAIEdit(params) {
+  const backend = isClaudeModel(params.model) ? 'Claude' : 'OpenAI API';
+  console.log(`[AI] Using ${backend} — model: ${params.model}`);
+  return isClaudeModel(params.model) ? spawnClaudeEdit(params) : spawnOpenAIEdit(params);
+}
 
 // ── Path utilities ──────────────────────────────────────────────────
 

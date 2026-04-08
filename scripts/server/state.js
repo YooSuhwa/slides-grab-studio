@@ -3,14 +3,14 @@ import { mkdir } from 'node:fs/promises';
 
 import {
   CLAUDE_MODELS,
+  CODEX_MODELS,
 } from '../../src/editor/codex-edit.js';
 
 import { normalizePackId } from '../../src/resolve.js';
 import { AsyncMutex } from './mutex.js';
 
-const CODEX_MODELS = ['gpt-5.4', 'gpt-5.3-codex', 'gpt-5.3-codex-spark'];
-const ALL_MODELS = [...CODEX_MODELS, ...CLAUDE_MODELS];
-const DEFAULT_CODEX_MODEL = CODEX_MODELS[0];
+const ALL_MODELS = [...CLAUDE_MODELS, ...CODEX_MODELS];
+const DEFAULT_CODEX_MODEL = CLAUDE_MODELS[0]; // claude-opus-4-6
 const SLIDE_FILE_PATTERN = /^slide-.*\.html$/i;
 
 const MAX_RUNS = 200;

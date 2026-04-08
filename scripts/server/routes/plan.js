@@ -1,7 +1,7 @@
 import { readdir, readFile, writeFile, stat } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 
-import { CLAUDE_MODELS } from '../../../src/editor/codex-edit.js';
+import { CLAUDE_MODELS, CODEX_MODELS } from '../../../src/editor/codex-edit.js';
 import { normalizePackId } from '../../../src/resolve.js';
 
 import { broadcastSSE } from '../sse.js';
@@ -9,10 +9,12 @@ import {
   randomRunId,
   parseOutline,
   appendOutlinePrompt,
-  spawnClaudeEdit,
+  spawnAIEdit,
   setupFileWatcher,
   listExistingDeckNames,
 } from '../helpers.js';
+
+const ALL_MODELS = [...CLAUDE_MODELS, ...CODEX_MODELS];
 
 /**
  * Plan and outline routes.
@@ -71,7 +73,7 @@ export function createPlanRouter(ctx) {
       return res.status(409).json({ error: 'A generation is already in progress.' });
     }
 
-    const selectedModel = typeof model === 'string' && CLAUDE_MODELS.includes(model.trim())
+    const selectedModel = typeof model === 'string' && ALL_MODELS.includes(model.trim())
       ? model.trim()
       : CLAUDE_MODELS[0];
 
@@ -115,7 +117,7 @@ export function createPlanRouter(ctx) {
 
         broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'plan', step: 'Generating outline with AI' });
 
-        const result = await spawnClaudeEdit({
+        const result = await spawnAIEdit({
           prompt: fullPrompt,
           imagePath: null,
           model: selectedModel,
@@ -238,7 +240,7 @@ export function createPlanRouter(ctx) {
 
         const fullPrompt = promptLines.join('\n');
 
-        const result = await spawnClaudeEdit({
+        const result = await spawnAIEdit({
           prompt: fullPrompt,
           imagePath: null,
           model: selectedModel,

@@ -2,7 +2,7 @@ import { mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, extname, join, resolve } from 'node:path';
 
-import { CLAUDE_MODELS } from '../../../src/editor/codex-edit.js';
+import { CLAUDE_MODELS, CODEX_MODELS } from '../../../src/editor/codex-edit.js';
 import { normalizePackId } from '../../../src/resolve.js';
 
 import { broadcastSSE } from '../sse.js';
@@ -10,10 +10,12 @@ import {
   randomRunId,
   parseOutline,
   appendOutlinePrompt,
-  spawnClaudeEdit,
+  spawnAIEdit,
   setupFileWatcher,
   listExistingDeckNames,
 } from '../helpers.js';
+
+const ALL_MODELS = [...CLAUDE_MODELS, ...CODEX_MODELS];
 
 const MAX_IMPORT_FILES = 5;
 const MAX_TOTAL_SIZE = 10 * 1024 * 1024; // 10MB total across all files
@@ -65,7 +67,7 @@ export function createImportRouter(ctx) {
     if (rawMd.length > 500_000) return res.status(400).json({ error: 'Content too large (max 500KB).' });
     if (!ctx.generateMutex.tryAcquire()) return res.status(409).json({ error: 'A generation is already in progress.' });
 
-    const selectedModel = typeof model === 'string' && CLAUDE_MODELS.includes(model.trim())
+    const selectedModel = typeof model === 'string' && ALL_MODELS.includes(model.trim())
       ? model.trim() : CLAUDE_MODELS[0];
     const runId = randomRunId();
 
@@ -164,7 +166,7 @@ export function createImportRouter(ctx) {
     const q = (key) => reqBody[key] || req.query[key] || '';
 
     const modelRaw = q('model');
-    const model = typeof modelRaw === 'string' && CLAUDE_MODELS.includes(modelRaw.trim())
+    const model = typeof modelRaw === 'string' && ALL_MODELS.includes(modelRaw.trim())
       ? modelRaw.trim() : CLAUDE_MODELS[0];
 
     const runId = randomRunId();
@@ -239,7 +241,7 @@ export function createImportRouter(ctx) {
       return res.status(400).json({ error: 'Total file size too large (max 10MB).' });
     }
 
-    const selectedModel = typeof model === 'string' && CLAUDE_MODELS.includes(model.trim())
+    const selectedModel = typeof model === 'string' && ALL_MODELS.includes(model.trim())
       ? model.trim() : CLAUDE_MODELS[0];
 
     const runId = randomRunId();
@@ -395,7 +397,7 @@ function runImportPlan(ctx, { runId, model, reqPackId, slideCount, userPrompt, p
 
       broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'plan', step: 'Converting with AI' });
 
-      const result = await spawnClaudeEdit({
+      const result = await spawnAIEdit({
         prompt: promptLines.join('\n'),
         imagePath: null,
         imagePaths: imagePaths || null,

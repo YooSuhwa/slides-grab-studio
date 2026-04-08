@@ -1,11 +1,13 @@
 import { readdir, readFile, mkdir, rename, stat } from 'node:fs/promises';
 import { basename, dirname, join, resolve, relative } from 'node:path';
 
-import { CLAUDE_MODELS } from '../../../src/editor/codex-edit.js';
+import { CLAUDE_MODELS, CODEX_MODELS } from '../../../src/editor/codex-edit.js';
 import { listPackTemplates, normalizePackId } from '../../../src/resolve.js';
 
 import { broadcastSSE } from '../sse.js';
-import { randomRunId, toPosixPath, listSlideFiles, spawnClaudeEdit, setupFileWatcher, backupSlides, uniqueDeckName, listExistingDeckNames } from '../helpers.js';
+import { randomRunId, toPosixPath, listSlideFiles, spawnAIEdit, setupFileWatcher, backupSlides, uniqueDeckName, listExistingDeckNames } from '../helpers.js';
+
+const ALL_MODELS = [...CLAUDE_MODELS, ...CODEX_MODELS];
 
 /** Slide generation route: POST /api/generate */
 export function createGenerateRouter(ctx) {
@@ -57,7 +59,7 @@ export function createGenerateRouter(ctx) {
       }
     }
 
-    const selectedModel = typeof model === 'string' && CLAUDE_MODELS.includes(model.trim())
+    const selectedModel = typeof model === 'string' && ALL_MODELS.includes(model.trim())
       ? model.trim()
       : CLAUDE_MODELS[0];
 
@@ -93,7 +95,7 @@ export function createGenerateRouter(ctx) {
 
         broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: 'Building slides with AI' });
 
-        const result = await spawnClaudeEdit({
+        const result = await spawnAIEdit({
           prompt: fullPrompt,
           imagePath: null,
           model: selectedModel,

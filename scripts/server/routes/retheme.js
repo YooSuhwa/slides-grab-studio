@@ -2,13 +2,15 @@ import { writeFile, mkdir } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 
-import { CLAUDE_MODELS } from '../../../src/editor/codex-edit.js';
+import { CLAUDE_MODELS, CODEX_MODELS } from '../../../src/editor/codex-edit.js';
 import { normalizePackId } from '../../../src/resolve.js';
 import { prepareRetheme, listBackups, restoreBackup } from '../../../src/retheme.js';
 import { analyzeDeck } from '../../../src/review.js';
 
 import { broadcastSSE } from '../sse.js';
-import { randomRunId, spawnClaudeEdit, setupFileWatcher, uniqueDeckName, sanitizeDeckName } from '../helpers.js';
+import { randomRunId, spawnAIEdit, setupFileWatcher, uniqueDeckName, sanitizeDeckName } from '../helpers.js';
+
+const ALL_MODELS = [...CLAUDE_MODELS, ...CODEX_MODELS];
 
 /**
  * Retheme, review, backup, and restore routes.
@@ -49,7 +51,7 @@ export function createRethemeRouter(ctx) {
       return res.status(404).json({ error: `Deck not found: ${safeDeckName}` });
     }
 
-    const selectedModel = typeof reqModel === 'string' && CLAUDE_MODELS.includes(reqModel.trim())
+    const selectedModel = typeof reqModel === 'string' && ALL_MODELS.includes(reqModel.trim())
       ? reqModel.trim()
       : CLAUDE_MODELS[0];
 
@@ -77,7 +79,7 @@ export function createRethemeRouter(ctx) {
 
         broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'retheme', step: `Regenerating slides with ${targetPack} pack` });
 
-        const result = await spawnClaudeEdit({
+        const result = await spawnAIEdit({
           prompt,
           imagePath: null,
           model: selectedModel,
