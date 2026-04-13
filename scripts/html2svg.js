@@ -533,15 +533,32 @@ export async function sanitizeSvgForFigma(page, svgString) {
           if (!isNaN(y)) tspan.setAttribute('y', (y + yAdjust).toFixed(2));
         }
 
-        /* Keep textLength for cross-renderer width consistency,
-         * but remove lengthAdjust (default "spacing" is less aggressive
-         * than "spacingAndGlyphs" and more likely to be handled as text). */
         tspan.removeAttribute('lengthAdjust');
 
         for (const attr of [...tspan.attributes]) {
           if (!TSPAN_KEEP.has(attr.name) && !attr.name.startsWith('xml:')) {
             tspan.removeAttribute(attr.name);
           }
+        }
+      }
+
+      /* ── multi-tspan: fix inline spacing for Figma ─────────────
+       * dom-to-svg assigns absolute x + textLength per tspan based on
+       * Chrome measurements.  Figma's text engine measures differently,
+       * so forced widths and absolute positions create gaps/overlaps
+       * between differently-colored segments on the same line.
+       * Fix: remove textLength from all tspans and remove absolute x
+       * from subsequent inline tspans (same y) so they flow naturally. */
+      if (tspans.length > 1) {
+        let prevY = null;
+        for (const tspan of tspans) {
+          tspan.removeAttribute('textLength');
+
+          const y = tspan.getAttribute('y');
+          if (prevY !== null && y === prevY) {
+            tspan.removeAttribute('x');
+          }
+          prevY = y;
         }
       }
 
@@ -582,6 +599,121 @@ export async function sanitizeSvgForFigma(page, svgString) {
       const fs = textEl.getAttribute('font-size');
       if (fs?.endsWith('px')) {
         textEl.setAttribute('font-size', parseFloat(fs).toString());
+      }
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+     * Merge inline <text> siblings into a single <text> with <tspan>
+     * children.  dom-to-svg creates separate <text> elements for
+     * inline colored spans (e.g. <h1>A <span style="color:red">B</span></h1>).
+     * Each gets an absolute x and textLength based on Chrome's
+     * measurements.  When Figma imports these, its text engine measures
+     * differently, creating gaps or overlaps.
+     * Merging into tspans lets Figma flow them naturally.
+     * ══════════════════════════════════════════════════════════════ */
+    const NS = 'http://www.w3.org/2000/svg';
+    /* Merge key: same y + same font-family + same font-size.
+     * font-weight, font-style, fill can differ between inline spans
+     * and will be stored per tspan. */
+    const MERGE_KEY_ATTRS = ['font-family', 'font-size'];
+
+    for (const g of [...doc.querySelectorAll('g')]) {
+      /* Collect text-bearing children:
+       *   - direct <text> child
+       *   - <g> wrapping a single <text> (dom-to-svg wraps colored spans) */
+      const items = [];
+      for (const child of [...g.children]) {
+        if (child.tagName === 'text') {
+          items.push({ node: child, textEl: child });
+        } else if (child.tagName === 'g'
+                   && child.querySelectorAll('text').length === 1) {
+          const t = child.querySelector('text');
+          items.push({ node: child, textEl: t });
+        } else {
+          items.push({ node: child, textEl: null });
+        }
+      }
+
+      /* Group consecutive text items that share the same baseline (y),
+       * font-family/size, AND are contiguous (no gap between x positions).
+       * Items with an intentional gap (e.g. flex gap between "01" and text)
+       * must stay as separate <text> elements to preserve spacing. */
+      const GAP_TOLERANCE = 2; // px — allow tiny rounding differences
+
+      let idx = 0;
+      while (idx < items.length) {
+        if (!items[idx].textEl) { idx++; continue; }
+
+        const run = [items[idx]];
+        const baseY = items[idx].textEl.getAttribute('y');
+        const baseFontKey = MERGE_KEY_ATTRS.map(
+          a => items[idx].textEl.getAttribute(a) ?? '').join('|');
+
+        let k = idx + 1;
+        while (k < items.length && items[k].textEl) {
+          const t = items[k].textEl;
+          const yMatch = t.getAttribute('y') === baseY;
+          const fontKey = MERGE_KEY_ATTRS.map(a => t.getAttribute(a) ?? '').join('|');
+
+          /* Check x-continuity: prev.x + prev.textLength ≈ next.x */
+          const prev = run[run.length - 1].textEl;
+          const prevEnd = (parseFloat(prev.getAttribute('x')) || 0)
+            + (parseFloat(prev.getAttribute('textLength')) || 0);
+          const nextX = parseFloat(t.getAttribute('x')) || 0;
+          const contiguous = Math.abs(nextX - prevEnd) <= GAP_TOLERANCE;
+
+          if (yMatch && fontKey === baseFontKey && contiguous) {
+            run.push(items[k]);
+            k++;
+          } else {
+            break;
+          }
+        }
+
+        if (run.length >= 2) {
+          const first = run[0].textEl;
+          const merged = doc.createElementNS(NS, 'text');
+
+          /* Copy common attributes from the first fragment,
+           * but NOT textLength (it was for the first fragment only). */
+          for (const a of [...TEXT_KEEP]) {
+            if (a === 'textLength') continue;
+            if (first.hasAttribute(a)) merged.setAttribute(a, first.getAttribute(a));
+          }
+
+          /* Build <tspan> per fragment — store per-span differences */
+          for (const item of run) {
+            const tspan = doc.createElementNS(NS, 'tspan');
+            tspan.textContent = item.textEl.textContent;
+
+            const fill = item.textEl.getAttribute('fill');
+            if (fill && fill !== merged.getAttribute('fill')) {
+              tspan.setAttribute('fill', fill);
+            }
+            const fw = item.textEl.getAttribute('font-weight');
+            if (fw && fw !== merged.getAttribute('font-weight')) {
+              tspan.setAttribute('font-weight', fw);
+            }
+            const fst = item.textEl.getAttribute('font-style');
+            if (fst && fst !== merged.getAttribute('font-style')) {
+              tspan.setAttribute('font-style', fst);
+            }
+            const ls = item.textEl.getAttribute('letter-spacing');
+            if (ls && ls !== merged.getAttribute('letter-spacing')) {
+              tspan.setAttribute('letter-spacing', ls);
+            }
+            const op = item.textEl.getAttribute('opacity');
+            if (op && op !== '1') tspan.setAttribute('opacity', op);
+
+            merged.appendChild(tspan);
+          }
+
+          /* Replace originals with merged text */
+          g.insertBefore(merged, run[0].node);
+          for (const item of run) item.node.remove();
+        }
+
+        idx = k;
       }
     }
 
