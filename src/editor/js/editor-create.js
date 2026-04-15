@@ -4,13 +4,13 @@ import { state, creationState } from './editor-state.js';
 import {
   creationPanel, creationTopic, creationRequirements, creationModel,
   creationGenerate, creationLog, creationProgress,
-  creationDeckName, creationSlideCount,
+  creationDeckName, creationSlideCount, creationUseImages,
   slidePanel, editorSidebar, slideCounter, btnNewDeck, slideStrip,
   btnPrev, btnNext, btnExportToggle, btnReviewOutline, btnReviewDeck,
   tabTopic, tabImport, tabTopicPanel, tabImportPanel,
   importDropzone, importFileInput, importBrowse,
   importFileList, importFileListItems, importAddMore,
-  importSlideCount,
+  importSlideCount, importUseImages,
   importModel, importSubmit, importPrompt, importUrlInput,
   btnPresent, btnDuplicateSlide, btnDeleteSlide,
 } from './editor-dom.js';
@@ -212,6 +212,7 @@ export async function submitGeneration() {
   const requirements = creationRequirements?.value?.trim() || '';
   const model = creationModel?.value || 'claude-sonnet-4-6';
   const slideCount = creationSlideCount?.value ?? '';
+  const useImages = creationUseImages?.checked ?? false;
 
   creationState.generating = true;
   window.addEventListener('beforeunload', preventUnload);
@@ -225,7 +226,7 @@ export async function submitGeneration() {
     const res = await fetch('/api/plan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ topic, requirements, model, slideCount, packId: getSelectedPack() }),
+      body: JSON.stringify({ topic, requirements, model, slideCount, packId: getSelectedPack(), useImages }),
     });
 
     if (!res.ok) {
@@ -579,6 +580,7 @@ export async function submitImport(content) {
 
   const model = importModel?.value || 'claude-sonnet-4-6';
   const slideCount = importSlideCount?.value || '';
+  const useImages = importUseImages?.checked ?? false;
 
   creationState.generating = true;
   window.addEventListener('beforeunload', preventUnload);
@@ -593,7 +595,7 @@ export async function submitImport(content) {
     const res = await fetch('/api/import-md', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: mdContent, model, slideCount, packId: getSelectedPack(), userPrompt }),
+      body: JSON.stringify({ content: mdContent, model, slideCount, packId: getSelectedPack(), userPrompt, useImages }),
     });
 
     if (!res.ok) {
@@ -683,7 +685,7 @@ export async function loadImportModelOptions() {
  * Submit a document import (PDF path or URL) to /api/import-doc.
  * Called from editor-init.js for CLI --import-doc mode, or from the UI.
  */
-export async function submitDocImport({ source, sourceType, model, slideCount, packId } = {}) {
+export async function submitDocImport({ source, sourceType, model, slideCount, packId, useImages } = {}) {
   if (!source) {
     setStatus('소스가 지정되지 않았습니다.');
     return;
@@ -696,6 +698,7 @@ export async function submitDocImport({ source, sourceType, model, slideCount, p
   const selectedModel = model || importModel?.value || 'claude-sonnet-4-6';
   const selectedSlideCount = slideCount || importSlideCount?.value || '';
   const selectedPack = packId || getSelectedPack();
+  const selectedUseImages = useImages ?? importUseImages?.checked ?? false;
 
   creationState.generating = true;
   window.addEventListener('beforeunload', preventUnload);
@@ -716,6 +719,7 @@ export async function submitDocImport({ source, sourceType, model, slideCount, p
       slideCount: selectedSlideCount,
       packId: selectedPack,
       userPrompt,
+      useImages: selectedUseImages,
     };
     if (isUrl) {
       body.url = source;
@@ -751,7 +755,7 @@ export async function submitDocImport({ source, sourceType, model, slideCount, p
 /**
  * Submit a PDF file (browser File object) via binary upload.
  */
-export async function submitPdfUpload(file, { model, slideCount, packId } = {}) {
+export async function submitPdfUpload(file, { model, slideCount, packId, useImages } = {}) {
   if (!file) {
     setStatus('PDF 파일을 선택해 주세요.');
     return;
@@ -764,6 +768,7 @@ export async function submitPdfUpload(file, { model, slideCount, packId } = {}) 
   const selectedModel = model || importModel?.value || 'claude-sonnet-4-6';
   const selectedSlideCount = slideCount || importSlideCount?.value || '';
   const selectedPack = packId || getSelectedPack();
+  const selectedUseImages = useImages ?? importUseImages?.checked ?? false;
 
   creationState.generating = true;
   window.addEventListener('beforeunload', preventUnload);
@@ -782,6 +787,7 @@ export async function submitPdfUpload(file, { model, slideCount, packId } = {}) 
       slideCount: selectedSlideCount,
       packId: selectedPack,
       userPrompt,
+      useImages: selectedUseImages ? 'true' : 'false',
     });
     const res = await fetch(`/api/import-doc?${qs}`, {
       method: 'POST',
@@ -844,6 +850,7 @@ async function submitMultiFileImport() {
 
   const model = importModel?.value || 'claude-sonnet-4-6';
   const slideCount = importSlideCount?.value || '';
+  const useImages = importUseImages?.checked ?? false;
   const userPrompt = getUserPrompt();
 
   creationState.generating = true;
@@ -872,7 +879,7 @@ async function submitMultiFileImport() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         files, model, slideCount,
-        packId: getSelectedPack(), userPrompt,
+        packId: getSelectedPack(), userPrompt, useImages,
       }),
     });
 

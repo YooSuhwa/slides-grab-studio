@@ -66,9 +66,9 @@ export function buildImageContractReport({ slideFile, sources = [] }) {
 
     if (classification.kind === 'remote-url') {
       issues.push({
-        severity: 'warning',
+        severity: 'critical',
         code: 'remote-image-url',
-        message: 'Remote image URL is best-effort only and may break deterministic exports.',
+        message: 'Remote image URLs are unsupported in saved slide HTML. Download the image into ./assets/<file> instead.',
         slide: slideFile,
         ...entry,
       });
@@ -77,9 +77,9 @@ export function buildImageContractReport({ slideFile, sources = [] }) {
 
     if (classification.kind === 'remote-url-insecure') {
       issues.push({
-        severity: 'warning',
+        severity: 'critical',
         code: 'remote-image-url-insecure',
-        message: 'Insecure http:// image URL is discouraged. Prefer ./assets/<file> or data: URLs.',
+        message: 'Remote http:// image URLs are unsupported in saved slide HTML. Download the image into ./assets/<file> instead.',
         slide: slideFile,
         ...entry,
       });

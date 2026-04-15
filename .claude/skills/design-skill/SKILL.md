@@ -236,6 +236,10 @@ This skill is **Stage 2**. It works from the `slide-outline.md` approved by the 
 1. **CSS gradients**: Not supported in PowerPoint conversion -- replace with background images
 2. **Webfonts**: Always include the Pretendard CDN link (unless pack specifies a different font)
 3. **Image contract**: Store local assets in `<slides-dir>/assets/` and reference as `./assets/<file>`. Download remote images before saving. Allow `data:` URLs for self-contained slides. Never use absolute filesystem paths.
+   - When a slide needs bespoke imagery, prefer `slides-grab image --prompt "<prompt>" --slides-dir <path>` to generate a local asset with Nano Banana Pro.
+   - If `GOOGLE_API_KEY` (or `GEMINI_API_KEY`) is unavailable or Nano Banana fails, fall back to web search + download the chosen image into `./assets/<file>`.
+   - Do not leave remote `http(s)://` image URLs in saved slide HTML.
+   - Use `data-image-placeholder` to reserve space when no final asset exists yet.
 4. **Colors**: Always include `#` prefix in CSS
 5. **Text rules**: Never place text directly in div/span
 6. **Korean text wrapping**: Always set `word-break: keep-all; overflow-wrap: break-word;` on body. Additionally, use `&nbsp;` to join words that must not be separated: verb+auxiliary (전달하지\&nbsp;않는다), short word chains (왜\&nbsp;그\&nbsp;값인지), negations (창작이\&nbsp;아니라). Natural break points are after commas and periods — prevent breaks only within semantic units.

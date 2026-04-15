@@ -63,7 +63,7 @@ export function createPlanRouter(ctx) {
 
   // ── POST /api/plan ──────────────────────────────────────────────────
   router.post('/api/plan', async (req, res) => {
-    const { topic, requirements, model, slideCount: slideCountRange, packId: reqPackId } = req.body ?? {};
+    const { topic, requirements, model, slideCount: slideCountRange, packId: reqPackId, useImages } = req.body ?? {};
 
     if (typeof topic !== 'string' || topic.trim() === '') {
       return res.status(400).json({ error: 'Missing or invalid `topic`.' });
@@ -101,6 +101,30 @@ export function createPlanRouter(ctx) {
           promptLines.push(`슬라이드 수: ${countLabel}장`);
         } else {
           promptLines.push('슬라이드 수: 주제에 적합한 분량으로 자유롭게 결정하세요 (보통 8~12장)');
+        }
+        if (useImages) {
+          promptLines.push('이미지 사용: ON — 전체 슬라이드의 약 50~70%에 이미지를 포함하세요.');
+          promptLines.push('');
+          promptLines.push('이미지 마커 형식 (2종류):');
+          promptLines.push('- image-search: <영문 키워드> — 실제 사진 (인물, 장소, 제품, 실제 장면)');
+          promptLines.push('- image-generate: <영문 설명> — 추상적/개념적/미래적/은유적 이미지');
+          promptLines.push('');
+          promptLines.push('마커 선택 예시:');
+          promptLines.push('- image-search: people working in office, Tokyo skyline at night');
+          promptLines.push('- image-generate: abstract neural network visualization, futuristic city with flying cars');
+          promptLines.push('');
+          promptLines.push('이미지가 효과적인 경우:');
+          promptLines.push('- Cover: 주제를 상징하는 히어로 이미지');
+          promptLines.push('- Quote: 인용 인물의 초상 사진');
+          promptLines.push('- 사례/비교: 실제 제품, 현장, before/after');
+          promptLines.push('- 감성/문제 제기: 상황 사진으로 공감 유도');
+          promptLines.push('- 개념 설명: 은유적 이미지로 시각화');
+          promptLines.push('');
+          promptLines.push('이미지를 생략해도 좋은 경우:');
+          promptLines.push('- 텍스트가 많거나 정보 밀도가 높은 슬라이드');
+          promptLines.push('- 수치/KPI/차트가 핵심인 슬라이드');
+          promptLines.push('');
+          promptLines.push('검색어/설명은 영어로, 구체적으로 작성하세요.');
         }
         promptLines.push('');
         promptLines.push('다음을 수행하세요:');

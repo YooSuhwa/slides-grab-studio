@@ -3,7 +3,7 @@
 import { state, creationState } from './editor-state.js';
 import { setStatus } from './editor-utils.js';
 import { appendCreationLog, showCreationMode, hideCreationMode, loadCreationModelOptions, showPlanLoading, updatePlanLoadingStep } from './editor-create.js';
-import { btnReviewOutline } from './editor-dom.js';
+import { btnReviewOutline, creationUseImages, importUseImages } from './editor-dom.js';
 import { getSelectedPack, setSelectedPack } from './editor-pack.js';
 import { goToSlide } from './editor-navigation.js';
 import { scaleSlide } from './editor-bbox.js';
@@ -515,6 +515,7 @@ if (outlineApprove) {
         body: JSON.stringify({
           topic: currentOutline?.title || '',
           deckName, model, fromOutline: true, packId: getSelectedPack(),
+          useImages: creationUseImages?.checked || importUseImages?.checked || false,
         }),
       });
       if (!res.ok) {

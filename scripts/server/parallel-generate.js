@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 
 import { listPackTemplates } from '../../src/resolve.js';
 import { spawnClaudeEdit, inlineTemplateRefs, inlineThemeRefs, inlineDesignMdRefs } from './spawn.js';
-import { appendPackInstructions } from './routes/generate.js';
+import { appendPackInstructions, appendImageInstructions, appendImageAssetsInstructions } from './routes/generate.js';
 
 const DEFAULT_CONCURRENCY = Number(process.env.SLIDES_GRAB_PARALLEL) || 3;
 const MAX_CONCURRENCY = 5;
@@ -27,9 +27,10 @@ export function splitIntoBatches(slides, concurrency = DEFAULT_CONCURRENCY) {
  * Includes the FULL outline for consistency — each batch sees the whole picture
  * but only generates its assigned slides.
  */
-export function buildBatchPrompt({ batchSlides, outlineContent, genPackId, packTemplateList, slidesDir }) {
+export function buildBatchPrompt({ batchSlides, outlineContent, genPackId, packTemplateList, slidesDir, useImages = false, availableAssets = [] }) {
   const packArg = genPackId && genPackId !== 'auto' ? ` --pack ${genPackId}` : '';
   const slideNumbers = batchSlides.map(s => String(s.slideIndex + 1).padStart(2, '0'));
+  const slideNumberSet = new Set(batchSlides.map(s => s.slideIndex + 1));
   const fileList = slideNumbers.map(n => `slide-${n}.html`).join(', ');
 
   const lines = [
@@ -40,11 +41,20 @@ export function buildBatchPrompt({ batchSlides, outlineContent, genPackId, packT
     '',
     '전체 아웃라인을 참고하여 발표 전체의 흐름, 톤, 스타일 일관성을 유지하세요.',
     '',
+  ];
+  // Filter assets to only those relevant to this batch
+  const batchAssets = availableAssets.filter(a => slideNumberSet.has(a.slideNumber));
+  if (batchAssets.length > 0) {
+    appendImageAssetsInstructions(lines, batchAssets);
+  } else if (useImages) {
+    appendImageInstructions(lines, slidesDir);
+  }
+  lines.push(
     '--- 전체 아웃라인 (참고용) ---',
     outlineContent,
     '--- 아웃라인 끝 ---',
     '',
-  ];
+  );
 
   appendPackInstructions(lines, genPackId, packTemplateList);
 
@@ -84,7 +94,7 @@ function runBuildViewer(slidesDir) {
  */
 export async function parallelGenerate({
   outline, outlineContent, genPackId, slidesDir, model, cwd,
-  onBatchProgress, onBatchLog,
+  onBatchProgress, onBatchLog, useImages = false, availableAssets = [],
 }) {
   const concurrency = Math.min(
     Number(process.env.SLIDES_GRAB_PARALLEL) || DEFAULT_CONCURRENCY,
@@ -105,6 +115,8 @@ export async function parallelGenerate({
       genPackId,
       packTemplateList,
       slidesDir,
+      useImages,
+      availableAssets,
     });
     return inlineDesignMdRefs(inlineThemeRefs(inlineTemplateRefs(raw)));
   });

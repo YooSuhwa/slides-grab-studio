@@ -61,6 +61,7 @@ export function createImportRouter(ctx) {
       slideCount,
       packId: reqImportPackId,
       userPrompt,
+      useImages,
     } = req.body ?? {};
 
     let rawMd = "";
@@ -114,6 +115,7 @@ export function createImportRouter(ctx) {
       reqPackId: reqImportPackId,
       slideCount: typeof slideCount === "string" ? slideCount.trim() : "",
       userPrompt: typeof userPrompt === "string" ? userPrompt.trim() : "",
+      useImages: !!useImages,
       preambleLines: [
         "아래 마크다운 문서를 분석하여 프레젠테이션 아웃라인으로 변환하세요.",
         "",
@@ -310,6 +312,7 @@ export function createImportRouter(ctx) {
           typeof rawSlideCount === "string" ? rawSlideCount.trim() : "",
         userPrompt:
           typeof rawUserPrompt === "string" ? rawUserPrompt.trim() : "",
+        useImages: q("useImages") === "true",
         preambleLines,
         folderExample: '"AI 도입 보고서" → ai-adoption-report',
         imagePaths: pageImages.length > 0 ? pageImages : null,
@@ -324,7 +327,7 @@ export function createImportRouter(ctx) {
     express.json({ limit: "15mb" }),
     async (req, res) => {
       const { parseSource } = await import("../../../src/parsers.js");
-      const { files, model, slideCount, packId, userPrompt } = req.body ?? {};
+      const { files, model, slideCount, packId, userPrompt, useImages } = req.body ?? {};
 
       if (!Array.isArray(files) || files.length === 0) {
         return res.status(400).json({ error: "No files provided." });
@@ -386,6 +389,7 @@ export function createImportRouter(ctx) {
         reqPackId: packId,
         slideCount: typeof slideCount === "string" ? slideCount.trim() : "",
         userPrompt: typeof userPrompt === "string" ? userPrompt.trim() : "",
+        useImages: !!useImages,
       });
     },
   );
@@ -427,7 +431,7 @@ async function parseFileEntry(entry, parseSource, visionTmpDir) {
 
 function runMultiFileImport(
   ctx,
-  { runId, files, model, reqPackId, slideCount, userPrompt },
+  { runId, files, model, reqPackId, slideCount, userPrompt, useImages },
 ) {
   (async () => {
     let visionTmpDir = "";
@@ -506,6 +510,7 @@ function runMultiFileImport(
         reqPackId,
         slideCount,
         userPrompt,
+        useImages: !!useImages,
         preambleLines,
         folderExample: '"AI 도입 보고서" → ai-adoption-report',
         imagePaths: allPageImages.length > 0 ? allPageImages : null,
@@ -539,6 +544,7 @@ function runImportPlan(
     reqPackId,
     slideCount,
     userPrompt,
+    useImages,
     preambleLines,
     folderExample,
     imagePaths,
@@ -551,6 +557,11 @@ function runImportPlan(
 
       promptLines.push("6. 원본 문서의 내용만 사용하세요.");
       if (slideCount) promptLines.push(`7. 목표 슬라이드 수: ${slideCount}장`);
+      if (useImages) {
+        promptLines.push("8. 이미지 사용: ON — 각 슬라이드에 적합한 이미지를 포함하세요.");
+        promptLines.push("   - 실제 사진: image-search: <영문 키워드> (인물, 장소, 제품, 실제 장면)");
+        promptLines.push("   - AI 생성: image-generate: <영문 설명> (추상적, 개념적, 미래적, 은유적 이미지)");
+      }
 
       if (userPrompt) {
         const trimmedPrompt = userPrompt.slice(0, 2000);

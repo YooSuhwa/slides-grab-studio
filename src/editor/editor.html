@@ -3885,6 +3885,64 @@
         border-color: var(--accent);
       }
 
+      /* ── Image toggle in creation actions ── */
+      .creation-toggle {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .creation-toggle > label {
+        font-size: 10px;
+        color: var(--text-2);
+        font-weight: 500;
+      }
+      .creation-toggle-switch {
+        position: relative;
+        display: flex;
+        align-items: center;
+        height: 38px;
+        gap: 6px;
+      }
+      .creation-toggle-switch input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 36px;
+        height: 20px;
+        background: var(--border);
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background var(--transition);
+        flex-shrink: 0;
+        position: relative;
+      }
+      .creation-toggle-switch input[type="checkbox"]::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        background: var(--text-1);
+        border-radius: 50%;
+        transition: transform var(--transition), background var(--transition);
+      }
+      .creation-toggle-switch input[type="checkbox"]:checked {
+        background: var(--accent);
+      }
+      .creation-toggle-switch input[type="checkbox"]:checked::after {
+        transform: translateX(16px);
+        background: #fff;
+      }
+      .creation-toggle-switch .toggle-label {
+        font-size: 11px;
+        color: var(--text-1);
+        white-space: nowrap;
+        user-select: none;
+      }
+      .creation-toggle-switch input:checked + .toggle-label {
+        color: var(--accent-2);
+      }
+
       #creation-generate {
         height: 38px;
         padding: 0 20px;
@@ -5616,6 +5674,13 @@
                     <label for="creation-model">Model</label>
                     <select id="creation-model"></select>
                   </div>
+                  <div class="creation-toggle">
+                    <label>Images</label>
+                    <div class="creation-toggle-switch">
+                      <input type="checkbox" id="creation-use-images" />
+                      <span class="toggle-label">AI</span>
+                    </div>
+                  </div>
                   <button id="creation-generate">Plan Outline</button>
                 </div>
               </div>
@@ -5706,6 +5771,13 @@
                   <div class="creation-actions-field">
                     <label for="import-model">Model</label>
                     <select id="import-model"></select>
+                  </div>
+                  <div class="creation-toggle">
+                    <label>Images</label>
+                    <div class="creation-toggle-switch">
+                      <input type="checkbox" id="import-use-images" />
+                      <span class="toggle-label">AI</span>
+                    </div>
                   </div>
                   <button id="import-submit">Import &amp; Plan</button>
                 </div>

@@ -8,6 +8,7 @@ import { broadcastSSE } from '../sse.js';
 import { randomRunId, toPosixPath, listSlideFiles, spawnAIEdit, setupFileWatcher, backupSlides, uniqueDeckName, listExistingDeckNames, syncPackInOutline } from '../helpers.js';
 import { parseOutline } from '../outline.js';
 import { parallelGenerate } from '../parallel-generate.js';
+import { extractImageMarkers, prepareImages } from '../image-prep.js';
 
 const ALL_MODELS = [...CLAUDE_MODELS, ...CODEX_MODELS];
 
@@ -17,7 +18,7 @@ export function createGenerateRouter(ctx) {
   const router = express.Router();
 
   router.post('/api/generate', async (req, res) => {
-    const { topic, requirements, model, deckName, slideCount: slideCountRange, fromOutline, packId: reqGenPackId } = req.body ?? {};
+    const { topic, requirements, model, deckName, slideCount: slideCountRange, fromOutline, packId: reqGenPackId, useImages } = req.body ?? {};
 
     if (!fromOutline && (typeof topic !== 'string' || topic.trim() === '')) {
       return res.status(400).json({ error: 'Missing or invalid `topic`.' });
@@ -98,24 +99,59 @@ export function createGenerateRouter(ctx) {
           const { outlineContent, genPackId } = await prepareOutlineContext(ctx, slidesDirectory, slidesDir, reqGenPackId, runId);
           const outline = parseOutline(outlineContent, basename(slidesDirectory));
 
+          // Image preparation step: acquire images before HTML generation
+          let availableAssets = [];
+          if (useImages) {
+            const markers = extractImageMarkers(outline);
+            if (markers.length > 0) {
+              broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: `Preparing ${markers.length} images...` });
+              const imgResult = await prepareImages({
+                markers,
+                slidesDir: slidesDirectory,
+                concurrency: 3,
+                onProgress: (cur, total, msg) => {
+                  broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: `Image ${cur}/${total}: ${msg}` });
+                },
+              });
+              availableAssets = imgResult.assets;
+              if (imgResult.failures.length > 0) {
+                broadcastSSE(ctx.sseClients, 'progress', {
+                  runId, phase: 'generate',
+                  step: `${availableAssets.length} images ready, ${imgResult.failures.length} skipped`,
+                });
+              }
+            }
+          }
+
           if (outline.slides.length > 3) {
             broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: `Building ${outline.slides.length} slides in parallel` });
 
             result = await parallelGenerate({
               outline, outlineContent, genPackId, slidesDir,
-              model: selectedModel, cwd: process.cwd(),
+              model: selectedModel, cwd: process.cwd(), useImages: !!useImages, availableAssets,
               onBatchProgress: (_idx, _total, step) => {
                 broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step });
               },
               onBatchLog: (_idx, stream, chunk) => onLog(stream, chunk),
             });
           } else {
-            const fullPrompt = buildFromOutlinePromptFull(outlineContent, genPackId, slidesDir);
+            const fullPrompt = buildFromOutlinePromptFull(outlineContent, genPackId, slidesDir, { useImages: !!useImages, availableAssets });
             broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: 'Building slides with AI' });
             result = await spawnAIEdit({ prompt: fullPrompt, imagePath: null, model: selectedModel, cwd: process.cwd(), onLog });
           }
         } else if (fromOutline && slidesDirectory) {
-          const fullPrompt = await buildFromOutlinePrompt(ctx, slidesDirectory, slidesDir, reqGenPackId, runId);
+          const { outlineContent: ncOutlineContent, genPackId: ncGenPackId } = await prepareOutlineContext(ctx, slidesDirectory, slidesDir, reqGenPackId, runId);
+          let nonClaudeAssets = [];
+          if (useImages) {
+            const ncParsed = parseOutline(ncOutlineContent, basename(slidesDirectory));
+            const ncMarkers = extractImageMarkers(ncParsed);
+            if (ncMarkers.length > 0) {
+              broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: `Preparing ${ncMarkers.length} images...` });
+              const ncResult = await prepareImages({ markers: ncMarkers, slidesDir: slidesDirectory, concurrency: 3 });
+              nonClaudeAssets = ncResult.assets;
+            }
+          }
+          const fullPrompt = buildFromOutlinePromptFull(ncOutlineContent, ncGenPackId, slidesDir, { useImages: !!useImages, availableAssets: nonClaudeAssets });
           broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: 'Building slides with AI' });
           result = await spawnAIEdit({ prompt: fullPrompt, imagePath: null, model: selectedModel, cwd: process.cwd(), onLog });
         } else {
@@ -246,7 +282,7 @@ async function prepareOutlineContext(ctx, slidesDirectory, slidesDir, reqGenPack
 /**
  * Build full single-process prompt from outline context.
  */
-function buildFromOutlinePromptFull(outlineContent, genPackId, slidesDir) {
+function buildFromOutlinePromptFull(outlineContent, genPackId, slidesDir, { useImages = false, availableAssets = [] } = {}) {
   const packTemplateList = genPackId && genPackId !== 'auto' ? listPackTemplates(genPackId, { includeFallback: true }) : [];
   const promptLines = [
     `작업 디렉토리: ${slidesDir}`,
@@ -254,11 +290,18 @@ function buildFromOutlinePromptFull(outlineContent, genPackId, slidesDir) {
     '아래 승인된 아웃라인 기반으로 HTML 슬라이드를 새로 생성하세요.',
     '기존 슬라이드는 백업 후 삭제되었으므로, 모든 슬라이드를 빠짐없이 새로 만들어야 합니다.',
     '',
+  ];
+  if (availableAssets.length > 0) {
+    appendImageAssetsInstructions(promptLines, availableAssets);
+  } else if (useImages) {
+    appendImageInstructions(promptLines, slidesDir);
+  }
+  promptLines.push(
     '--- 아웃라인 ---',
     outlineContent,
     '--- 아웃라인 끝 ---',
     '',
-  ];
+  );
   appendPackInstructions(promptLines, genPackId, packTemplateList);
   appendSlideSteps(promptLines, genPackId, slidesDir, { includeBackupNote: true });
   return promptLines.join('\n');
@@ -267,9 +310,9 @@ function buildFromOutlinePromptFull(outlineContent, genPackId, slidesDir) {
 /**
  * Legacy: full prompt builder (for non-parallel paths that call this directly).
  */
-async function buildFromOutlinePrompt(ctx, slidesDirectory, slidesDir, reqGenPackId, runId) {
+async function buildFromOutlinePrompt(ctx, slidesDirectory, slidesDir, reqGenPackId, runId, { useImages = false, availableAssets = [] } = {}) {
   const { outlineContent, genPackId } = await prepareOutlineContext(ctx, slidesDirectory, slidesDir, reqGenPackId, runId);
-  return buildFromOutlinePromptFull(outlineContent, genPackId, slidesDir);
+  return buildFromOutlinePromptFull(outlineContent, genPackId, slidesDir, { useImages, availableAssets });
 }
 
 function buildFromScratchPrompt(topic, requirements, slideCountRange, slidesDir, reqGenPackId, existingDeckNames = []) {
@@ -328,6 +371,37 @@ function buildFromScratchPrompt(topic, requirements, slideCountRange, slidesDir,
 }
 
 // ── Shared prompt helpers ───────────────────────────────────────────
+
+export function appendImageInstructions(lines, slidesDir) {
+  lines.push(
+    '## 이미지 사용 (ON)',
+    '아웃라인에 image-search 또는 image-generate 마커가 있는 슬라이드에는 이미지를 포함하세요.',
+    `- \`slides-grab image --prompt "<설명>" --slides-dir ${slidesDir}\`로 생성하거나, 웹 검색으로 다운로드하여 \`./assets/<file>\`에 저장`,
+    '- 모든 이미지는 반드시 `./assets/<file>`로 참조 (remote URL 금지)',
+    '- `GOOGLE_API_KEY`가 없으면 웹 검색 + 다운로드로 대체',
+    '',
+  );
+}
+
+export function appendImageAssetsInstructions(lines, assets) {
+  if (!assets || assets.length === 0) return;
+  lines.push(
+    '## 이미지 에셋 (사전 준비 완료)',
+    '아래 이미지가 `./assets/` 폴더에 준비되어 있습니다. 해당 슬라이드 HTML에 `<img>` 태그로 삽입하세요.',
+    '',
+  );
+  for (const a of assets) {
+    lines.push(`- Slide ${a.slideNumber}: \`${a.relativeRef}\` — ${a.query}`);
+  }
+  lines.push(
+    '',
+    '규칙:',
+    '- `<img src="./assets/..." alt="설명" style="width:100%; height:100%; object-fit:cover;">` 형식 사용',
+    '- Remote URL 사용 금지 — 모든 이미지는 위 로컬 assets에서 참조',
+    '- 이미지를 슬라이드 레이아웃에 맞게 배치 (split-layout, image-text 등 type에 따라)',
+    '',
+  );
+}
 
 export function appendPackInstructions(promptLines, genPackId, packTemplateList) {
   if (!genPackId) return;
