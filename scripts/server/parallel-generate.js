@@ -93,6 +93,7 @@ function runBuildViewer(slidesDir) {
 export async function parallelGenerate({
   outline, outlineContent, genPackId, slidesDir, model, cwd,
   onBatchProgress, onBatchLog, useImages = false, availableAssets = [],
+  tracker,
 }) {
   const concurrency = Math.min(
     Number(process.env.SLIDES_GRAB_PARALLEL) || DEFAULT_CONCURRENCY,
@@ -119,6 +120,7 @@ export async function parallelGenerate({
   const results = await Promise.allSettled(
     batchPrompts.map((prompt, idx) => {
       onBatchProgress?.(idx, totalBatches, `Starting batch ${idx + 1}/${totalBatches}`);
+      const callId = tracker?.startCall('generate-batch', model, { promptChars: prompt.length });
       return spawnClaudeEdit({
         prompt,
         imagePath: null,
@@ -126,6 +128,20 @@ export async function parallelGenerate({
         cwd,
         timeout: BATCH_TIMEOUT,
         onLog: (stream, chunk) => onBatchLog?.(idx, stream, chunk),
+      }).then(result => {
+        tracker?.finishCall(callId, {
+          inputTokens: result.usage?.inputTokens ?? null,
+          outputTokens: result.usage?.outputTokens ?? null,
+          reportedCostUsd: result.usage?.costUsd ?? null,
+          numTurns: result.usage?.numTurns ?? null,
+          promptChars: prompt.length,
+          outputChars: (result.stdout || '').length,
+          success: result.code === 0,
+        });
+        return result;
+      }, err => {
+        tracker?.finishCall(callId, { success: false });
+        throw err;
       });
     }),
   );

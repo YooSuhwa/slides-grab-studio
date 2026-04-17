@@ -109,6 +109,7 @@ export function createGenerateRouter(ctx) {
                 markers,
                 slidesDir: slidesDirectory,
                 concurrency: 3,
+                tracker: ctx.usageTracker,
                 onProgress: (cur, total, msg) => {
                   broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: `Image ${cur}/${total}: ${msg}` });
                 },
@@ -129,6 +130,7 @@ export function createGenerateRouter(ctx) {
             result = await parallelGenerate({
               outline, outlineContent, genPackId, slidesDir,
               model: selectedModel, cwd: process.cwd(), useImages: !!useImages, availableAssets,
+              tracker: ctx.usageTracker,
               onBatchProgress: (_idx, _total, step) => {
                 broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step });
               },
@@ -137,7 +139,7 @@ export function createGenerateRouter(ctx) {
           } else {
             const fullPrompt = buildFromOutlinePromptFull(outlineContent, genPackId, slidesDir, { useImages: !!useImages, availableAssets });
             broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: 'Building slides with AI' });
-            result = await spawnAIEdit({ prompt: fullPrompt, imagePath: null, model: selectedModel, cwd: process.cwd(), onLog });
+            result = await spawnAIEdit({ prompt: fullPrompt, imagePath: null, model: selectedModel, cwd: process.cwd(), onLog }, { tracker: ctx.usageTracker, operation: 'generate' });
           }
         } else if (fromOutline && slidesDirectory) {
           const { outlineContent: ncOutlineContent, genPackId: ncGenPackId } = await prepareOutlineContext(ctx, slidesDirectory, slidesDir, reqGenPackId, runId);
@@ -147,18 +149,18 @@ export function createGenerateRouter(ctx) {
             const ncMarkers = extractImageMarkers(ncParsed);
             if (ncMarkers.length > 0) {
               broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: `Preparing ${ncMarkers.length} images...` });
-              const ncResult = await prepareImages({ markers: ncMarkers, slidesDir: slidesDirectory, concurrency: 3 });
+              const ncResult = await prepareImages({ markers: ncMarkers, slidesDir: slidesDirectory, concurrency: 3, tracker: ctx.usageTracker });
               nonClaudeAssets = ncResult.assets;
             }
           }
           const fullPrompt = buildFromOutlinePromptFull(ncOutlineContent, ncGenPackId, slidesDir, { useImages: !!useImages, availableAssets: nonClaudeAssets });
           broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: 'Building slides with AI' });
-          result = await spawnAIEdit({ prompt: fullPrompt, imagePath: null, model: selectedModel, cwd: process.cwd(), onLog });
+          result = await spawnAIEdit({ prompt: fullPrompt, imagePath: null, model: selectedModel, cwd: process.cwd(), onLog }, { tracker: ctx.usageTracker, operation: 'generate' });
         } else {
           const existingNames = slidesDir ? [] : await listExistingDeckNames();
           const fullPrompt = buildFromScratchPrompt(topic, requirements, slideCountRange, slidesDir, reqGenPackId, existingNames);
           broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: 'Building slides with AI' });
-          result = await spawnAIEdit({ prompt: fullPrompt, imagePath: null, model: selectedModel, cwd: process.cwd(), onLog });
+          result = await spawnAIEdit({ prompt: fullPrompt, imagePath: null, model: selectedModel, cwd: process.cwd(), onLog }, { tracker: ctx.usageTracker, operation: 'generate' });
         }
 
         const success = result.code === 0;

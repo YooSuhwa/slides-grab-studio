@@ -116,6 +116,7 @@ export function createApplyRouter(ctx) {
 
       const usesClaude = isClaudeModel(selectedModel);
       const spawnEdit = usesClaude ? spawnClaudeEdit : spawnCodexEdit;
+      const callId = ctx.usageTracker?.startCall('apply', selectedModel, { promptChars: codexPrompt.length });
       const result = await spawnEdit({
         prompt: codexPrompt,
         imagePath: annotatedPath,
@@ -125,6 +126,15 @@ export function createApplyRouter(ctx) {
           ctx.runStore.appendLog(runId, chunk);
           broadcastSSE(ctx.sseClients, 'applyLog', { runId, slide, stream, chunk });
         },
+      });
+      ctx.usageTracker?.finishCall(callId, {
+        inputTokens: result.usage?.inputTokens ?? null,
+        outputTokens: result.usage?.outputTokens ?? null,
+        reportedCostUsd: result.usage?.costUsd ?? null,
+        numTurns: result.usage?.numTurns ?? null,
+        promptChars: codexPrompt.length,
+        outputChars: (result.stdout || '').length,
+        success: result.code === 0,
       });
 
       const engineLabel = isClaudeModel(selectedModel) ? 'Claude' : 'Codex';

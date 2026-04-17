@@ -408,7 +408,17 @@ export async function generateNanoBananaImage({
       throw new Error(`Nano Banana API request failed: ${getApiErrorMessage(payload, response.status)}.`);
     }
 
-    return extractFn(payload);
+    const image = extractFn(payload);
+
+    // Extract usage metadata when available
+    let usage = null;
+    if (provider === 'openrouter' && payload.usage) {
+      usage = { inputTokens: payload.usage.prompt_tokens, outputTokens: payload.usage.completion_tokens };
+    } else if (payload.usageMetadata) {
+      usage = { inputTokens: payload.usageMetadata.promptTokenCount, outputTokens: payload.usageMetadata.candidatesTokenCount };
+    }
+
+    return { ...image, usage };
   } catch (error) {
     throw new Error(getNanoBananaFallbackMessage(error.message));
   }

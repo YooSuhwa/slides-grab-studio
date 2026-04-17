@@ -39,5 +39,11 @@ export function createModelsRouter(ctx) {
     });
   });
 
+  router.get('/api/ai-usage', (_req, res) => {
+    const summary = ctx.usageTracker?.getSessionSummary() ?? {};
+    const recent = ctx.usageTracker?.listRecentCalls(20) ?? [];
+    res.json({ session: summary, recentCalls: recent });
+  });
+
   return router;
 }

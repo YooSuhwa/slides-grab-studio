@@ -7,6 +7,51 @@ import { buildCodexExecArgs } from '../../src/editor/codex-edit.js';
 import { resolvePackDesign } from '../../src/resolve.js';
 
 /**
+ * Try to parse Claude CLI usage data from stderr.
+ * Claude Code with `--verbose` may output a JSON result line containing
+ * token counts and cost information.
+ */
+export function parseClaudeUsage(stderr) {
+  if (!stderr) return null;
+
+  // Strategy 1: Find last JSON line with token/cost data
+  const lines = stderr.split('\n');
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i].trim();
+    if (!line.startsWith('{')) continue;
+    try {
+      const json = JSON.parse(line);
+      const inTok = json.input_tokens ?? json.usage?.input_tokens;
+      const outTok = json.output_tokens ?? json.usage?.output_tokens;
+      if (inTok != null || outTok != null) {
+        return {
+          inputTokens: inTok ?? null,
+          outputTokens: outTok ?? null,
+          costUsd: json.cost_usd ?? json.total_cost_usd ?? json.cost ?? null,
+          numTurns: json.num_turns ?? null,
+        };
+      }
+    } catch { /* not valid JSON */ }
+  }
+
+  // Strategy 2: Regex patterns (e.g. "Input tokens: 5,432")
+  const inputMatch = stderr.match(/input.tokens?[\s:]+?([\d,]+)/i);
+  const outputMatch = stderr.match(/output.tokens?[\s:]+?([\d,]+)/i);
+  const costMatch = stderr.match(/(?:total.)?cost[\s:]+?\$?([\d.]+)/i);
+
+  if (inputMatch || outputMatch) {
+    return {
+      inputTokens: inputMatch ? parseInt(inputMatch[1].replace(/,/g, ''), 10) : null,
+      outputTokens: outputMatch ? parseInt(outputMatch[1].replace(/,/g, ''), 10) : null,
+      costUsd: costMatch ? parseFloat(costMatch[1]) : null,
+      numTurns: null,
+    };
+  }
+
+  return null;
+}
+
+/**
  * Spawn a Codex subprocess for slide editing.
  */
 export function spawnCodexEdit({ prompt, imagePath, model, cwd, onLog, timeout = 300_000 }) {
@@ -120,10 +165,14 @@ export function spawnClaudeEdit({ prompt, imagePath, imagePaths, model, cwd, onL
 
     child.on('close', (code) => {
       clearTimeout(timer);
+      const finalStderr = killed ? stderr + `\n[TIMEOUT after ${timeout}ms]` : stderr;
+      let usage = null;
+      try { usage = parseClaudeUsage(finalStderr); } catch { /* ignore */ }
       resolvePromise({
         code: killed ? -1 : (code ?? 1),
         stdout,
-        stderr: killed ? stderr + `\n[TIMEOUT after ${timeout}ms]` : stderr,
+        stderr: finalStderr,
+        usage,
       });
     });
 
@@ -139,7 +188,7 @@ export function spawnClaudeEdit({ prompt, imagePath, imagePaths, model, cwd, onL
  * Sends both the text prompt and a screenshot for visual accuracy.
  * Returns the extracted JavaScript code from the response.
  */
-export async function callOpenAIForPptx({ prompt, imageBase64, timeout = 60_000 }) {
+export async function callOpenAIForPptx({ prompt, imageBase64, timeout = 60_000, tracker }) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY is not set. Add it to .env file.');
@@ -157,14 +206,32 @@ export async function callOpenAIForPptx({ prompt, imageBase64, timeout = 60_000 
   }
   content.push({ type: 'text', text: prompt });
 
-  const response = await client.chat.completions.create({
-    model: process.env.PPTX_MODEL || 'gpt-4o',
-    messages: [{ role: 'user', content }],
-    temperature: 0.2,
-    max_tokens: 4096,
-  });
+  const pptxModel = process.env.PPTX_MODEL || 'gpt-4o';
+  const callId = tracker?.startCall('pptx', pptxModel, { promptChars: prompt.length });
+
+  let response;
+  try {
+    response = await client.chat.completions.create({
+      model: pptxModel,
+      messages: [{ role: 'user', content }],
+      temperature: 0.2,
+      max_tokens: 4096,
+    });
+  } catch (err) {
+    tracker?.finishCall(callId, { success: false });
+    throw err;
+  }
 
   const text = response.choices[0]?.message?.content || '';
+
+  tracker?.finishCall(callId, {
+    inputTokens: response.usage?.prompt_tokens ?? null,
+    outputTokens: response.usage?.completion_tokens ?? null,
+    promptChars: prompt.length,
+    outputChars: text.length,
+    success: true,
+  });
+
   const m = text.match(/```(?:javascript|js)?\n([\s\S]*?)```/);
   if (!m) throw new Error(`No code block in OpenAI response: ${text.slice(0, 200)}`);
   return unwrapFunctionBody(m[1]);
@@ -285,6 +352,9 @@ export async function spawnOpenAIEdit({ prompt, model, cwd, onLog, timeout = 300
     });
 
     const text = response.choices[0]?.message?.content || '';
+    const usage = response.usage
+      ? { inputTokens: response.usage.prompt_tokens, outputTokens: response.usage.completion_tokens }
+      : null;
     onLog?.('stdout', text);
 
     // Parse and write files
@@ -308,11 +378,11 @@ export async function spawnOpenAIEdit({ prompt, model, cwd, onLog, timeout = 300
       console.warn(warn);
     }
 
-    return { code: written.length > 0 ? 0 : 1, stdout: text, stderr: '' };
+    return { code: written.length > 0 ? 0 : 1, stdout: text, stderr: '', usage };
   } catch (err) {
     const msg = `[OpenAI API] Error: ${err.message}\n`;
     onLog?.('stderr', msg);
     console.error(msg);
-    return { code: 1, stdout: '', stderr: msg };
+    return { code: 1, stdout: '', stderr: msg, usage: null };
   }
 }

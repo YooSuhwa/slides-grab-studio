@@ -8,6 +8,7 @@ import {
 
 import { normalizePackId } from '../../src/resolve.js';
 import { AsyncMutex } from './mutex.js';
+import { createUsageTracker } from './ai-usage.js';
 
 const ALL_MODELS = [...CLAUDE_MODELS, ...CODEX_MODELS];
 const DEFAULT_CODEX_MODEL = CLAUDE_MODELS[0]; // claude-opus-4-6
@@ -165,6 +166,9 @@ export function createServerState(opts, { PACKAGE_ROOT, express, screenshotMod }
 
     // Active generation mutex (replaces boolean flag to prevent TOCTOU race)
     generateMutex: new AsyncMutex(),
+
+    // AI usage tracker
+    usageTracker: createUsageTracker(),
 
     // Constants
     ALL_MODELS,

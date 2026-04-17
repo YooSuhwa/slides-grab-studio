@@ -344,7 +344,7 @@ export function createPptxExportRouter(ctx) {
 
   async function convertSlideWithAI(slideFile, cachedScreenshot = null) {
     const imageBase64 = cachedScreenshot ?? await captureScreenshotBase64(slideFile);
-    return callOpenAIForPptx({ prompt: PPTX_AI_PROMPT, imageBase64 });
+    return callOpenAIForPptx({ prompt: PPTX_AI_PROMPT, imageBase64, tracker: ctx.usageTracker });
   }
 
   async function embedScreenshot(slide, slideFile) {
