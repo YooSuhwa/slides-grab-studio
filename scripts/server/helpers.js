@@ -44,13 +44,28 @@ export function syncPackInOutline(content, packId) {
 import { spawnClaudeEdit, spawnCodexEdit, spawnOpenAIEdit, inlineDesignMdRefs } from './spawn.js';
 export { spawnClaudeEdit, spawnCodexEdit, spawnOpenAIEdit };
 
-export function spawnAIEdit(params) {
+export async function spawnAIEdit(params, { tracker, operation } = {}) {
   const backend = isClaudeModel(params.model) ? 'Claude' : 'OpenAI API';
   console.log(`[AI] Using ${backend} — model: ${params.model}`);
   // Inline design.md CLI refs into actual content so AI doesn't need tool calls
   const inlinedPrompt = inlineDesignMdRefs(params.prompt);
   const inlinedParams = { ...params, prompt: inlinedPrompt };
-  return isClaudeModel(params.model) ? spawnClaudeEdit(inlinedParams) : spawnOpenAIEdit(inlinedParams);
+
+  const callId = tracker?.startCall(operation || 'ai', params.model, { promptChars: inlinedPrompt.length });
+  const result = await (isClaudeModel(params.model) ? spawnClaudeEdit(inlinedParams) : spawnOpenAIEdit(inlinedParams));
+
+  if (callId) {
+    tracker.finishCall(callId, {
+      inputTokens: result.usage?.inputTokens ?? null,
+      outputTokens: result.usage?.outputTokens ?? null,
+      reportedCostUsd: result.usage?.costUsd ?? null,
+      numTurns: result.usage?.numTurns ?? null,
+      promptChars: inlinedPrompt.length,
+      outputChars: (result.stdout || '').length,
+      success: result.code === 0,
+    });
+  }
+  return result;
 }
 
 // ── Path utilities ──────────────────────────────────────────────────

@@ -97,12 +97,12 @@ async function generateWithNanoBanana(query, markerType, apiKey, provider) {
     imageSize: '2K',
   });
 
-  return { bytes: generated.bytes, mimeType: generated.mimeType, source: 'nano-banana' };
+  return { bytes: generated.bytes, mimeType: generated.mimeType, source: 'nano-banana', usage: generated.usage };
 }
 
 // ── Single Image Acquisition (marker-driven routing) ────────────────
 
-async function acquireOneImage({ marker, keys }) {
+async function acquireOneImage({ marker, keys, tracker }) {
   const errors = [];
 
   // Route A: search markers try Unsplash first
@@ -117,13 +117,22 @@ async function acquireOneImage({ marker, keys }) {
 
   // Both routes fall through to Nano Banana (realistic prefix for search, raw for generate)
   if (keys.nanoBanana) {
+    const model = 'gemini-3-pro-image-preview';
+    const callId = tracker?.startCall('image', model, { promptChars: marker.query.length });
     try {
       const result = await generateWithNanoBanana(
         marker.query, marker.markerType,
         keys.nanoBanana.apiKey, keys.nanoBanana.provider,
       );
+      tracker?.finishCall(callId, {
+        inputTokens: result.usage?.inputTokens ?? null,
+        outputTokens: result.usage?.outputTokens ?? null,
+        promptChars: marker.query.length,
+        success: true,
+      });
       if (result) return { ...result, marker, errors };
     } catch (err) {
+      tracker?.finishCall(callId, { success: false });
       errors.push(`nano-banana: ${err.message}`);
     }
   }
@@ -152,7 +161,7 @@ async function runWithConcurrency(tasks, limit) {
 
 // ── Main: Prepare All Images ────────────────────────────────────────
 
-export async function prepareImages({ markers, slidesDir, onProgress, concurrency = 3 }) {
+export async function prepareImages({ markers, slidesDir, onProgress, concurrency = 3, tracker }) {
   if (!markers || markers.length === 0) return { assets: [], failures: [] };
 
   const keys = {
@@ -180,7 +189,7 @@ export async function prepareImages({ markers, slidesDir, onProgress, concurrenc
 
     onProgress?.(idx + 1, markers.length, marker.query);
 
-    const result = await acquireOneImage({ marker, keys });
+    const result = await acquireOneImage({ marker, keys, tracker });
     completed++;
 
     if (!result) {

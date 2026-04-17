@@ -87,7 +87,7 @@ export function createRethemeRouter(ctx) {
           onLog: (stream, chunk) => {
             broadcastSSE(ctx.sseClients, 'planLog', { runId, stream, chunk });
           },
-        });
+        }, { tracker: ctx.usageTracker, operation: 'retheme' });
 
         const success = result.code === 0;
 

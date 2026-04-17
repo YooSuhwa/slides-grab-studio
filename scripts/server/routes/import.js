@@ -606,7 +606,7 @@ function runImportPlan(
         onLog: (stream, chunk) => {
           broadcastSSE(ctx.sseClients, "planLog", { runId, stream, chunk });
         },
-      });
+      }, { tracker: ctx.usageTracker, operation: "import" });
 
       const success = result.code === 0;
       let outline = null;

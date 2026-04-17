@@ -149,7 +149,7 @@ export function createPlanRouter(ctx) {
           onLog: (stream, chunk) => {
             broadcastSSE(ctx.sseClients, 'planLog', { runId, stream, chunk });
           },
-        });
+        }, { tracker: ctx.usageTracker, operation: 'outline' });
 
         const success = result.code === 0;
         let outline = null;
@@ -272,7 +272,7 @@ export function createPlanRouter(ctx) {
           onLog: (stream, chunk) => {
             broadcastSSE(ctx.sseClients, 'planLog', { runId, stream, chunk });
           },
-        });
+        }, { tracker: ctx.usageTracker, operation: 'revise' });
 
         const success = result.code === 0;
 
