@@ -17,10 +17,12 @@ import { createApplyRouter } from './server/routes/apply.js';
 import { createPlanRouter } from './server/routes/plan.js';
 import { createImportRouter } from './server/routes/import.js';
 import { createGenerateRouter } from './server/routes/generate.js';
+import { createNotesGenerateRouter } from './server/routes/notes-generate.js';
 import { createExportRouter } from './server/routes/export.js';
 import { createPdfFigmaRouter, setupFigmaWebSocket } from './server/routes/pdf-figma.js';
 import { createPptxExportRouter } from './server/routes/pptx-export.js';
 import { createLogoRouter } from './server/routes/logo.js';
+import { createImageOpsRouter } from './server/routes/image-ops.js';
 import { createRethemeRouter } from './server/routes/retheme.js';
 import { createEventsRouter } from './server/routes/events.js';
 
@@ -227,8 +229,9 @@ async function startServer(opts) {
 
   const app = express();
 
-  // Logo router MUST be mounted before express.json() — upload route needs raw body
+  // Raw-body routers MUST be mounted before express.json() — upload routes need raw body
   app.use(createLogoRouter(ctx));
+  app.use(createImageOpsRouter(ctx));
   app.use(express.json({ limit: '5mb' }));
 
   // Mount all route modules
@@ -242,6 +245,7 @@ async function startServer(opts) {
   app.use(createPlanRouter(ctx));
   app.use(createImportRouter(ctx));
   app.use(createGenerateRouter(ctx));
+  app.use(createNotesGenerateRouter(ctx));
   app.use(createExportRouter(ctx));
   app.use(createPdfFigmaRouter(ctx));
   app.use(createPptxExportRouter(ctx));

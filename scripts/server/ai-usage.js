@@ -14,6 +14,7 @@ const COST_TABLE = new Map([
   ['claude-opus-4-5-20250918', { input: 15, output: 75 }],
   ['claude-sonnet-4-6',   { input: 3,     output: 15   }],
   ['claude-sonnet-4-5-20250514', { input: 3, output: 15 }],
+  ['gpt-4o-mini',         { input: 0.15,  output: 0.6  }],
   ['gpt-4o',              { input: 2.5,   output: 10   }],
   ['gpt-4.1',             { input: 2,     output: 8    }],
   ['o4-mini',             { input: 1.1,   output: 4.4  }],

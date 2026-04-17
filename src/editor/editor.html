@@ -284,9 +284,11 @@
       .slide-panel {
         flex: 1;
         display: flex;
+        flex-direction: column;
         min-width: 0;
+        min-height: 0;
         overflow: hidden;
-        padding: 24px 28px;
+        padding: 0;
         background: var(--bg-0);
       }
 
@@ -316,7 +318,7 @@
         justify-content: center;
         overflow: hidden;
         position: relative;
-        padding: 28px;
+        padding: 24px 28px;
         max-width: 100%;
         max-height: 100%;
       }
@@ -646,6 +648,38 @@
         background: rgba(96, 165, 250, 0.08);
         box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.14);
       }
+
+      .image-handles {
+        position: absolute;
+        z-index: 11;
+        pointer-events: none;
+        outline: 2px solid rgba(251, 191, 36, 0.95);
+        outline-offset: 0;
+        box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2);
+      }
+
+      .image-handle-body {
+        position: absolute;
+        inset: 0;
+        pointer-events: auto;
+        cursor: move;
+      }
+
+      .image-handle-corner {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        background: #fbbf24;
+        border: 2px solid #fff;
+        border-radius: 2px;
+        pointer-events: auto;
+        z-index: 2;
+      }
+
+      .image-handle-corner.nw { top: -7px; left: -7px; cursor: nwse-resize; }
+      .image-handle-corner.ne { top: -7px; right: -7px; cursor: nesw-resize; }
+      .image-handle-corner.sw { bottom: -7px; left: -7px; cursor: nesw-resize; }
+      .image-handle-corner.se { bottom: -7px; right: -7px; cursor: nwse-resize; }
 
       .draw-layer {
         position: absolute;
@@ -5074,66 +5108,487 @@
         box-shadow: 0 0 0 2px rgba(252, 94, 32, 0.35);
       }
 
-      /* ── Presenter Notes ── */
-      .notes-section {
-        border-top: 1px solid var(--border);
-        padding: 0;
+      /* ── Notes Dock (center column, flush with sidebars) ── */
+      .notes-dock {
         flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        background: var(--surface-0);
+        border-top: 1px solid var(--border-medium);
+        height: 200px;
+        min-height: 40px;
+        max-height: 70vh;
+        overflow: hidden;
+        transition: height 180ms ease;
+        position: relative;
       }
-      .notes-toggle {
-        width: 100%;
+      .notes-dock.is-collapsed {
+        height: 40px !important;
+      }
+      .notes-dock.is-resizing {
+        transition: none;
+        user-select: none;
+      }
+      .notes-dock-handle {
+        flex: 0 0 auto;
+        height: 10px;
+        margin-top: -5px;
         display: flex;
         align-items: center;
-        gap: 6px;
-        padding: 8px 14px;
-        background: var(--surface-0);
+        justify-content: center;
+        cursor: ns-resize;
+        background: transparent;
         border: none;
-        color: var(--text-1);
+        padding: 0;
+        position: relative;
+        z-index: 2;
+      }
+      .notes-dock-handle::before {
+        content: '';
+        width: 44px;
+        height: 3px;
+        border-radius: 3px;
+        background: var(--border-strong);
+        opacity: 0.55;
+        transition: opacity 150ms ease, background 150ms ease, width 150ms ease;
+      }
+      .notes-dock-handle:hover::before,
+      .notes-dock-handle:focus-visible::before,
+      .notes-dock.is-resizing .notes-dock-handle::before {
+        background: var(--accent);
+        opacity: 1;
+        width: 56px;
+      }
+      .notes-dock-handle:focus-visible {
+        outline: none;
+      }
+      .notes-dock-bar {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 2px 14px 6px;
+        height: 28px;
+      }
+      .notes-dock-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         font-size: 11px;
         font-weight: 600;
-        font-family: inherit;
-        cursor: pointer;
-        text-align: left;
-        letter-spacing: 0.03em;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
+        color: var(--text-2);
+        user-select: none;
       }
-      .notes-toggle:hover {
-        color: var(--text-0);
+      .notes-dock-title::before {
+        content: '';
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--text-2);
+        opacity: 0.45;
+      }
+      .notes-dock-spacer {
+        flex: 1;
+      }
+      .notes-dock-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        height: 26px;
+        padding: 0 10px 0 11px;
         background: var(--surface-1);
+        color: var(--text-0);
+        border: 1px solid var(--border-medium);
+        border-radius: var(--radius-pill);
+        font-size: 12px;
+        font-family: inherit;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
       }
-      .notes-toggle-icon {
-        transition: transform var(--transition);
-        flex-shrink: 0;
+      .notes-dock-btn:hover:not(:disabled) {
+        background: var(--surface-hover);
+        border-color: var(--border-hover);
       }
-      .notes-section.expanded .notes-toggle-icon {
-        transform: rotate(90deg);
+      .notes-dock-btn:focus-visible {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(252, 94, 32, 0.18);
       }
-      .notes-textarea {
+      .notes-dock-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .notes-dock-btn svg {
+        color: var(--accent);
+      }
+      .notes-dock-btn-kbd {
+        display: inline-flex;
+        align-items: center;
+        padding: 1px 6px;
+        border-radius: 3px;
+        background: var(--surface-3);
+        color: var(--text-1);
+        font-size: 10px;
+        font-weight: 700;
+        font-family: var(--mono);
+        letter-spacing: 0.04em;
+      }
+      .notes-dock-collapse-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        background: transparent;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        color: var(--text-2);
+        transition: background 150ms ease, color 150ms ease;
+      }
+      .notes-dock-collapse-btn:hover {
+        background: var(--surface-hover);
+        color: var(--text-0);
+      }
+      .notes-dock-collapse-btn svg {
+        transition: transform 200ms ease;
+      }
+      .notes-dock.is-collapsed .notes-dock-collapse-btn svg {
+        transform: rotate(180deg);
+      }
+      .notes-dock-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        padding: 0 14px 14px;
+      }
+      .notes-dock.is-collapsed .notes-dock-body {
         display: none;
+      }
+      .notes-dock.is-collapsed .notes-dock-bar {
+        padding-bottom: 0;
+      }
+      .notes-dock-textarea {
+        flex: 1;
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        background: var(--surface-1);
+        color: var(--text-0);
+        border: 1px solid var(--border-subtle);
+        border-radius: 10px;
+        font-size: 14px;
+        font-family: inherit;
+        line-height: 1.65;
+        resize: none;
+        transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+      }
+      .notes-dock-textarea::placeholder {
+        color: var(--text-2);
+      }
+      .notes-dock-textarea:hover {
+        border-color: var(--border-medium);
+      }
+      .notes-dock-textarea:focus {
+        outline: none;
+        background: var(--surface-0);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(252, 94, 32, 0.14);
+      }
+      .notes-dock-status {
+        position: absolute;
+        right: 18px;
+        bottom: 10px;
+        font-size: 11px;
+        color: var(--text-2);
+        pointer-events: none;
+        background: var(--surface-1);
+        padding: 3px 8px;
+        border: 1px solid var(--border-medium);
+        border-radius: var(--radius-pill);
+      }
+      .notes-dock-status.is-error { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
+      .notes-dock-status.is-warn { color: #92400e; border-color: #fde68a; background: #fffbeb; }
+      .notes-dock-status.is-success { color: #047857; border-color: #a7f3d0; background: #ecfdf5; }
+
+      /* ── Notes Modal (AI 초안 생성) ── */
+      .notes-modal-overlay[hidden] {
+        display: none;
+      }
+      .notes-modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10500;
+        background: rgba(8, 11, 20, 0.52);
+        backdrop-filter: blur(8px) saturate(120%);
+        -webkit-backdrop-filter: blur(8px) saturate(120%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        animation: notesModalFade 180ms ease-out;
+      }
+      @keyframes notesModalFade {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .notes-modal {
+        width: 100%;
+        max-width: 520px;
+        background: var(--surface-0);
+        border: 1px solid var(--border-medium);
+        border-radius: 16px;
+        box-shadow:
+          0 1px 2px rgba(0, 0, 0, 0.04),
+          0 8px 20px rgba(0, 0, 0, 0.08),
+          0 32px 80px rgba(15, 23, 42, 0.22);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: notesModalScale 240ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      @keyframes notesModalScale {
+        from { transform: translateY(12px) scale(0.96); opacity: 0; }
+        to { transform: translateY(0) scale(1); opacity: 1; }
+      }
+      .notes-modal-header {
+        padding: 22px 24px 14px;
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .notes-modal-badge {
+        flex: 0 0 auto;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+        color: #fff;
+        box-shadow:
+          0 1px 2px rgba(252, 94, 32, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      }
+      .notes-modal-header-text {
+        flex: 1;
+        min-width: 0;
+      }
+      .notes-modal-header-text h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-0);
+        letter-spacing: -0.01em;
+      }
+      .notes-modal-header-text p {
+        margin: 4px 0 0;
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--text-1);
+      }
+      .notes-modal-close {
+        flex: 0 0 auto;
+        margin-left: auto;
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        color: var(--text-2);
+        transition: background 150ms ease, color 150ms ease;
+      }
+      .notes-modal-close:hover {
+        background: var(--surface-hover);
+        color: var(--text-0);
+      }
+      .notes-modal-body {
+        padding: 18px 24px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .notes-modal-field {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .notes-modal-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-1);
+        letter-spacing: 0;
+        text-transform: none;
+      }
+      .notes-modal-row {
+        display: flex;
+        gap: 12px;
+      }
+      .notes-modal-row .notes-modal-field {
+        flex: 1;
+        min-width: 0;
+      }
+      .notes-modal-select,
+      .notes-modal-input {
         width: 100%;
         box-sizing: border-box;
-        min-height: 80px;
-        max-height: 200px;
-        padding: 10px 14px;
+        padding: 10px 12px;
         background: var(--surface-1);
-        border: none;
-        border-top: 1px solid var(--border-subtle, var(--border));
         color: var(--text-0);
+        border: 1px solid var(--border-input);
+        border-radius: 10px;
         font-size: 13px;
         font-family: inherit;
-        line-height: 1.6;
-        resize: vertical;
+        line-height: 1.4;
+        transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
       }
-      .notes-textarea::placeholder {
-        color: var(--text-2);
-        font-style: italic;
+      .notes-modal-select {
+        appearance: none;
+        -webkit-appearance: none;
+        padding-right: 34px;
+        background-image:
+          url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 12px 12px;
+        cursor: pointer;
       }
-      .notes-textarea:focus {
+      .notes-modal-select:hover,
+      .notes-modal-input:hover {
+        border-color: var(--border-hover);
+      }
+      .notes-modal-select:focus,
+      .notes-modal-input:focus {
         outline: none;
+        border-color: var(--accent);
+        background: var(--surface-0);
+        box-shadow: 0 0 0 3px rgba(252, 94, 32, 0.16);
+      }
+      .notes-modal-textarea {
+        min-height: 84px;
+        max-height: 180px;
+        resize: vertical;
+        line-height: 1.55;
+      }
+      .notes-modal-textarea::placeholder,
+      .notes-modal-input::placeholder {
+        color: var(--text-2);
+      }
+      .notes-modal-check {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        font-size: 13px;
+        color: var(--text-1);
+        background: var(--surface-1);
+        border: 1px solid var(--border-subtle);
+        border-radius: 10px;
+        cursor: pointer;
+        user-select: none;
+        transition: border-color 150ms ease, background 150ms ease;
+      }
+      .notes-modal-check:hover {
+        border-color: var(--border-medium);
         background: var(--surface-2);
       }
-      .notes-section.expanded .notes-textarea {
-        display: block;
+      .notes-modal-check input {
+        width: 15px;
+        height: 15px;
+        margin: 0;
+        cursor: pointer;
+        accent-color: var(--accent);
+      }
+      .notes-modal-status {
+        font-size: 12px;
+        padding: 10px 12px;
+        background: var(--surface-1);
+        border: 1px solid var(--border-subtle);
+        border-radius: 10px;
+        color: var(--text-1);
+        line-height: 1.5;
+      }
+      .notes-modal-status[hidden] { display: none; }
+      .notes-modal-status.is-error {
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #b91c1c;
+      }
+      .notes-modal-status.is-warn {
+        background: #fffbeb;
+        border-color: #fde68a;
+        color: #92400e;
+      }
+      .notes-modal-status.is-success {
+        background: #ecfdf5;
+        border-color: #a7f3d0;
+        color: #065f46;
+      }
+      .notes-modal-footer {
+        padding: 14px 24px 18px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-top: 1px solid var(--border-subtle);
+        background: var(--surface-1);
+      }
+      .notes-modal-footer .notes-modal-spacer {
+        flex: 1;
+      }
+      .notes-modal-btn {
+        height: 36px;
+        padding: 0 14px;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: inherit;
+        border-radius: 10px;
+        border: 1px solid var(--border-input);
+        background: var(--surface-0);
+        color: var(--text-0);
+        cursor: pointer;
+        transition: background 150ms ease, border-color 150ms ease, transform 80ms ease, box-shadow 150ms ease;
+      }
+      .notes-modal-btn:hover:not(:disabled) {
+        background: var(--surface-hover);
+        border-color: var(--border-hover);
+      }
+      .notes-modal-btn:active:not(:disabled) {
+        transform: translateY(0.5px);
+      }
+      .notes-modal-btn:focus-visible {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(252, 94, 32, 0.18);
+      }
+      .notes-modal-btn.is-primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        box-shadow:
+          0 1px 2px rgba(252, 94, 32, 0.25),
+          inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      }
+      .notes-modal-btn.is-primary:hover:not(:disabled) {
+        background: var(--accent-2);
+        border-color: var(--accent-2);
+      }
+      .notes-modal-btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
       }
 
       /* ── Presentation Mode Overlay ── */
@@ -5939,6 +6394,18 @@
                   id="object-selected-box"
                 ></div>
               </div>
+              <div
+                class="image-handles"
+                id="image-handles"
+                style="display: none"
+                aria-hidden="true"
+              >
+                <div class="image-handle-body" data-corner="move"></div>
+                <div class="image-handle-corner nw" data-corner="nw"></div>
+                <div class="image-handle-corner ne" data-corner="ne"></div>
+                <div class="image-handle-corner sw" data-corner="sw"></div>
+                <div class="image-handle-corner se" data-corner="se"></div>
+              </div>
               <div class="draw-layer" id="draw-layer">
                 <div class="draw-box" id="draw-box"></div>
               </div>
@@ -5949,6 +6416,84 @@
               >
             </div>
           </div>
+
+          <!-- Presenter Notes Dock (resizable, constrained to center column) -->
+          <section
+            class="notes-dock"
+            id="notes-dock"
+            aria-label="Presenter notes"
+          >
+            <div
+              class="notes-dock-handle"
+              id="notes-dock-handle"
+              role="separator"
+              aria-orientation="horizontal"
+              aria-label="Resize presenter notes"
+              tabindex="0"
+              title="Drag to resize. Double-click to collapse."
+            ></div>
+            <div class="notes-dock-bar">
+              <span class="notes-dock-title">Presenter Notes</span>
+              <span class="notes-dock-spacer"></span>
+              <button
+                type="button"
+                class="notes-dock-btn"
+                id="btn-notes-open-modal"
+                title="AI로 발표 노트 초안을 생성합니다"
+              >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 3l1.8 4.5L18 9l-4.2 1.5L12 15l-1.8-4.5L6 9l4.2-1.5L12 3z" />
+                  <path d="M19 14l0.9 2.1 2.1 0.9-2.1 0.9-0.9 2.1-0.9-2.1-2.1-0.9 2.1-0.9 0.9-2.1z" />
+                </svg>
+                AI로 초안 생성하기
+              </button>
+              <button
+                type="button"
+                class="notes-dock-collapse-btn"
+                id="notes-dock-collapse"
+                title="접기 / 펼치기"
+                aria-label="Toggle notes dock"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+            </div>
+            <div class="notes-dock-body">
+              <textarea
+                id="notes-textarea"
+                class="notes-dock-textarea"
+                placeholder="발표자 메모 추가..."
+                aria-label="Presenter notes for current slide"
+              ></textarea>
+            </div>
+            <div
+              class="notes-dock-status"
+              id="notes-dock-status"
+              hidden
+              aria-live="polite"
+            ></div>
+          </section>
         </div>
 
         <aside
@@ -6257,6 +6802,38 @@
                   </button>
                 </div>
               </div>
+              <div id="image-controls" hidden>
+                <div class="sidebar-divider"></div>
+                <div class="sidebar-section">
+                  <span class="sidebar-label">Image</span>
+                  <div class="sidebar-field-row" style="gap: 6px; display: flex;">
+                    <button
+                      type="button"
+                      class="sidebar-btn-sm"
+                      id="img-replace-btn"
+                      title="Replace with an uploaded file"
+                    >Replace</button>
+                    <button
+                      type="button"
+                      class="sidebar-btn-sm"
+                      id="img-regenerate-btn"
+                      title="Regenerate with AI (edit prompt)"
+                    >AI Regen</button>
+                  </div>
+                  <div class="sidebar-field-row" style="gap: 6px; display: flex; margin-top: 6px;">
+                    <button
+                      type="button"
+                      class="sidebar-btn-sm"
+                      id="img-delete-btn"
+                      style="color: #ef4444"
+                    >Delete</button>
+                  </div>
+                  <span class="sidebar-hint" style="font-size: 11px; color: var(--text-2); display: block; margin-top: 6px;">
+                    Drag corners to resize (Shift = free). Drag body to move.
+                  </span>
+                  <input id="img-replace-input" type="file" accept="image/*" hidden />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -6264,9 +6841,26 @@
             Drag on the slide to add red bboxes. Enter to run.
           </div>
 
-          <!-- Logo Settings -->
+          <!-- Insert Image & Logo Settings -->
           <div class="sidebar-divider"></div>
-          <div class="sidebar-section" style="padding: 4px 12px">
+          <div class="sidebar-section" style="padding: 4px 12px; display: flex; gap: 6px; flex-direction: column;">
+            <div style="display: flex; gap: 6px;">
+              <button
+                class="sidebar-btn"
+                id="btn-insert-image"
+                type="button"
+                style="flex: 1; font-size: 12px"
+                title="Upload an image file"
+              >Upload Image</button>
+              <button
+                class="sidebar-btn"
+                id="btn-insert-ai-image"
+                type="button"
+                style="flex: 1; font-size: 12px"
+                title="Generate an image with AI"
+              >AI Image</button>
+            </div>
+            <input id="img-insert-input" type="file" accept="image/*" hidden />
             <button
               class="sidebar-btn"
               id="btn-logo-settings"
@@ -6277,38 +6871,6 @@
             </button>
           </div>
 
-          <!-- Presenter Notes -->
-          <div class="notes-section expanded" id="notes-section">
-            <button
-              class="notes-toggle"
-              id="notes-toggle"
-              type="button"
-              aria-expanded="true"
-              aria-controls="notes-textarea"
-            >
-              <svg
-                class="notes-toggle-icon"
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-              Presenter Notes
-            </button>
-            <textarea
-              id="notes-textarea"
-              class="notes-textarea"
-              placeholder="Add notes for this slide..."
-              rows="4"
-            ></textarea>
-          </div>
         </aside>
       </div>
 
@@ -6698,6 +7260,57 @@
       </div>
     </div>
     <div class="figma-toast" id="figma-toast"></div>
+
+    <div class="shortcuts-overlay" id="image-prompt-modal" hidden>
+      <div
+        class="shortcuts-modal"
+        role="dialog"
+        aria-label="Image prompt"
+        style="max-width: 520px"
+      >
+        <h3 id="image-prompt-title">Generate image</h3>
+        <p
+          style="
+            margin: 8px 0 12px;
+            opacity: 0.8;
+            font-size: 12px;
+          "
+        >
+          Describe the image you want. Uses Nano Banana Pro (requires GOOGLE_API_KEY
+          or OPENROUTER_API_KEY).
+        </p>
+        <textarea
+          id="image-prompt-input"
+          rows="5"
+          style="
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface-1);
+            color: var(--text-1);
+            font: inherit;
+            resize: vertical;
+          "
+          placeholder="A watercolor illustration of a succulent in a ceramic pot, soft lighting..."
+        ></textarea>
+        <div
+          id="image-prompt-status"
+          style="
+            margin: 8px 0 0;
+            min-height: 16px;
+            font-size: 12px;
+            color: var(--text-2);
+          "
+        ></div>
+        <div
+          style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px"
+        >
+          <button class="nav-bar-btn ghost" id="image-prompt-cancel">Cancel</button>
+          <button class="nav-bar-btn" id="image-prompt-submit">Generate</button>
+        </div>
+      </div>
+    </div>
 
     <div class="shortcuts-overlay" id="delete-slide-modal" hidden>
       <div
@@ -7108,6 +7721,118 @@
         <div class="present-notes-text" id="present-notes-text"></div>
       </div>
       <div class="present-counter" id="present-counter"></div>
+    </div>
+
+    <!-- AI 초안 생성 모달 -->
+    <div
+      class="notes-modal-overlay"
+      id="notes-modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="notes-modal-title"
+      hidden
+    >
+      <div class="notes-modal" id="notes-modal">
+        <div class="notes-modal-header">
+          <span class="notes-modal-badge" aria-hidden="true">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 3l1.8 4.5L18 9l-4.2 1.5L12 15l-1.8-4.5L6 9l4.2-1.5L12 3z" />
+              <path d="M19 14l0.9 2.1 2.1 0.9-2.1 0.9-0.9 2.1-0.9-2.1-2.1-0.9 2.1-0.9 0.9-2.1z" />
+            </svg>
+          </span>
+          <div class="notes-modal-header-text">
+            <h3 id="notes-modal-title">AI로 발표 노트 초안 만들기</h3>
+            <p>페르소나와 요청을 설정하면, 슬라이드 아웃라인과 화면 내용을 함께 분석해 발표 스크립트를 생성합니다.</p>
+          </div>
+          <button
+            type="button"
+            class="notes-modal-close"
+            id="notes-modal-close"
+            aria-label="닫기"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="notes-modal-body">
+          <div class="notes-modal-row">
+            <div class="notes-modal-field">
+              <label class="notes-modal-label" for="notes-ai-persona">페르소나</label>
+              <select id="notes-ai-persona" class="notes-modal-select"></select>
+            </div>
+            <div class="notes-modal-field">
+              <label class="notes-modal-label" for="notes-ai-model">AI 모델</label>
+              <select id="notes-ai-model" class="notes-modal-select"></select>
+            </div>
+          </div>
+          <div class="notes-modal-field">
+            <label class="notes-modal-label" for="notes-ai-custom-prompt">
+              추가 요청 (선택)
+            </label>
+            <textarea
+              id="notes-ai-custom-prompt"
+              class="notes-modal-input notes-modal-textarea"
+              placeholder="예: '더 짧게', '영어로', '고객 사례 중심으로 바꿔줘'"
+              rows="3"
+            ></textarea>
+          </div>
+          <label class="notes-modal-check">
+            <input type="checkbox" id="notes-ai-overwrite" />
+            기존 노트가 있어도 덮어쓰기 (원본은 .bak-* 파일로 백업됩니다)
+          </label>
+          <div
+            class="notes-modal-status"
+            id="notes-ai-status"
+            hidden
+          ></div>
+        </div>
+        <div class="notes-modal-footer">
+          <button
+            type="button"
+            class="notes-modal-btn"
+            id="btn-notes-modal-cancel"
+          >
+            취소
+          </button>
+          <span class="notes-modal-spacer"></span>
+          <button
+            type="button"
+            class="notes-modal-btn"
+            id="btn-notes-generate-all"
+            title="덱 안의 모든 슬라이드에 대해 생성"
+          >
+            전체 슬라이드
+          </button>
+          <button
+            type="button"
+            class="notes-modal-btn is-primary"
+            id="btn-notes-generate-one"
+            title="현재 선택된 슬라이드 1장에 대해서만 생성"
+          >
+            이 슬라이드만 생성
+          </button>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="/js/editor-init.js"></script>
