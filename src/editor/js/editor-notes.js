@@ -1,105 +1,81 @@
-// editor-notes.js — Presenter notes: load, save, auto-save panel
+// editor-notes.js — Presenter notes dock: load, save, auto-save, drag-to-resize, collapse
 
 import { currentSlideFile } from './editor-utils.js';
+import { initNotesGenerator, openNotesModal } from './editor-notes-generator.js';
+
+const STORAGE_KEYS = {
+  height: 'sg-notes-dock-height',
+  collapsed: 'sg-notes-dock-collapsed',
+};
+
+const MIN_HEIGHT = 100;
+const MAX_HEIGHT_VH = 0.7;
+const DEFAULT_HEIGHT = 200;
 
 /** @type {HTMLTextAreaElement|null} */
 let notesTextarea = null;
-
 /** @type {HTMLElement|null} */
-let notesToggleBtn = null;
-
+let dock = null;
 /** @type {HTMLElement|null} */
-let notesSection = null;
+let handle = null;
+/** @type {HTMLElement|null} */
+let collapseBtn = null;
+/** @type {HTMLButtonElement|null} */
+let openModalBtn = null;
 
-/** Debounce timer for auto-save */
 let saveTimer = null;
-
-/** Track the slide file we last loaded notes for */
 let loadedForSlide = '';
-
-/** Whether the panel is expanded */
-let expanded = false;
+let collapsed = false;
 
 // ── Public API ──────────────────────────────────────────────────────
 
-/**
- * Initialize the notes panel: find DOM elements, set up event listeners.
- */
 export function initNotesPanel() {
   notesTextarea = document.getElementById('notes-textarea');
-  notesToggleBtn = document.getElementById('notes-toggle');
-  notesSection = document.getElementById('notes-section');
+  dock = document.getElementById('notes-dock');
+  handle = document.getElementById('notes-dock-handle');
+  collapseBtn = document.getElementById('notes-dock-collapse');
+  openModalBtn = document.getElementById('btn-notes-open-modal');
 
-  if (!notesTextarea || !notesSection) return;
+  if (!notesTextarea || !dock || !handle) return;
 
-  // Restore collapsed/expanded state from localStorage (default: expanded)
-  const savedState = localStorage.getItem('sg-notes-expanded');
-  expanded = savedState !== 'false';
-  applyExpandedState();
+  restoreDockState();
+  bindTextareaHandlers();
+  bindDragHandlers();
+  bindCollapseHandlers();
+  if (openModalBtn) openModalBtn.addEventListener('click', () => openNotesModal());
 
-  if (notesToggleBtn) {
-    notesToggleBtn.addEventListener('click', () => {
-      expanded = !expanded;
-      applyExpandedState();
-      localStorage.setItem('sg-notes-expanded', expanded ? 'true' : 'false');
-    });
-  }
-
-  // Auto-save on blur
-  notesTextarea.addEventListener('blur', () => {
-    flushSave();
-  });
-
-  // Auto-save after 1 second of inactivity
-  notesTextarea.addEventListener('input', () => {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-      flushSave();
-    }, 1000);
+  initNotesGenerator({
+    onCurrentSlideUpdated: (newNotes) => {
+      if (!notesTextarea) return;
+      notesTextarea.value = newNotes || '';
+      clearTimeout(saveTimer);
+      saveTimer = null;
+    },
   });
 }
 
-/**
- * Load notes for a given slide file from the server.
- */
 export async function loadNotes(slideFile) {
   if (!notesTextarea) return;
-
-  // Flush any pending save for the previous slide first
-  if (loadedForSlide && loadedForSlide !== slideFile) {
-    flushSave();
-  }
-
+  if (loadedForSlide && loadedForSlide !== slideFile) flushSave();
   loadedForSlide = slideFile;
 
   if (!slideFile) {
     notesTextarea.value = '';
     return;
   }
-
   try {
     const res = await fetch(`/api/slides/${encodeURIComponent(slideFile)}/notes`);
     if (res.ok) {
       const data = await res.json();
-      // Only update if we're still on the same slide
-      if (loadedForSlide === slideFile) {
-        notesTextarea.value = data.notes || '';
-      }
-    } else {
-      if (loadedForSlide === slideFile) {
-        notesTextarea.value = '';
-      }
-    }
-  } catch {
-    if (loadedForSlide === slideFile) {
+      if (loadedForSlide === slideFile) notesTextarea.value = data.notes || '';
+    } else if (loadedForSlide === slideFile) {
       notesTextarea.value = '';
     }
+  } catch {
+    if (loadedForSlide === slideFile) notesTextarea.value = '';
   }
 }
 
-/**
- * Save notes for the given slide file to the server.
- */
 export async function saveNotes(slideFile, text) {
   if (!slideFile) return;
   try {
@@ -109,18 +85,23 @@ export async function saveNotes(slideFile, text) {
       body: JSON.stringify({ notes: text }),
     });
   } catch {
-    // silent — notes are non-critical
+    /* non-critical */
   }
 }
 
-/**
- * Get the current notes text (used by presentation mode).
- */
 export function getCurrentNotesText() {
   return notesTextarea?.value || '';
 }
 
-// ── Internal helpers ────────────────────────────────────────────────
+// ── Textarea handlers ──────────────────────────────────────────────
+
+function bindTextareaHandlers() {
+  notesTextarea.addEventListener('blur', () => flushSave());
+  notesTextarea.addEventListener('input', () => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(flushSave, 1000);
+  });
+}
 
 function flushSave() {
   clearTimeout(saveTimer);
@@ -130,14 +111,99 @@ function flushSave() {
   saveNotes(slide, notesTextarea.value);
 }
 
-function applyExpandedState() {
-  if (!notesSection) return;
-  if (expanded) {
-    notesSection.classList.add('expanded');
-  } else {
-    notesSection.classList.remove('expanded');
-  }
-  if (notesToggleBtn) {
-    notesToggleBtn.setAttribute('aria-expanded', String(expanded));
-  }
+// ── Dock state: restore + persist ───────────────────────────────────
+
+function restoreDockState() {
+  const savedHeight = parseInt(localStorage.getItem(STORAGE_KEYS.height) || '', 10);
+  const height = Number.isFinite(savedHeight) ? clampHeight(savedHeight) : DEFAULT_HEIGHT;
+  dock.style.height = `${height}px`;
+
+  collapsed = localStorage.getItem(STORAGE_KEYS.collapsed) === '1';
+  dock.classList.toggle('is-collapsed', collapsed);
+}
+
+function persistHeight(h) {
+  localStorage.setItem(STORAGE_KEYS.height, String(Math.round(h)));
+}
+
+function persistCollapsed(val) {
+  localStorage.setItem(STORAGE_KEYS.collapsed, val ? '1' : '0');
+}
+
+function clampHeight(h) {
+  const maxH = Math.max(MIN_HEIGHT, Math.floor(window.innerHeight * MAX_HEIGHT_VH));
+  return Math.min(maxH, Math.max(MIN_HEIGHT, h));
+}
+
+// ── Drag-to-resize ──────────────────────────────────────────────────
+
+function bindDragHandlers() {
+  handle.addEventListener('mousedown', startDrag);
+  handle.addEventListener('touchstart', startDrag, { passive: false });
+  handle.addEventListener('dblclick', toggleCollapsed);
+  handle.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowUp') { e.preventDefault(); nudgeHeight(16); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); nudgeHeight(-16); }
+    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCollapsed(); }
+  });
+}
+
+function nudgeHeight(delta) {
+  if (collapsed) setCollapsed(false);
+  const current = dock.getBoundingClientRect().height;
+  const next = clampHeight(current + delta);
+  dock.style.height = `${next}px`;
+  persistHeight(next);
+}
+
+function startDrag(e) {
+  if (collapsed) setCollapsed(false);
+  e.preventDefault();
+  const startY = pointerY(e);
+  const startHeight = dock.getBoundingClientRect().height;
+
+  dock.classList.add('is-resizing');
+
+  const onMove = (ev) => {
+    const y = pointerY(ev);
+    const delta = startY - y; // drag up → positive → grow
+    const next = clampHeight(startHeight + delta);
+    dock.style.height = `${next}px`;
+  };
+  const onEnd = () => {
+    dock.classList.remove('is-resizing');
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onEnd);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('touchend', onEnd);
+    persistHeight(dock.getBoundingClientRect().height);
+  };
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onEnd);
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('touchend', onEnd);
+}
+
+function pointerY(e) {
+  if (e.touches && e.touches.length > 0) return e.touches[0].clientY;
+  if (e.changedTouches && e.changedTouches.length > 0) return e.changedTouches[0].clientY;
+  return e.clientY;
+}
+
+// ── Collapse toggle ─────────────────────────────────────────────────
+
+function bindCollapseHandlers() {
+  if (!collapseBtn) return;
+  collapseBtn.addEventListener('click', toggleCollapsed);
+}
+
+function toggleCollapsed(e) {
+  e?.preventDefault?.();
+  setCollapsed(!collapsed);
+}
+
+function setCollapsed(val) {
+  collapsed = !!val;
+  dock.classList.toggle('is-collapsed', collapsed);
+  persistCollapsed(collapsed);
 }

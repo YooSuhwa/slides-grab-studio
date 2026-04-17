@@ -18,6 +18,11 @@ import {
   refreshSlideList, updatePlanLoadingStep, feedPlanLoadingLog, showPlanLoading,
 } from './editor-create.js';
 import { onPlanStarted, onPlanLog, onPlanFinished } from './editor-outline.js';
+import {
+  onNotesGenerateStarted,
+  onNotesGenerateProgress,
+  onNotesGenerateFinished,
+} from './editor-notes-generator.js';
 
 function upsertRun(run) {
   if (!run?.runId) return;
@@ -303,6 +308,21 @@ export function connectSSE() {
     } catch (error) {
       console.error('figmaExportFinished parse error:', error);
     }
+  });
+
+  evtSource.addEventListener('notesGenerateStarted', (event) => {
+    try { onNotesGenerateStarted(JSON.parse(event.data)); }
+    catch (error) { console.error('notesGenerateStarted parse error:', error); }
+  });
+
+  evtSource.addEventListener('notesGenerateProgress', (event) => {
+    try { onNotesGenerateProgress(JSON.parse(event.data)); }
+    catch (error) { console.error('notesGenerateProgress parse error:', error); }
+  });
+
+  evtSource.addEventListener('notesGenerateFinished', (event) => {
+    try { onNotesGenerateFinished(JSON.parse(event.data)); }
+    catch (error) { console.error('notesGenerateFinished parse error:', error); }
   });
 
   evtSource.addEventListener('devReload', () => {
