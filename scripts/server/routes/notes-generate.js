@@ -14,16 +14,20 @@ import {
   listPersonas,
   loadPersona,
   generateNote,
+  generateDeckSpine,
   NOTE_MODELS,
   DEFAULT_NOTE_MODEL,
 } from '../../../src/notes-generator.js';
+import {
+  ensureNotesDir,
+  ensureNotesFolderLayout,
+  notesBackupPathFor,
+  notesPathFor,
+  spinePath,
+} from '../../../src/notes-paths.js';
 import { broadcastSSE } from '../sse.js';
 
 const BATCH_CONCURRENCY = 3;
-
-function notesFilenameFor(slideFile) {
-  return slideFile.replace(/\.html$/i, '.notes.md');
-}
 
 async function pathExists(path) {
   try {
@@ -32,6 +36,72 @@ async function pathExists(path) {
   } catch {
     return false;
   }
+}
+
+async function readSpineCache(deckDir) {
+  const cachePath = spinePath(deckDir);
+  try {
+    const [raw, outlineStat, spineStat] = await Promise.all([
+      readFile(cachePath, 'utf-8'),
+      stat(join(deckDir, 'slide-outline.md')).catch(() => null),
+      stat(cachePath),
+    ]);
+    const obj = JSON.parse(raw);
+    if (!obj || !Array.isArray(obj.spine)) return null;
+    const spineMtime = spineStat.mtime.getTime();
+    const outlineMtime = outlineStat ? outlineStat.mtime.getTime() : 0;
+    if (outlineMtime > spineMtime) return { ...obj, stale: true };
+    return { ...obj, stale: false };
+  } catch {
+    return null;
+  }
+}
+
+async function writeSpineCache(deckDir, { personaId, model, spine }) {
+  await ensureNotesDir(deckDir);
+  const cachePath = spinePath(deckDir);
+  const payload = {
+    generatedAt: new Date().toISOString(),
+    personaId,
+    model,
+    spine,
+  };
+  const tmp = `${cachePath}.tmp-${process.pid}-${Date.now()}`;
+  await writeFile(tmp, JSON.stringify(payload, null, 2), 'utf-8');
+  await rename(tmp, cachePath);
+}
+
+async function loadOrCreateSpine(deckDir, {
+  personaId, persona, model, tracker, outlineContent, forceFresh = false,
+}) {
+  if (!outlineContent) return { spine: null, reused: false, regenerated: false };
+
+  if (!forceFresh) {
+    const cached = await readSpineCache(deckDir);
+    if (cached && !cached.stale
+      && cached.personaId === personaId
+      && cached.model === model
+      && Array.isArray(cached.spine) && cached.spine.length > 0) {
+      return { spine: cached.spine, reused: true, regenerated: false };
+    }
+  }
+
+  const spine = await generateDeckSpine({
+    outlineContent, persona, model, tracker, cwd: deckDir,
+  }).catch((err) => {
+    console.warn('[notes-generate] spine generation failed, continuing without spine:', err.message);
+    return null;
+  });
+
+  if (spine) {
+    try {
+      await writeSpineCache(deckDir, { personaId, model, spine });
+    } catch (err) {
+      console.warn('[notes-generate] failed to persist deck-spine.json:', err.message);
+    }
+  }
+
+  return { spine, reused: false, regenerated: !!spine };
 }
 
 function resolveModel(raw) {
@@ -48,10 +118,13 @@ function sanitizeCustomPrompt(raw) {
   return raw.trim().slice(0, 4000);
 }
 
-async function writeNoteAtomic(notesPath, text, { backupOnOverwrite }) {
+async function writeNoteAtomic(deckDir, slideFile, text, { backupOnOverwrite }) {
+  await ensureNotesDir(deckDir);
+  const notesPath = notesPathFor(deckDir, slideFile);
   if (backupOnOverwrite && await pathExists(notesPath)) {
-    const bak = `${notesPath}.bak-${Date.now()}`;
-    try { await rename(notesPath, bak); } catch { /* best-effort */ }
+    // Rolling single-slot backup — overwrites any prior `.bak`.
+    try { await rename(notesPath, notesBackupPathFor(deckDir, slideFile)); }
+    catch { /* best-effort */ }
   }
   const tmp = `${notesPath}.tmp-${process.pid}-${Date.now()}`;
   await writeFile(tmp, text, 'utf8');
@@ -75,8 +148,9 @@ async function processOneSlide({
   tracker,
   overwrite,
   outlineContent,
+  spine,
 }) {
-  const notesPath = join(deckDir, notesFilenameFor(slideFile));
+  const notesPath = notesPathFor(deckDir, slideFile);
   const exists = await pathExists(notesPath);
   if (exists && !overwrite) {
     const existing = await readFile(notesPath, 'utf-8').catch(() => '');
@@ -84,12 +158,12 @@ async function processOneSlide({
   }
 
   const note = await generateNote({
-    deckDir, slideFile, persona, customPrompt, model, tracker, outlineContent,
+    deckDir, slideFile, persona, customPrompt, model, tracker, outlineContent, spine,
   });
   if (!note || !note.trim()) {
     return { slide: slideFile, status: 'failed', reason: 'empty-output' };
   }
-  await writeNoteAtomic(notesPath, note, { backupOnOverwrite: exists });
+  await writeNoteAtomic(deckDir, slideFile, note, { backupOnOverwrite: exists });
   return { slide: slideFile, status: 'generated', overwritten: exists };
 }
 
@@ -137,6 +211,7 @@ export function createNotesGenerateRouter(ctx) {
     if (!await pathExists(join(deckDir, slideFile))) {
       return res.status(404).json({ error: `Slide not found: ${slideFile}` });
     }
+    await ensureNotesFolderLayout(deckDir);
 
     const personaId = typeof req.body?.persona === 'string' ? req.body.persona.trim() : '';
     if (!personaId) return res.status(400).json({ error: 'Missing `persona`.' });
@@ -152,7 +227,7 @@ export function createNotesGenerateRouter(ctx) {
     try { persona = await loadPersona(personaId); }
     catch (err) { return res.status(400).json({ error: err.message }); }
 
-    const notesPath = join(deckDir, notesFilenameFor(slideFile));
+    const notesPath = notesPathFor(deckDir, slideFile);
     if (await pathExists(notesPath) && !overwrite) {
       const existing = await readFile(notesPath, 'utf-8').catch(() => '');
       return res.status(409).json({
@@ -162,10 +237,17 @@ export function createNotesGenerateRouter(ctx) {
     }
 
     try {
+      const outlineContent = await loadOutlineIfPresent(deckDir);
+      const { spine } = await loadOrCreateSpine(deckDir, {
+        personaId, persona, model,
+        tracker: ctx.usageTracker,
+        outlineContent,
+      });
       const result = await processOneSlide({
         deckDir, slideFile, persona, customPrompt, model,
         tracker: ctx.usageTracker, overwrite: true,
-        outlineContent: await loadOutlineIfPresent(deckDir),
+        outlineContent,
+        spine,
       });
       if (result.status !== 'generated') {
         return res.status(500).json({ error: result.reason || 'Generation failed.' });
@@ -180,6 +262,7 @@ export function createNotesGenerateRouter(ctx) {
   router.post('/api/notes/generate-all', async (req, res) => {
     const deckDir = ctx.getSlidesDir();
     if (!deckDir) return res.status(400).json({ error: 'No slides directory set.' });
+    await ensureNotesFolderLayout(deckDir);
 
     const personaId = typeof req.body?.persona === 'string' ? req.body.persona.trim() : '';
     if (!personaId) return res.status(400).json({ error: 'Missing `persona`.' });
@@ -199,12 +282,36 @@ export function createNotesGenerateRouter(ctx) {
     if (slides.length === 0) return res.status(400).json({ error: 'No slides found in deck.' });
 
     const runId = `notes-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+    const forceRefreshSpine = req.body?.refreshSpine === true;
     res.json({ runId, total: slides.length, persona: persona.id, model });
 
     const outlineContent = await loadOutlineIfPresent(deckDir);
     broadcastSSE(ctx.sseClients, 'notesGenerateStarted', {
       runId, total: slides.length, persona: persona.id, model,
     });
+
+    let spine = null;
+    try {
+      const spineResult = await loadOrCreateSpine(deckDir, {
+        personaId, persona, model,
+        tracker: ctx.usageTracker,
+        outlineContent,
+        forceFresh: forceRefreshSpine,
+      });
+      spine = spineResult.spine;
+      broadcastSSE(ctx.sseClients, 'notesSpineReady', {
+        runId,
+        hasSpine: !!spine,
+        reused: !!spineResult.reused,
+        regenerated: !!spineResult.regenerated,
+        slides: spine ? spine.length : 0,
+      });
+    } catch (err) {
+      broadcastSSE(ctx.sseClients, 'notesSpineReady', {
+        runId, hasSpine: false, reused: false, regenerated: false,
+        error: err.message || String(err),
+      });
+    }
 
     let completed = 0;
     const onDone = (result) => {
@@ -221,6 +328,7 @@ export function createNotesGenerateRouter(ctx) {
             deckDir, slideFile, persona, customPrompt, model,
             tracker: ctx.usageTracker, overwrite,
             outlineContent,
+            spine,
           });
           onDone(result);
           return result;

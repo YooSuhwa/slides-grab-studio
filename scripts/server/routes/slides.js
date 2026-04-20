@@ -2,10 +2,11 @@ import { readFile, writeFile, rename, unlink, mkdir, rm, stat } from 'node:fs/pr
 import { join } from 'node:path';
 
 import { listSlideFiles, normalizeSlideFilename, normalizeSlideHtml } from '../helpers.js';
-
-function notesFilenameFor(slideFile) {
-  return slideFile.replace(/\.html$/i, '.notes.md');
-}
+import {
+  ensureNotesDir,
+  ensureNotesFolderLayout,
+  notesPathFor,
+} from '../../../src/notes-paths.js';
 
 /**
  * Renumber slide files to sequential order via a temp directory.
@@ -239,8 +240,10 @@ export function createSlidesRouter(ctx) {
     const slidesDirectory = ctx.getSlidesDir();
     if (!slidesDirectory) return res.json({ notes: '' });
 
+    await ensureNotesFolderLayout(slidesDirectory);
+
     try {
-      const notes = await readFile(join(slidesDirectory, notesFilenameFor(file)), 'utf-8');
+      const notes = await readFile(notesPathFor(slidesDirectory, file), 'utf-8');
       return res.json({ notes });
     } catch {
       return res.json({ notes: '' });
@@ -264,13 +267,16 @@ export function createSlidesRouter(ctx) {
       return res.status(err.status || 404).json({ error: err.message });
     }
 
+    await ensureNotesFolderLayout(slidesDirectory);
+
     const notes = typeof req.body?.notes === 'string' ? req.body.notes : '';
-    const notesPath = join(slidesDirectory, notesFilenameFor(file));
+    const notesPath = notesPathFor(slidesDirectory, file);
 
     try {
       if (notes.trim() === '') {
         try { await unlink(notesPath); } catch { /* file may not exist */ }
       } else {
+        await ensureNotesDir(slidesDirectory);
         await writeFile(notesPath, notes, 'utf8');
       }
       return res.json({ success: true, slide: file });
