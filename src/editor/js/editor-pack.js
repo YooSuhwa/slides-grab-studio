@@ -53,6 +53,11 @@ export function getSelectedPack() {
   return selectedPackId;
 }
 
+export function getPackMeta(packId = selectedPackId) {
+  if (!packId || packId === 'auto') return null;
+  return packsData.find(p => p.id === packId) || null;
+}
+
 export function setSelectedPack(packId) {
   selectedPackId = packId;
   creationState.packId = packId;

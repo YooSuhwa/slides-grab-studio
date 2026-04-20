@@ -378,6 +378,7 @@ export function appendImageInstructions(lines, slidesDir) {
     `- \`slides-grab image --prompt "<설명>" --slides-dir ${slidesDir}\`로 생성하거나, 웹 검색으로 다운로드하여 \`./assets/<file>\`에 저장`,
     '- 모든 이미지는 반드시 `./assets/<file>`로 참조 (remote URL 금지)',
     '- `GOOGLE_API_KEY`가 없으면 웹 검색 + 다운로드로 대체',
+    '- AI로 생성한 이미지의 `<img>` 태그에는 반드시 `data-image-prompt="<생성에 사용한 프롬프트>"`와 `data-image-slot="ai-generated"` 속성을 추가하세요. 에디터에서 이미지 재생성(Regen)에 사용됩니다.',
     '',
   );
 }
@@ -395,7 +396,8 @@ export function appendImageAssetsInstructions(lines, assets) {
   lines.push(
     '',
     '규칙:',
-    '- `<img src="./assets/..." alt="설명" style="width:100%; height:100%; object-fit:cover;">` 형식 사용',
+    '- `<img src="./assets/..." alt="설명" data-image-prompt="<원본 쿼리/프롬프트>" data-image-slot="ai-generated" style="width:100%; height:100%; object-fit:cover;">` 형식 사용',
+    '- `data-image-prompt`에는 위 "Slide N: path — query"의 query 값을 그대로 넣으세요. 에디터 Regen 버튼이 이 값을 재사용합니다.',
     '- Remote URL 사용 금지 — 모든 이미지는 위 로컬 assets에서 참조',
     '- 이미지를 슬라이드 레이아웃에 맞게 배치 (split-layout, image-text 등 type에 따라)',
     '',
