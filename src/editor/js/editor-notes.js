@@ -93,6 +93,11 @@ export function getCurrentNotesText() {
   return notesTextarea?.value || '';
 }
 
+export function toggleNotesDock() {
+  if (!dock) return;
+  setCollapsed(!collapsed);
+}
+
 // ── Textarea handlers ──────────────────────────────────────────────
 
 function bindTextareaHandlers() {

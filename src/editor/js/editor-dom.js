@@ -44,7 +44,6 @@ export const modelSelect = $('#model-select');
 export const btnClearBboxes = $('#btn-clear-bboxes');
 export const bboxCountEl = $('#bbox-count');
 export const btnSend = $('#btn-send');
-export const editorHint = $('#editor-hint');
 export const selectedObjectMini = $('#selected-object-mini');
 export const miniTag = $('#mini-tag');
 export const miniText = $('#mini-text');

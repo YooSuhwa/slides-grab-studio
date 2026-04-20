@@ -15,7 +15,11 @@ export const POPOVER_TEXT_COLOR = 'text-color';
 export const POPOVER_BG_COLOR = 'bg-color';
 export const POPOVER_SIZE = 'size';
 export const DEFAULT_MODELS = ['claude-opus-4-6', 'claude-sonnet-4-6', 'gpt-4o', 'o4-mini'];
-export const DIRECT_TEXT_TAGS = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li']);
+export const DIRECT_TEXT_TAGS = new Set([
+  'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li',
+  'span', 'a', 'strong', 'em', 'b', 'i', 'u', 's', 'mark', 'code', 'small', 'sub', 'sup',
+  'div',
+]);
 export const NON_SELECTABLE_TAGS = new Set(['html', 'head', 'body', 'script', 'style', 'link', 'meta', 'noscript']);
 
 export const slideStates = new Map();

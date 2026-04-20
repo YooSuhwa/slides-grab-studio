@@ -26,6 +26,8 @@ let optionsLoaded = false;
 let currentBatchRunId = '';
 let batchInProgress = false;
 let lastFocusedBeforeOpen = null;
+let elapsedTimer = null;
+const originalButtonLabels = new Map();
 
 // ── Public API ──────────────────────────────────────────────────────
 
@@ -53,9 +55,15 @@ export function initNotesGenerator({ onCurrentSlideUpdated } = {}) {
   btnGenerateAll.addEventListener('click', () => generateForAll().catch(() => {}));
   btnCancel?.addEventListener('click', closeNotesModal);
   btnClose?.addEventListener('click', closeNotesModal);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeNotesModal(); });
+  overlay.addEventListener('click', (e) => {
+    if (e.target !== overlay) return;
+    if (isGenerating()) return;
+    closeNotesModal();
+  });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !overlay.hidden) closeNotesModal();
+    if (e.key !== 'Escape' || overlay.hidden) return;
+    if (isGenerating()) return;
+    closeNotesModal();
   });
 }
 
@@ -73,11 +81,10 @@ export async function openNotesModal() {
 
 export function closeNotesModal() {
   if (!overlay || overlay.hidden) return;
-  if (batchInProgress) {
-    setStatus('배치 생성 진행 중입니다. 완료 후 닫힙니다.', 'warn');
-    return;
-  }
+  if (isGenerating()) return;
   overlay.hidden = true;
+  stopElapsed();
+  clearGenerateButtonsLoading();
   if (lastFocusedBeforeOpen && lastFocusedBeforeOpen.focus) {
     try { lastFocusedBeforeOpen.focus(); } catch { /* ignore */ }
   }
@@ -178,20 +185,124 @@ function setButtonsDisabled(disabled) {
   if (btnGenerateAll) btnGenerateAll.disabled = disabled;
 }
 
+function stopElapsed() {
+  if (elapsedTimer != null) {
+    clearInterval(elapsedTimer);
+    elapsedTimer = null;
+  }
+}
+
+function resetStatusEl() {
+  if (!statusEl) return;
+  stopElapsed();
+  statusEl.classList.remove('is-error', 'is-warn', 'is-success', 'is-loading');
+  statusEl.textContent = '';
+}
+
 function setStatus(message, kind) {
   if (!statusEl) return;
+  resetStatusEl();
   if (!message) {
     statusEl.hidden = true;
-    statusEl.textContent = '';
-    statusEl.classList.remove('is-error', 'is-warn', 'is-success');
     return;
   }
   statusEl.hidden = false;
+  if (kind === 'loading') {
+    renderLoading(message);
+    return;
+  }
   statusEl.textContent = message;
-  statusEl.classList.remove('is-error', 'is-warn', 'is-success');
   if (kind === 'error') statusEl.classList.add('is-error');
   else if (kind === 'warn') statusEl.classList.add('is-warn');
   else if (kind === 'success') statusEl.classList.add('is-success');
+}
+
+function renderLoading(message) {
+  statusEl.classList.add('is-loading');
+
+  const row = document.createElement('div');
+  row.className = 'notes-modal-status-row';
+
+  const spinner = document.createElement('span');
+  spinner.className = 'notes-modal-spinner';
+  spinner.setAttribute('aria-hidden', 'true');
+
+  const text = document.createElement('span');
+  text.className = 'notes-modal-status-text';
+  text.textContent = message;
+
+  const elapsed = document.createElement('span');
+  elapsed.className = 'notes-modal-status-elapsed';
+  elapsed.textContent = '0s';
+
+  row.append(spinner, text, elapsed);
+
+  const bar = document.createElement('div');
+  bar.className = 'notes-modal-progress';
+  bar.setAttribute('role', 'progressbar');
+  bar.setAttribute('aria-label', message);
+  const fill = document.createElement('div');
+  fill.className = 'notes-modal-progress-bar';
+  bar.appendChild(fill);
+
+  statusEl.append(row, bar);
+
+  const started = Date.now();
+  elapsedTimer = setInterval(() => {
+    elapsed.textContent = `${Math.floor((Date.now() - started) / 1000)}s`;
+  }, 500);
+}
+
+function updateLoadingMessage(message) {
+  if (!statusEl || !statusEl.classList.contains('is-loading')) {
+    setStatus(message, 'loading');
+    return;
+  }
+  const text = statusEl.querySelector('.notes-modal-status-text');
+  if (text) text.textContent = message;
+}
+
+function rememberButtonLabel(btn) {
+  if (!btn || originalButtonLabels.has(btn)) return;
+  originalButtonLabels.set(btn, btn.textContent || '');
+}
+
+function restoreButtonLabel(btn) {
+  if (!btn) return;
+  const label = originalButtonLabels.get(btn);
+  btn.classList.remove('is-loading');
+  btn.textContent = label != null ? label : btn.textContent;
+}
+
+function setButtonLoading(btn, loadingText) {
+  if (!btn) return;
+  rememberButtonLabel(btn);
+  btn.classList.add('is-loading');
+  btn.textContent = '';
+  const spinner = document.createElement('span');
+  spinner.className = 'notes-modal-btn-spinner';
+  spinner.setAttribute('aria-hidden', 'true');
+  const label = document.createElement('span');
+  label.textContent = loadingText;
+  btn.append(spinner, label);
+}
+
+function setGenerateButtonsLoading(which) {
+  setButtonsDisabled(true);
+  if (which === 'one') setButtonLoading(btnGenerateOne, '생성 중…');
+  else if (which === 'all') setButtonLoading(btnGenerateAll, '생성 중…');
+}
+
+function clearGenerateButtonsLoading() {
+  restoreButtonLabel(btnGenerateOne);
+  restoreButtonLabel(btnGenerateAll);
+  setButtonsDisabled(false);
+}
+
+function isGenerating() {
+  return batchInProgress
+    || !!(btnGenerateOne?.classList.contains('is-loading'))
+    || !!(btnGenerateAll?.classList.contains('is-loading'));
 }
 
 // ── Single-slide generation ─────────────────────────────────────────
@@ -208,8 +319,8 @@ async function generateForOne() {
     return;
   }
 
-  setButtonsDisabled(true);
-  setStatus(`${slide} 생성 중...`);
+  setGenerateButtonsLoading('one');
+  setStatus(`${slide} 노트를 생성하는 중입니다`, 'loading');
 
   try {
     const res = await fetch(`/api/slides/${encodeURIComponent(slide)}/notes/generate`, {
@@ -241,10 +352,11 @@ async function generateForOne() {
         : `${slide} 노트를 생성했습니다.`,
       'success',
     );
+    closeNotesModal();
   } catch (err) {
     setStatus(`네트워크 오류: ${err.message || err}`, 'error');
   } finally {
-    setButtonsDisabled(false);
+    clearGenerateButtonsLoading();
   }
 }
 
@@ -267,8 +379,8 @@ async function generateForAll() {
     if (!ok) return;
   }
 
-  setButtonsDisabled(true);
-  setStatus('전체 생성 요청 중...');
+  setGenerateButtonsLoading('all');
+  setStatus('전체 생성 요청 중입니다', 'loading');
 
   try {
     const res = await fetch('/api/notes/generate-all', {
@@ -279,15 +391,15 @@ async function generateForAll() {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       setStatus(data.error || `배치 요청 실패 (HTTP ${res.status})`, 'error');
-      setButtonsDisabled(false);
+      clearGenerateButtonsLoading();
       return;
     }
     currentBatchRunId = data.runId || '';
     batchInProgress = true;
-    setStatus(`배치 생성 중 0/${data.total ?? '?'}...`);
+    updateLoadingMessage(`배치 생성 중 0 / ${data.total ?? '?'}`);
   } catch (err) {
     setStatus(`네트워크 오류: ${err.message || err}`, 'error');
-    setButtonsDisabled(false);
+    clearGenerateButtonsLoading();
   }
 }
 
@@ -299,7 +411,9 @@ export function onNotesGenerateProgress(payload) {
   if (!payload?.runId || payload.runId !== currentBatchRunId) return;
   const { completed = 0, total = 0, slide, status } = payload;
   const short = status === 'skipped' ? '⤼' : status === 'failed' ? '⚠' : '✓';
-  setStatus(`배치 생성 중 ${completed}/${total} ${short} ${slide || ''}`);
+  updateLoadingMessage(
+    `배치 생성 중 ${completed} / ${total} ${short} ${slide || ''}`.trim(),
+  );
   if (status === 'generated' && slide && slide === currentSlideFile()) {
     void refreshCurrentSlideNote(slide);
   }
@@ -309,7 +423,7 @@ export function onNotesGenerateFinished(payload) {
   if (!payload?.runId || payload.runId !== currentBatchRunId) return;
   batchInProgress = false;
   currentBatchRunId = '';
-  setButtonsDisabled(false);
+  clearGenerateButtonsLoading();
 
   const { total = 0, generated = 0, skipped = 0, failed = 0, error } = payload;
   if (error) {
@@ -322,6 +436,8 @@ export function onNotesGenerateFinished(payload) {
 
   const slide = currentSlideFile();
   if (slide) void refreshCurrentSlideNote(slide);
+
+  if (failed === 0 && generated > 0) closeNotesModal();
 }
 
 async function refreshCurrentSlideNote(slide) {

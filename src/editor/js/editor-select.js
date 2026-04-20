@@ -3,7 +3,7 @@
 import { state, TOOL_MODE_DRAW, TOOL_MODE_SELECT, SLIDE_W, SLIDE_H, NON_SELECTABLE_TAGS, DIRECT_TEXT_TAGS } from './editor-state.js';
 import {
   slideIframe, slidePanel, drawBox, toolModeDrawBtn, toolModeSelectBtn,
-  bboxToolbar, selectToolbar, editorHint, objectSelectedBox, objectHoverBox,
+  bboxToolbar, selectToolbar, objectSelectedBox, objectHoverBox,
   selectedObjectMini, miniTag, miniText, selectEmptyHint,
   toggleBold, toggleItalic, toggleUnderline, toggleStrike,
   alignLeft, alignCenter, alignRight,
@@ -111,6 +111,12 @@ export function readSelectedObjectStyleState(el) {
   };
 }
 
+let afterSelectionUpdate = null;
+
+export function onAfterSelectionUpdate(fn) {
+  afterSelectionUpdate = typeof fn === 'function' ? fn : null;
+}
+
 function setToggleActive(button, active) {
   if (!button) return;
   button.classList.toggle('active', Boolean(active));
@@ -156,6 +162,13 @@ export function updateObjectEditorControls() {
     selectToolbar.hidden = state.toolMode !== TOOL_MODE_SELECT;
   }
 
+  const isImage = !!selected && selected.tagName && selected.tagName.toLowerCase() === 'img';
+  const isTextOnly = !isImage && capabilities.textEditable;
+  const textControls = document.getElementById('text-controls');
+  const imageControls = document.getElementById('image-controls');
+  if (textControls) textControls.hidden = isImage;
+  if (imageControls) imageControls.hidden = isTextOnly;
+
   if (selectedObjectMini && selectEmptyHint) {
     if (selected) {
       const tag = selected.tagName.toLowerCase();
@@ -195,6 +208,10 @@ export function updateObjectEditorControls() {
   setToggleActive(alignRight, capabilities.alignEditable && (snapshot?.textAlign === 'right' || snapshot?.textAlign === 'end'));
 
   syncInlineInputs(snapshot);
+
+  if (afterSelectionUpdate) {
+    try { afterSelectionUpdate(selected); } catch (err) { console.error('[select] afterSelectionUpdate failed:', err); }
+  }
 }
 
 export function renderObjectSelection() {
@@ -209,6 +226,15 @@ export function renderObjectSelection() {
   applyOverlayRect(objectHoverBox, hoveredRect);
 }
 
+export function setEditorHintForMode() {
+  const isDraw = state.toolMode === TOOL_MODE_DRAW;
+  setStatus(
+    isDraw
+      ? 'Drag on the slide to add red bboxes. Cmd/Ctrl+Enter to run.'
+      : 'Click an object to edit. \u2318B bold \u00b7 \u2318I italic \u00b7 \u2318U underline',
+  );
+}
+
 export function updateToolModeUI() {
   const isDraw = state.toolMode === TOOL_MODE_DRAW;
   slidePanel.classList.toggle('mode-draw', isDraw);
@@ -217,9 +243,7 @@ export function updateToolModeUI() {
   toolModeSelectBtn.classList.toggle('active', !isDraw);
   toolModeDrawBtn.setAttribute('aria-pressed', isDraw ? 'true' : 'false');
   toolModeSelectBtn.setAttribute('aria-pressed', !isDraw ? 'true' : 'false');
-  editorHint.textContent = isDraw
-    ? 'Drag on the slide to add red bboxes. Cmd/Ctrl+Enter to run.'
-    : 'Click an object to edit. \u2318B bold \u00b7 \u2318I italic \u00b7 \u2318U underline';
+  setEditorHintForMode();
   renderBboxes();
   renderObjectSelection();
   updateObjectEditorControls();
