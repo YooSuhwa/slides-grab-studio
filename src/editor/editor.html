@@ -6010,6 +6010,340 @@
         z-index: 10000;
         backdrop-filter: blur(8px);
       }
+
+      /* ── Unified Modal System ─────────────────────────────────
+         notes-modal을 기준으로 모든 모달(shortcuts, svg-export, pdf-export,
+         pptx-export, logo-settings, figma-confirm, delete-slide, retheme)을
+         같은 비주얼 언어로 통일. 마크업 변경 없이 스타일만 오버라이드. */
+
+      .shortcuts-overlay,
+      .svg-export-overlay,
+      .figma-confirm-overlay {
+        z-index: 10500;
+        padding: 24px;
+        background: rgba(8, 11, 20, 0.52);
+        backdrop-filter: blur(8px) saturate(120%);
+        -webkit-backdrop-filter: blur(8px) saturate(120%);
+        animation: notesModalFade 180ms ease-out;
+      }
+
+      .shortcuts-modal,
+      .svg-export-modal,
+      .figma-confirm-modal {
+        background: var(--surface-0);
+        border: 1px solid var(--border-medium);
+        border-radius: 16px;
+        box-shadow:
+          0 1px 2px rgba(0, 0, 0, 0.04),
+          0 8px 20px rgba(0, 0, 0, 0.08),
+          0 32px 80px rgba(15, 23, 42, 0.22);
+        padding: 22px 24px 20px;
+        animation: notesModalScale 240ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .shortcuts-modal h3,
+      .svg-export-modal h3,
+      .figma-confirm-modal h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-0);
+        letter-spacing: -0.01em;
+      }
+      .shortcuts-modal h3 {
+        margin: 0 0 14px;
+      }
+      .svg-export-modal h3,
+      .figma-confirm-modal h3 {
+        margin: 0;
+      }
+
+      /* Inputs & selects — 통일된 인풋 룩 */
+      .svg-export-field select,
+      .svg-export-field input[type="number"] {
+        height: 36px;
+        padding: 0 12px;
+        background: var(--surface-1);
+        color: var(--text-0);
+        border: 1px solid var(--border-input);
+        border-radius: 10px;
+        font-size: 13px;
+        font-family: inherit;
+        transition: border-color 150ms ease, background 150ms ease,
+          box-shadow 150ms ease;
+      }
+      .svg-export-field select:hover,
+      .svg-export-field input[type="number"]:hover {
+        border-color: var(--border-hover);
+      }
+      .svg-export-field select:focus,
+      .svg-export-field input[type="number"]:focus {
+        outline: none;
+        border-color: var(--accent);
+        background: var(--surface-0);
+        box-shadow: 0 0 0 3px rgba(252, 94, 32, 0.16);
+      }
+      .svg-export-field label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-1);
+        text-transform: none;
+        letter-spacing: 0;
+      }
+
+      /* Action row */
+      .svg-export-actions,
+      .figma-confirm-actions {
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      /* Unified button style — notes-modal-btn 기반 */
+      .svg-export-actions button,
+      .figma-confirm-actions button {
+        height: 36px;
+        padding: 0 14px;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: inherit;
+        border-radius: 10px;
+        border: 1px solid var(--border-input);
+        background: var(--surface-0);
+        color: var(--text-0);
+        cursor: pointer;
+        transition: background 150ms ease, border-color 150ms ease,
+          transform 80ms ease, box-shadow 150ms ease;
+      }
+      .svg-export-actions button:hover:not(:disabled),
+      .figma-confirm-actions button:hover:not(:disabled) {
+        background: var(--surface-hover);
+        border-color: var(--border-hover);
+      }
+      .svg-export-actions button:active:not(:disabled),
+      .figma-confirm-actions button:active:not(:disabled) {
+        transform: translateY(0.5px);
+      }
+      .svg-export-actions button:focus-visible,
+      .figma-confirm-actions button:focus-visible {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(252, 94, 32, 0.18);
+      }
+
+      /* Secondary/close buttons — 통일된 회색 톤 */
+      .svg-export-btn-cancel,
+      .figma-btn-cancel {
+        background: var(--surface-0);
+        color: var(--text-0);
+        border-color: var(--border-input);
+      }
+      .svg-export-btn-cancel:hover,
+      .figma-btn-cancel:hover {
+        background: var(--surface-hover);
+        border-color: var(--border-hover);
+        color: var(--text-0);
+      }
+
+      /* Primary action — accent gradient & shadow */
+      .svg-export-btn-start,
+      .figma-btn-current {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+        box-shadow:
+          0 1px 2px rgba(252, 94, 32, 0.25),
+          inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      }
+      .svg-export-btn-start:hover:not(:disabled),
+      .figma-btn-current:hover:not(:disabled) {
+        background: var(--accent-2);
+        border-color: var(--accent-2);
+      }
+      .svg-export-btn-start:disabled,
+      .figma-btn-current:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      /* Distinct purple for "All slides" action */
+      .figma-btn-all {
+        background: #7c3aed;
+        color: #fff;
+        border-color: #7c3aed;
+        box-shadow:
+          0 1px 2px rgba(124, 58, 237, 0.28),
+          inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      }
+      .figma-btn-all:hover:not(:disabled) {
+        background: #8b5cf6;
+        border-color: #8b5cf6;
+      }
+      .figma-btn-all:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      /* 통일된 버튼 톤 (shortcuts/delete/retheme 모달에서 공용) */
+      .shortcuts-close {
+        height: 36px;
+        padding: 0 14px;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: inherit;
+        border-radius: 10px;
+        border: 1px solid var(--border-input);
+        background: var(--surface-0);
+        color: var(--text-0);
+        cursor: pointer;
+        transition: background 150ms ease, border-color 150ms ease,
+          transform 80ms ease, box-shadow 150ms ease;
+      }
+      .shortcuts-close:hover:not(:disabled) {
+        background: var(--surface-hover);
+        border-color: var(--border-hover);
+      }
+      .shortcuts-close:active:not(:disabled) {
+        transform: translateY(0.5px);
+      }
+      .shortcuts-close:focus-visible {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(252, 94, 32, 0.18);
+      }
+      .shortcuts-close.is-primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        box-shadow:
+          0 1px 2px rgba(252, 94, 32, 0.25),
+          inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      }
+      .shortcuts-close.is-primary:hover:not(:disabled) {
+        background: var(--accent-2);
+        border-color: var(--accent-2);
+      }
+      .shortcuts-close.is-danger {
+        background: #dc2626;
+        border-color: #dc2626;
+        color: #fff;
+        box-shadow:
+          0 1px 2px rgba(220, 38, 38, 0.25),
+          inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      }
+      .shortcuts-close.is-danger:hover:not(:disabled) {
+        background: #ef4444;
+        border-color: #ef4444;
+      }
+      .shortcuts-close.is-danger:focus-visible {
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.22);
+      }
+
+      /* 단축키 모달의 최하단 Close 버튼은 full-width */
+      #shortcuts-close {
+        display: block;
+        width: 100%;
+        margin-top: 18px;
+      }
+
+      /* app-modal-* 유틸 (retheme 등 inline-styled 모달을 위한 통일 필드) */
+      .app-modal-lead {
+        font-size: 13px;
+        color: var(--text-1);
+        line-height: 1.5;
+        margin: 0 0 16px;
+      }
+      .app-modal-field {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        margin-bottom: 14px;
+      }
+      .app-modal-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-1);
+      }
+      .app-modal-input {
+        width: 100%;
+        box-sizing: border-box;
+        height: 36px;
+        padding: 0 12px;
+        background: var(--surface-1);
+        color: var(--text-0);
+        border: 1px solid var(--border-input);
+        border-radius: 10px;
+        font-size: 13px;
+        font-family: inherit;
+        transition: border-color 150ms ease, background 150ms ease,
+          box-shadow 150ms ease;
+      }
+      select.app-modal-input {
+        appearance: none;
+        -webkit-appearance: none;
+        padding-right: 34px;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 12px 12px;
+        cursor: pointer;
+      }
+      .app-modal-input:hover {
+        border-color: var(--border-hover);
+      }
+      .app-modal-input:focus {
+        outline: none;
+        border-color: var(--accent);
+        background: var(--surface-0);
+        box-shadow: 0 0 0 3px rgba(252, 94, 32, 0.16);
+      }
+      .app-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      /* Progress bars — 통일된 라운드/색상 */
+      .svg-export-progress-bar,
+      .figma-progress-bar {
+        height: 4px;
+        background: var(--surface-2);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .svg-export-progress-fill,
+      .figma-progress-fill {
+        background: linear-gradient(
+          90deg,
+          var(--accent) 0%,
+          var(--accent-2) 100%
+        );
+        border-radius: inherit;
+      }
+      .svg-export-progress-text,
+      .figma-progress-text {
+        font-size: 12px;
+        color: var(--text-2);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Shortcut row — 부드러운 divider */
+      .shortcut-row {
+        padding: 7px 0;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .shortcut-desc {
+        font-size: 13px;
+        color: var(--text-1);
+      }
+      .shortcut-key {
+        background: var(--surface-1);
+        border: 1px solid var(--border-medium);
+        border-radius: 6px;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-family: var(--mono);
+        color: var(--text-0);
+      }
     </style>
     <script>
       (function () {
@@ -7728,7 +8062,7 @@
         </div>
         <div class="figma-confirm-actions" id="figma-confirm-actions">
           <button class="figma-btn-cancel" id="figma-cancel" type="button">
-            Cancel
+            Close
           </button>
           <button
             class="figma-btn-current"
@@ -7814,7 +8148,7 @@
         <div class="notes-modal-footer">
           <div class="notes-modal-spacer"></div>
           <button type="button" class="notes-modal-btn" id="image-prompt-cancel">
-            취소
+            닫기
           </button>
           <button
             type="button"
@@ -7840,13 +8174,12 @@
           <strong id="delete-slide-name"></strong>?
         </p>
         <div style="display: flex; gap: 8px; justify-content: flex-end">
-          <button class="nav-bar-btn ghost" id="delete-slide-cancel">
-            Cancel
+          <button class="shortcuts-close" id="delete-slide-cancel">
+            Close
           </button>
           <button
-            class="nav-bar-btn"
+            class="shortcuts-close is-danger"
             id="delete-slide-confirm"
-            style="background: #e53e3e; color: #fff; border: none"
           >
             Delete
           </button>
@@ -8012,71 +8345,28 @@
         style="max-width: 420px"
       >
         <h3>Retheme Deck</h3>
-        <p style="font-size: 13px; color: var(--text-1); margin-bottom: 16px">
-          다른 팩으로 전체 덱을 리디자인합니다.
-        </p>
-        <div style="margin-bottom: 16px">
-          <label
-            for="retheme-pack-select"
-            style="
-              display: block;
-              font-size: 12px;
-              color: var(--text-2);
-              margin-bottom: 6px;
-            "
+        <p class="app-modal-lead">다른 팩으로 전체 덱을 리디자인합니다.</p>
+        <div class="app-modal-field">
+          <label class="app-modal-label" for="retheme-pack-select"
             >Target Pack</label
           >
-          <select
-            id="retheme-pack-select"
-            style="
-              width: 100%;
-              padding: 8px 12px;
-              background: var(--panel);
-              border: 1px solid var(--border);
-              border-radius: var(--radius);
-              color: var(--text-0);
-              font-size: 13px;
-            "
-          ></select>
+          <select id="retheme-pack-select" class="app-modal-input"></select>
         </div>
-        <div style="margin-bottom: 16px">
-          <label
-            for="retheme-save-as"
-            style="
-              display: block;
-              font-size: 12px;
-              color: var(--text-2);
-              margin-bottom: 6px;
-            "
+        <div class="app-modal-field">
+          <label class="app-modal-label" for="retheme-save-as"
             >Save as (비워두면 자동 생성)</label
           >
           <input
             type="text"
             id="retheme-save-as"
+            class="app-modal-input"
             placeholder=""
-            style="
-              width: 100%;
-              padding: 8px 12px;
-              background: var(--panel);
-              border: 1px solid var(--border);
-              border-radius: var(--radius);
-              color: var(--text-0);
-              font-size: 13px;
-            "
             autocomplete="off"
           />
         </div>
-        <div style="display: flex; gap: 8px; justify-content: flex-end">
-          <button class="shortcuts-close" id="retheme-cancel">Cancel</button>
-          <button
-            class="shortcuts-close"
-            id="retheme-confirm"
-            style="
-              background: var(--accent);
-              color: #fff;
-              border-color: var(--accent);
-            "
-          >
+        <div class="app-modal-actions">
+          <button class="shortcuts-close" id="retheme-cancel">Close</button>
+          <button class="shortcuts-close is-primary" id="retheme-confirm">
             Retheme
           </button>
         </div>
@@ -8105,15 +8395,8 @@
           <div style="display: flex; gap: 8px">
             <select
               id="retheme-backup-select"
-              style="
-                flex: 1;
-                padding: 8px 12px;
-                background: var(--panel);
-                border: 1px solid var(--border);
-                border-radius: var(--radius);
-                color: var(--text-0);
-                font-size: 13px;
-              "
+              class="app-modal-input"
+              style="flex: 1"
             ></select>
             <button
               class="shortcuts-close"
@@ -8323,7 +8606,7 @@
             class="notes-modal-btn"
             id="btn-notes-modal-cancel"
           >
-            취소
+            닫기
           </button>
           <span class="notes-modal-spacer"></span>
           <button
