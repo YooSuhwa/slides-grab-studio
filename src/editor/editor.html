@@ -170,13 +170,42 @@
         border-color: var(--border-strong);
       }
 
+      .slide-nav-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        padding: 0 2px;
+        margin: 0 2px;
+      }
+      .slide-nav-group .nav-bar-btn.ghost {
+        background: transparent;
+        height: 26px;
+        width: 26px;
+        padding: 0;
+        border: none;
+        border-radius: 6px;
+        color: var(--text-2);
+      }
+      .slide-nav-group .nav-bar-btn.ghost:hover {
+        background: var(--surface-hover);
+        color: var(--text-0);
+      }
+      .slide-nav-group .nav-bar-btn.ghost:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(252, 94, 32, 0.35);
+      }
       .slide-counter {
-        color: var(--text-1);
-        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 48px;
+        padding: 0 8px;
+        color: var(--text-0);
+        font-size: 12.5px;
         font-weight: 600;
-        min-width: 84px;
-        text-align: center;
-        font-family: var(--mono);
+        font-family: var(--sans);
+        letter-spacing: 0.01em;
+        font-variant-numeric: tabular-nums;
       }
 
       .nav-spacer {
@@ -1453,13 +1482,78 @@
 
       /* ── Editor sidebar ── */
       .editor-sidebar {
-        width: 336px;
-        min-width: 336px;
+        width: 296px;
+        min-width: 296px;
         border-left: 1px solid var(--border-medium);
         background: var(--surface-1);
         display: flex;
         flex-direction: column;
         min-height: 0;
+      }
+
+      .editor-sidebar-header {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
+        padding: 8px 10px 4px;
+        flex-shrink: 0;
+        user-select: none;
+      }
+      .editor-sidebar-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-2);
+        white-space: nowrap;
+        overflow: hidden;
+      }
+      .editor-sidebar-title::before {
+        content: '';
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--text-2);
+        opacity: 0.45;
+        flex-shrink: 0;
+      }
+      .editor-sidebar-spacer {
+        flex: 1;
+      }
+      .editor-sidebar-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        flex-shrink: 0;
+        background: transparent;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        color: var(--text-2);
+        transition:
+          background 150ms ease,
+          color 150ms ease;
+      }
+      .editor-sidebar-toggle:hover {
+        background: var(--surface-hover);
+        color: var(--text-0);
+      }
+      .editor-sidebar-toggle:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(252, 94, 32, 0.18);
+      }
+      .editor-sidebar-toggle svg {
+        transition: transform 200ms ease;
+      }
+      .editor-sidebar.collapsed .editor-sidebar-toggle svg {
+        transform: rotate(180deg);
       }
 
       .sidebar-mode-tabs {
@@ -1542,6 +1636,47 @@
         height: 1px;
         background: var(--border-subtle);
         margin: 2px 0;
+      }
+
+      .sidebar-section-break {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 12px 6px;
+      }
+
+      .sidebar-section-break::before,
+      .sidebar-section-break::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border-subtle);
+      }
+
+      .sidebar-section-break-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-2);
+      }
+
+      .sidebar-section-break-label .tool-icon {
+        width: 12px;
+        height: 12px;
+        opacity: 0.75;
+      }
+
+      .editor-sidebar .tool-icon-btn.danger {
+        color: #ef4444;
+      }
+
+      .editor-sidebar .tool-icon-btn.danger:hover {
+        background: rgba(239, 68, 68, 0.12);
+        border-color: rgba(239, 68, 68, 0.55);
       }
 
       .sidebar-textarea {
@@ -1728,6 +1863,66 @@
         flex-wrap: wrap;
       }
 
+      .sidebar-action-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .editor-sidebar .sidebar-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        height: 34px;
+        padding: 0 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border-btn);
+        background: var(--surface-3);
+        color: var(--text-1);
+        font-family: var(--sans);
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        text-align: left;
+        transition:
+          background 150ms ease,
+          border-color 150ms ease,
+          color 150ms ease,
+          opacity 150ms ease;
+      }
+      .editor-sidebar .sidebar-action-btn:hover:not(:disabled) {
+        background: var(--surface-btn);
+        border-color: var(--border-hover);
+        color: var(--text-0);
+      }
+      .editor-sidebar .sidebar-action-btn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(252, 94, 32, 0.18);
+      }
+      .editor-sidebar .sidebar-action-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .editor-sidebar .sidebar-action-btn.danger {
+        color: #ef4444;
+      }
+      .editor-sidebar .sidebar-action-btn.danger:hover:not(:disabled) {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.45);
+        color: #f87171;
+      }
+      .sidebar-action-btn .tool-icon {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
+      .sidebar-action-label {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
       .editor-sidebar .tool-icon-btn {
         min-width: 36px;
         height: 36px;
@@ -1791,16 +1986,17 @@
           0 0 0 4px rgba(252, 94, 32, 0.25);
       }
 
-      /* ── Slide Sidebar ── */
+      /* ── Slide Sidebar (unified with notes-dock + editor-sidebar) ── */
       .slide-sidebar {
-        width: 180px;
+        width: 184px;
         flex-shrink: 0;
         display: flex;
         flex-direction: column;
-        background: var(--surface-0);
+        background: var(--surface-1);
         border-right: 1px solid var(--border-medium);
         transition: width 200ms ease-out;
         overflow: hidden;
+        min-width: 0;
       }
       .slide-sidebar.collapsed {
         width: 40px;
@@ -1808,51 +2004,88 @@
       .slide-sidebar.collapsed .slide-strip {
         display: none;
       }
-      .slide-sidebar.collapsed .slide-sidebar-title {
+      .slide-sidebar.collapsed .slide-sidebar-title,
+      .slide-sidebar.collapsed .slide-sidebar-count {
         display: none;
       }
       .slide-sidebar.collapsed .slide-sidebar-header {
         justify-content: center;
+        padding: 10px 8px;
       }
       .slide-sidebar-header {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        padding: 8px 10px;
-        border-bottom: 1px solid var(--border-medium);
+        gap: 8px;
+        padding: 10px 14px 8px;
+        height: 40px;
         flex-shrink: 0;
+        user-select: none;
       }
       .slide-sidebar-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         font-size: 11px;
         font-weight: 600;
-        color: var(--text-2);
+        letter-spacing: 0.06em;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
+        color: var(--text-2);
         white-space: nowrap;
         overflow: hidden;
       }
-      .slide-sidebar-toggle {
-        width: 24px;
-        height: 24px;
+      .slide-sidebar-title::before {
+        content: '';
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--text-2);
+        opacity: 0.45;
         flex-shrink: 0;
-        display: flex;
+      }
+      .slide-sidebar-count {
+        display: inline-flex;
+        align-items: center;
+        padding: 1px 6px;
+        border-radius: 3px;
+        background: var(--surface-3);
+        color: var(--text-1);
+        font-size: 10px;
+        font-weight: 700;
+        font-family: var(--mono);
+        letter-spacing: 0.04em;
+      }
+      .slide-sidebar-spacer {
+        flex: 1;
+      }
+      .slide-sidebar-toggle {
+        display: inline-flex;
         align-items: center;
         justify-content: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        flex-shrink: 0;
+        background: transparent;
         border: none;
-        background: none;
-        color: var(--text-2);
+        border-radius: 6px;
         cursor: pointer;
-        border-radius: var(--radius-xs);
+        color: var(--text-2);
         transition:
-          background var(--transition),
-          color var(--transition),
-          transform 200ms ease-out;
+          background 150ms ease,
+          color 150ms ease;
       }
       .slide-sidebar-toggle:hover {
         background: var(--surface-hover);
         color: var(--text-0);
       }
-      .slide-sidebar.collapsed .slide-sidebar-toggle {
+      .slide-sidebar-toggle:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(252, 94, 32, 0.18);
+      }
+      .slide-sidebar-toggle svg {
+        transition: transform 200ms ease;
+      }
+      .slide-sidebar.collapsed .slide-sidebar-toggle svg {
         transform: rotate(180deg);
       }
 
@@ -1862,36 +2095,41 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 8px 10px;
-        gap: 8px;
+        padding: 4px 14px 14px;
+        gap: 10px;
         overflow-y: auto;
         overflow-x: hidden;
         scrollbar-width: thin;
-        scrollbar-color: var(--border) transparent;
+        scrollbar-gutter: stable;
+        scrollbar-color: var(--border-medium) transparent;
       }
 
       .slide-strip::-webkit-scrollbar {
-        width: 3px;
+        width: 6px;
       }
       .slide-strip::-webkit-scrollbar-track {
         background: transparent;
       }
       .slide-strip::-webkit-scrollbar-thumb {
-        background: var(--border);
-        border-radius: 2px;
+        background: var(--border-medium);
+        border-radius: 3px;
+      }
+      .slide-strip::-webkit-scrollbar-thumb:hover {
+        background: var(--border-hover);
       }
 
       .slide-thumb {
         flex: 0 0 auto;
-        width: 160px;
-        height: 90px;
-        border-radius: var(--radius-xs);
-        border: 1.5px solid var(--border);
-        background: var(--panel-2);
+        width: 150px;
+        height: 84px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-subtle);
+        background: var(--surface-1);
         cursor: pointer;
         transition:
-          border-color var(--transition),
-          box-shadow var(--transition),
+          border-color 150ms ease,
+          box-shadow 150ms ease,
+          background 150ms ease,
           opacity 0.15s;
         display: flex;
         align-items: center;
@@ -1902,32 +2140,35 @@
 
       .slide-thumb:hover {
         border-color: var(--border-hover);
-        background: var(--panel);
+        background: var(--surface-hover);
       }
 
       .slide-thumb.active {
         border-color: var(--accent);
-        box-shadow: 0 0 0 2px rgba(252, 94, 32, 0.25);
+        box-shadow: 0 0 0 3px rgba(252, 94, 32, 0.18);
       }
 
       .slide-thumb-num {
         position: absolute;
-        top: 4px;
+        top: 5px;
         left: 6px;
         font-size: 10px;
         font-weight: 700;
         font-family: var(--mono);
-        background: rgba(0, 0, 0, 0.6);
-        color: #fff;
-        padding: 1px 4px;
-        border-radius: 2px;
+        letter-spacing: 0.04em;
+        background: var(--surface-3);
+        color: var(--text-1);
+        padding: 1px 6px;
+        border-radius: 3px;
         pointer-events: none;
         z-index: 1;
+        border: 1px solid var(--border-medium);
       }
 
       .slide-thumb.active .slide-thumb-num {
         background: var(--accent);
         color: #fff;
+        border-color: var(--accent);
       }
 
       .slide-thumb-preview {
@@ -1936,7 +2177,7 @@
         left: 0;
         width: 960px;
         height: 540px;
-        transform: scale(0.16667);
+        transform: scale(0.15625);
         transform-origin: top left;
         pointer-events: none;
         border: none;
@@ -2190,58 +2431,57 @@
       }
 
       /* ── Sidebar collapse ── */
-      .sidebar-toggle {
-        position: absolute;
-        top: 50%;
-        left: -14px;
-        transform: translateY(-50%);
-        width: 14px;
-        height: 48px;
-        background: var(--surface-1);
-        border: 1px solid var(--border-medium);
-        border-right: none;
-        border-radius: var(--radius-xs) 0 0 var(--radius-xs);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--text-2);
-        font-size: 10px;
-        z-index: 50;
-        transition: all var(--transition);
-      }
-
-      .sidebar-toggle:hover {
-        background: var(--surface-btn);
-        color: var(--text-0);
-      }
-
       .editor-sidebar {
         position: relative;
         transition:
-          width var(--transition),
-          min-width var(--transition),
-          opacity var(--transition);
-      }
-
-      .editor-sidebar.collapsed {
-        width: 0;
-        min-width: 0;
-        overflow: visible;
-        border-left: none;
-      }
-
-      .editor-sidebar.collapsed > *:not(.sidebar-toggle) {
-        opacity: 0;
-        pointer-events: none;
-        height: 0;
+          width 200ms ease-out,
+          min-width 200ms ease-out;
         overflow: hidden;
       }
 
-      .editor-sidebar.collapsed .sidebar-toggle {
-        left: -22px;
-        width: 22px;
-        height: 56px;
+      .editor-sidebar.collapsed {
+        width: 52px;
+        min-width: 52px;
+      }
+
+      .editor-sidebar.collapsed .sidebar-mode-tabs,
+      .editor-sidebar.collapsed .sidebar-body {
+        display: none;
+      }
+
+      .editor-sidebar.collapsed .editor-sidebar-title {
+        display: none;
+      }
+
+      .editor-sidebar.collapsed .editor-sidebar-header {
+        justify-content: center;
+        padding: 10px 8px;
+      }
+
+      /* Insert tray stays visible when collapsed — tidy it for the narrow column */
+      .editor-sidebar.collapsed .sidebar-section-break {
+        padding: 10px 4px 4px;
+      }
+      .editor-sidebar.collapsed .sidebar-section-break::before,
+      .editor-sidebar.collapsed .sidebar-section-break::after {
+        display: none;
+      }
+      .editor-sidebar.collapsed .sidebar-section-break-label {
+        font-size: 0;
+        gap: 0;
+      }
+      .editor-sidebar.collapsed .sidebar-section-break-label .tool-icon {
+        width: 14px;
+        height: 14px;
+        opacity: 0.6;
+      }
+      .editor-sidebar.collapsed .sidebar-icon-grid {
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+      .editor-sidebar.collapsed [aria-label="Insert image tools"] {
+        padding: 0;
       }
 
       /* ── Outline card type border colors ── */
@@ -2315,16 +2555,44 @@
 
       @media (max-width: 1024px) {
         .editor-sidebar {
-          width: 0;
-          min-width: 0;
+          width: 52px;
+          min-width: 52px;
           overflow: hidden;
-          border-left: none;
-          opacity: 0;
-          pointer-events: none;
         }
-        .editor-sidebar .sidebar-toggle {
-          opacity: 1;
-          pointer-events: auto;
+        .editor-sidebar .sidebar-mode-tabs,
+        .editor-sidebar .sidebar-body {
+          display: none;
+        }
+        .editor-sidebar .editor-sidebar-title {
+          display: none;
+        }
+        .editor-sidebar .editor-sidebar-header {
+          justify-content: center;
+          padding: 10px 8px;
+        }
+        .editor-sidebar .sidebar-section-break {
+          padding: 10px 4px 4px;
+        }
+        .editor-sidebar .sidebar-section-break::before,
+        .editor-sidebar .sidebar-section-break::after {
+          display: none;
+        }
+        .editor-sidebar .sidebar-section-break-label {
+          font-size: 0;
+          gap: 0;
+        }
+        .editor-sidebar .sidebar-section-break-label .tool-icon {
+          width: 14px;
+          height: 14px;
+          opacity: 0.6;
+        }
+        .editor-sidebar .sidebar-icon-grid {
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+        }
+        .editor-sidebar [aria-label="Insert image tools"] {
+          padding: 0;
         }
         .slide-sidebar {
           width: 0 !important;
@@ -5591,6 +5859,100 @@
         cursor: not-allowed;
       }
 
+      /* ── Loading state: status box (spinner + elapsed + progress bar) ── */
+      .notes-modal-status.is-loading {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: var(--surface-1);
+        border-color: var(--border-medium);
+        color: var(--text-0);
+      }
+      .notes-modal-status-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .notes-modal-status-text {
+        flex: 1;
+        min-width: 0;
+        font-size: 12px;
+        color: var(--text-0);
+        font-weight: 500;
+      }
+      .notes-modal-status-elapsed {
+        flex: 0 0 auto;
+        font-size: 11px;
+        color: var(--text-2);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.02em;
+      }
+      .notes-modal-spinner {
+        flex: 0 0 auto;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid var(--border-medium);
+        border-top-color: var(--accent);
+        animation: notesModalSpin 0.8s linear infinite;
+      }
+      .notes-modal-progress {
+        position: relative;
+        height: 4px;
+        background: var(--surface-2);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .notes-modal-progress-bar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 40%;
+        background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+        border-radius: inherit;
+        animation: notesModalProgress 1.4s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+      }
+      @keyframes notesModalSpin {
+        to { transform: rotate(360deg); }
+      }
+      @keyframes notesModalProgress {
+        0%   { left: -40%; width: 40%; }
+        50%  { left: 30%;  width: 55%; }
+        100% { left: 100%; width: 40%; }
+      }
+
+      /* ── Loading state: primary submit button ── */
+      .notes-modal-btn.is-loading {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .notes-modal-btn.is-loading:disabled {
+        opacity: 0.92;
+        cursor: progress;
+      }
+      .notes-modal-btn-spinner {
+        flex: 0 0 auto;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-top-color: #fff;
+        animation: notesModalSpin 0.7s linear infinite;
+      }
+      .notes-modal-btn:not(.is-primary) .notes-modal-btn-spinner {
+        border-color: var(--border-medium);
+        border-top-color: var(--accent);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .notes-modal-spinner,
+        .notes-modal-btn-spinner { animation-duration: 1.6s; }
+        .notes-modal-progress-bar { animation-duration: 2.4s; }
+      }
+
       /* ── Presentation Mode Overlay ── */
       .present-overlay[hidden] {
         display: none;
@@ -5684,53 +6046,55 @@
           style="display: none"
         ></span>
         <div class="nav-controls">
-          <button
-            id="btn-prev"
-            class="nav-bar-btn ghost nav-icon-btn"
-            title="Previous slide (↑)"
-            aria-label="Previous slide"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+          <div class="slide-nav-group" role="group" aria-label="Slide navigation">
+            <button
+              id="btn-prev"
+              class="nav-bar-btn ghost nav-icon-btn"
+              title="Previous slide (↑)"
+              aria-label="Previous slide"
             >
-              <path d="M18 15l-6-6-6 6" />
-            </svg>
-          </button>
-          <span class="slide-counter" id="slide-counter" aria-live="polite"
-            >-- / --</span
-          >
-          <button
-            id="btn-next"
-            class="nav-bar-btn ghost nav-icon-btn"
-            title="Next slide (↓)"
-            aria-label="Next slide"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <span class="slide-counter" id="slide-counter" aria-live="polite"
+              >-- / --</span
             >
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-          </button>
+            <button
+              id="btn-next"
+              class="nav-bar-btn ghost nav-icon-btn"
+              title="Next slide (↓)"
+              aria-label="Next slide"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
           <span
             style="
               width: 1px;
               height: 18px;
               background: var(--border-color, #444);
-              margin: 0 4px;
+              margin: 0 6px;
               opacity: 0.4;
             "
           ></span>
@@ -6021,6 +6385,8 @@
         <div class="slide-sidebar" id="slide-sidebar">
           <div class="slide-sidebar-header">
             <span class="slide-sidebar-title">Slides</span>
+            <span class="slide-sidebar-count" id="slide-sidebar-count" aria-hidden="true">0</span>
+            <span class="slide-sidebar-spacer"></span>
             <button
               class="slide-sidebar-toggle"
               id="slide-sidebar-toggle"
@@ -6501,14 +6867,28 @@
           id="editor-sidebar"
           aria-label="Editor sidebar"
         >
-          <button
-            class="sidebar-toggle"
-            id="sidebar-toggle"
-            aria-label="Toggle sidebar"
-            title="Toggle sidebar"
-          >
-            &#9656;
-          </button>
+          <div class="editor-sidebar-header">
+            <button
+              class="editor-sidebar-toggle"
+              id="sidebar-toggle"
+              aria-label="Toggle sidebar"
+              title="Toggle sidebar"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
           <div class="sidebar-mode-tabs">
             <button
               type="button"
@@ -6610,7 +6990,17 @@
                   >Click an object on the slide</span
                 >
               </div>
-              <div class="sidebar-divider"></div>
+              <div id="text-controls">
+                <div class="sidebar-section-break">
+                  <span class="sidebar-section-break-label">
+                    <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 7V4h16v3" />
+                      <path d="M9 20h6" />
+                      <path d="M12 4v16" />
+                    </svg>
+                    Text
+                  </span>
+                </div>
               <div class="sidebar-section">
                 <span class="sidebar-label">Text</span>
                 <div class="sidebar-field-row">
@@ -6802,73 +7192,167 @@
                   </button>
                 </div>
               </div>
-              <div id="image-controls" hidden>
-                <div class="sidebar-divider"></div>
+              </div>
+              <div id="image-controls">
+                <div class="sidebar-section-break">
+                  <span class="sidebar-section-break-label">
+                    <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <circle cx="9" cy="9" r="2" />
+                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                    </svg>
+                    Image
+                  </span>
+                </div>
                 <div class="sidebar-section">
-                  <span class="sidebar-label">Image</span>
-                  <div class="sidebar-field-row" style="gap: 6px; display: flex;">
+                  <div
+                    class="sidebar-action-list"
+                    role="toolbar"
+                    aria-label="Image actions"
+                  >
                     <button
                       type="button"
-                      class="sidebar-btn-sm"
+                      class="sidebar-action-btn"
                       id="img-replace-btn"
                       title="Replace with an uploaded file"
-                    >Replace</button>
+                    >
+                      <svg
+                        class="tool-icon"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path d="m16 3 4 4-4 4" />
+                        <path d="M20 7H4" />
+                        <path d="m8 21-4-4 4-4" />
+                        <path d="M4 17h16" />
+                      </svg>
+                      <span class="sidebar-action-label">파일로 교체</span>
+                    </button>
                     <button
                       type="button"
-                      class="sidebar-btn-sm"
+                      class="sidebar-action-btn"
                       id="img-regenerate-btn"
                       title="Regenerate with AI (edit prompt)"
-                    >AI Regen</button>
-                  </div>
-                  <div class="sidebar-field-row" style="gap: 6px; display: flex; margin-top: 6px;">
+                    >
+                      <svg
+                        class="tool-icon"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.13-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.13a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.13 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.13a.5.5 0 0 1-.96 0Z"
+                        />
+                        <path d="M20 3v4" />
+                        <path d="M22 5h-4" />
+                        <path d="M4 17v2" />
+                        <path d="M5 18H3" />
+                      </svg>
+                      <span class="sidebar-action-label">AI로 다시 생성</span>
+                    </button>
                     <button
                       type="button"
-                      class="sidebar-btn-sm"
+                      class="sidebar-action-btn danger"
                       id="img-delete-btn"
-                      style="color: #ef4444"
-                    >Delete</button>
+                      title="Delete image"
+                    >
+                      <svg
+                        class="tool-icon"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path d="M3 6h18" />
+                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        <path
+                          d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+                        />
+                        <line x1="10" y1="11" x2="10" y2="17" />
+                        <line x1="14" y1="11" x2="14" y2="17" />
+                      </svg>
+                      <span class="sidebar-action-label">삭제</span>
+                    </button>
                   </div>
-                  <span class="sidebar-hint" style="font-size: 11px; color: var(--text-2); display: block; margin-top: 6px;">
-                    Drag corners to resize (Shift = free). Drag body to move.
-                  </span>
-                  <input id="img-replace-input" type="file" accept="image/*" hidden />
+                  <input
+                    id="img-replace-input"
+                    type="file"
+                    accept="image/*"
+                    hidden
+                  />
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="sidebar-hint" id="editor-hint">
-            Drag on the slide to add red bboxes. Enter to run.
+          <!-- Insert / Logo tray -->
+          <div class="sidebar-section-break">
+            <span class="sidebar-section-break-label">
+              <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 5v14" />
+                <path d="M5 12h14" />
+              </svg>
+              Insert
+            </span>
           </div>
-
-          <!-- Insert Image & Logo Settings -->
-          <div class="sidebar-divider"></div>
-          <div class="sidebar-section" style="padding: 4px 12px; display: flex; gap: 6px; flex-direction: column;">
-            <div style="display: flex; gap: 6px;">
+          <div class="sidebar-section" style="padding: 4px 12px;">
+            <div
+              class="sidebar-icon-grid"
+              role="toolbar"
+              aria-label="Insert image tools"
+            >
               <button
-                class="sidebar-btn"
+                class="tool-icon-btn tight"
                 id="btn-insert-image"
                 type="button"
-                style="flex: 1; font-size: 12px"
                 title="Upload an image file"
-              >Upload Image</button>
+                aria-label="Upload an image"
+              >
+                <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M16 5h6" />
+                  <path d="M19 2v6" />
+                  <path
+                    d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5"
+                  />
+                  <circle cx="9" cy="9" r="2" />
+                  <path
+                    d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"
+                  />
+                </svg>
+              </button>
               <button
-                class="sidebar-btn"
+                class="tool-icon-btn tight"
                 id="btn-insert-ai-image"
                 type="button"
-                style="flex: 1; font-size: 12px"
                 title="Generate an image with AI"
-              >AI Image</button>
+                aria-label="Generate image with AI"
+              >
+                <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.13-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.13a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.13 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.13a.5.5 0 0 1-.96 0Z"
+                  />
+                  <path d="M20 3v4" />
+                  <path d="M22 5h-4" />
+                  <path d="M4 17v2" />
+                  <path d="M5 18H3" />
+                </svg>
+              </button>
+              <button
+                class="tool-icon-btn tight"
+                id="btn-logo-settings"
+                type="button"
+                title="Logo settings"
+                aria-label="Logo settings"
+              >
+                <svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 22h14" />
+                  <path
+                    d="M19.27 13.73A2.5 2.5 0 0 0 17.5 13h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5c0-.66-.26-1.3-.73-1.77Z"
+                  />
+                  <path
+                    d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-3-3c-1.66 0-3 1-3 3s1 2 1 3.5V13"
+                  />
+                </svg>
+              </button>
             </div>
             <input id="img-insert-input" type="file" accept="image/*" hidden />
-            <button
-              class="sidebar-btn"
-              id="btn-logo-settings"
-              type="button"
-              style="width: 100%; font-size: 12px"
-            >
-              Logo Settings
-            </button>
           </div>
 
         </aside>
@@ -7261,53 +7745,84 @@
     </div>
     <div class="figma-toast" id="figma-toast"></div>
 
-    <div class="shortcuts-overlay" id="image-prompt-modal" hidden>
-      <div
-        class="shortcuts-modal"
-        role="dialog"
-        aria-label="Image prompt"
-        style="max-width: 520px"
-      >
-        <h3 id="image-prompt-title">Generate image</h3>
-        <p
-          style="
-            margin: 8px 0 12px;
-            opacity: 0.8;
-            font-size: 12px;
-          "
-        >
-          Describe the image you want. Uses Nano Banana Pro (requires GOOGLE_API_KEY
-          or OPENROUTER_API_KEY).
-        </p>
-        <textarea
-          id="image-prompt-input"
-          rows="5"
-          style="
-            width: 100%;
-            padding: 8px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            background: var(--surface-1);
-            color: var(--text-1);
-            font: inherit;
-            resize: vertical;
-          "
-          placeholder="A watercolor illustration of a succulent in a ceramic pot, soft lighting..."
-        ></textarea>
-        <div
-          id="image-prompt-status"
-          style="
-            margin: 8px 0 0;
-            min-height: 16px;
-            font-size: 12px;
-            color: var(--text-2);
-          "
-        ></div>
-        <div
-          style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px"
-        >
-          <button class="nav-bar-btn ghost" id="image-prompt-cancel">Cancel</button>
-          <button class="nav-bar-btn" id="image-prompt-submit">Generate</button>
+    <!-- AI 이미지 생성 모달 (notes-modal 스타일 시스템 재사용 — 공용 AI 모달) -->
+    <div
+      class="notes-modal-overlay"
+      id="image-prompt-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="image-prompt-title"
+      hidden
+    >
+      <div class="notes-modal" role="document">
+        <div class="notes-modal-header">
+          <span class="notes-modal-badge" aria-hidden="true">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="9" cy="9" r="2" />
+              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+            </svg>
+          </span>
+          <div class="notes-modal-header-text">
+            <h3 id="image-prompt-title">AI로 이미지 생성하기</h3>
+            <p id="image-prompt-subtitle">
+              원하는 이미지를 자연어로 설명하면 Nano Banana Pro가 슬라이드에 어울리는 이미지를 만들어 줍니다.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="notes-modal-close"
+            id="image-prompt-close"
+            aria-label="닫기"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="notes-modal-body">
+          <div class="notes-modal-field">
+            <label class="notes-modal-label" for="image-prompt-input">프롬프트</label>
+            <textarea
+              id="image-prompt-input"
+              class="notes-modal-input notes-modal-textarea"
+              rows="5"
+              placeholder="예: 따뜻한 조명의 도자기 화분에 담긴 다육식물 수채화 일러스트…"
+            ></textarea>
+          </div>
+          <div class="notes-modal-status" id="image-prompt-status" hidden></div>
+        </div>
+        <div class="notes-modal-footer">
+          <div class="notes-modal-spacer"></div>
+          <button type="button" class="notes-modal-btn" id="image-prompt-cancel">
+            취소
+          </button>
+          <button
+            type="button"
+            class="notes-modal-btn is-primary"
+            id="image-prompt-submit"
+          >
+            이미지 생성
+          </button>
         </div>
       </div>
     </div>
@@ -7361,9 +7876,13 @@
         <div class="shortcut-row">
           <span class="shortcut-desc">Previous / Next slide</span>
           <div class="shortcut-keys">
-            <span class="shortcut-key">&larr;</span
-            ><span class="shortcut-key">&rarr;</span>
+            <span class="shortcut-key">&uarr;</span
+            ><span class="shortcut-key">&darr;</span>
           </div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Presentation mode</span>
+          <div class="shortcut-keys"><span class="shortcut-key">F5</span></div>
         </div>
 
         <h4
@@ -7440,6 +7959,10 @@
             ><span class="shortcut-key">U</span>
           </div>
         </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Delete selected image</span>
+          <div class="shortcut-keys"><span class="shortcut-key">Del</span></div>
+        </div>
 
         <h4
           style="
@@ -7450,23 +7973,11 @@
             opacity: 0.5;
           "
         >
-          Slide Management
+          Notes
         </h4>
         <div class="shortcut-row">
-          <span class="shortcut-desc">Duplicate slide</span>
-          <div class="shortcut-keys">
-            <span class="shortcut-key">Ctrl</span
-            ><span class="shortcut-key">Shift</span
-            ><span class="shortcut-key">D</span>
-          </div>
-        </div>
-        <div class="shortcut-row">
-          <span class="shortcut-desc">Delete slide</span>
-          <div class="shortcut-keys"><span class="shortcut-key">Del</span></div>
-        </div>
-        <div class="shortcut-row">
-          <span class="shortcut-desc">Presentation mode</span>
-          <div class="shortcut-keys"><span class="shortcut-key">F5</span></div>
+          <span class="shortcut-desc">Toggle notes dock / notes bar (Presentation)</span>
+          <div class="shortcut-keys"><span class="shortcut-key">N</span></div>
         </div>
 
         <h4
@@ -7818,18 +8329,18 @@
           <button
             type="button"
             class="notes-modal-btn"
-            id="btn-notes-generate-all"
-            title="덱 안의 모든 슬라이드에 대해 생성"
-          >
-            전체 슬라이드
-          </button>
-          <button
-            type="button"
-            class="notes-modal-btn is-primary"
             id="btn-notes-generate-one"
             title="현재 선택된 슬라이드 1장에 대해서만 생성"
           >
             이 슬라이드만 생성
+          </button>
+          <button
+            type="button"
+            class="notes-modal-btn is-primary"
+            id="btn-notes-generate-all"
+            title="덱 안의 모든 슬라이드에 대해 생성"
+          >
+            전체 슬라이드 생성
           </button>
         </div>
       </div>

@@ -30,7 +30,9 @@ import {
   setToolMode, updateToolModeUI, renderObjectSelection, updateObjectEditorControls,
   getSelectedObjectElement, setSelectedObjectXPath, updateHoveredObjectFromPointer,
   clearHoveredObject, getSelectableTargetAt, readSelectedObjectStyleState,
+  onAfterSelectionUpdate,
 } from './editor-select.js';
+import { maybeUpdateImageUI, refreshImageHandles, deleteSelectedImageIfAny } from './editor-image.js';
 import {
   mutateSelectedObject, applyTextDecorationToken, serializeSlideDocument, persistDirectSlideHtml,
 } from './editor-direct-edit.js';
@@ -47,11 +49,14 @@ import { showCreationMode, hideCreationMode, loadCreationModelOptions, checkCrea
 import { showOutlinePhase } from './editor-outline.js';
 import { renderThumbnailStrip, updateActiveThumbnail } from './editor-thumbnails.js';
 import { loadPacks } from './editor-pack.js';
-import { initNotesPanel, loadNotes } from './editor-notes.js';
+import { initNotesPanel, loadNotes, toggleNotesDock } from './editor-notes.js';
 import { enterPresentationMode, exitPresentationMode, isPresenting } from './editor-present.js';
 
 // Late-binding: connect bbox changes to updateSendState
 onBboxChange(updateSendState);
+
+// Late-binding: image overlay follows selection state
+onAfterSelectionUpdate(maybeUpdateImageUI);
 
 // Bbox layer events
 initBboxLayerEvents();
@@ -356,13 +361,6 @@ document.addEventListener('keydown', (event) => {
     if (codeIs(event, 'KeyU')) { event.preventDefault(); if (!toggleUnderline.disabled) toggleUnderline.click(); return; }
   }
 
-  // Ctrl+Shift+D — Duplicate slide
-  if (ctrl && event.shiftKey && codeIs(event, 'KeyD') && !inTextField) {
-    event.preventDefault();
-    duplicateCurrentSlide();
-    return;
-  }
-
   if (ctrl && event.key === 'Enter') {
     event.preventDefault();
     applyChanges();
@@ -417,10 +415,11 @@ document.addEventListener('keydown', (event) => {
 
   if (inTextField) return;
 
-  // Backspace / Delete — open delete slide confirmation
-  if (event.key === 'Backspace' || event.key === 'Delete') {
-    event.preventDefault();
-    openDeleteSlideModal();
+  // Delete / Backspace — remove selected image (no-op if no image selected)
+  if (event.key === 'Delete' || event.key === 'Backspace') {
+    if (deleteSelectedImageIfAny()) {
+      event.preventDefault();
+    }
     return;
   }
 
@@ -443,12 +442,19 @@ document.addEventListener('keydown', (event) => {
     return;
   }
 
-  if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+  // N — toggle notes dock (IME-safe via event.code)
+  if (codeIs(event, 'KeyN')) {
+    event.preventDefault();
+    toggleNotesDock();
+    return;
+  }
+
+  if (event.key === 'ArrowUp') {
     event.preventDefault();
     void goToSlide(state.currentIndex - 1);
     return;
   }
-  if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+  if (event.key === 'ArrowDown') {
     event.preventDefault();
     void goToSlide(state.currentIndex + 1);
     return;
@@ -503,9 +509,7 @@ if (sidebarToggle && editorSidebar) {
 
   sidebarToggle.addEventListener('click', () => {
     const isCollapsed = editorSidebar.classList.toggle('collapsed');
-    sidebarToggle.textContent = isCollapsed ? '\u25c2' : '\u25b8';
     localStorage.setItem('sidebar-collapsed', isCollapsed ? 'true' : 'false');
-    // Recalculate slide scale after sidebar transition completes
     editorSidebar.addEventListener('transitionend', scaleSlide, { once: true });
   });
 }
@@ -848,7 +852,42 @@ function updateRunButtonLabel() {
 modelSelect?.addEventListener('change', updateRunButtonLabel);
 
 // Iframe load — detect content size and adapt wrapper/iframe dimensions
+// Forward keydown from inside the slide iframe so global shortcuts (arrows, Del, N, ?) still work
+// when focus lands inside iframe content.
+function forwardIframeKeydown(event) {
+  const key = event.key;
+  const shouldForward =
+    key === 'ArrowUp' || key === 'ArrowDown' ||
+    key === 'Delete' || key === 'Backspace' ||
+    key === 'F5' || key === '?' ||
+    key === 'Escape';
+  // Also forward bare letter shortcuts (D, S, N) only when no modifier — avoid hijacking iframe typing
+  const isBareLetter =
+    !event.ctrlKey && !event.metaKey && !event.altKey &&
+    (event.code === 'KeyD' || event.code === 'KeyS' || event.code === 'KeyN');
+  if (!shouldForward && !isBareLetter) return;
+  const clone = new KeyboardEvent('keydown', {
+    key: event.key,
+    code: event.code,
+    shiftKey: event.shiftKey,
+    ctrlKey: event.ctrlKey,
+    metaKey: event.metaKey,
+    altKey: event.altKey,
+    bubbles: true,
+    cancelable: true,
+  });
+  document.dispatchEvent(clone);
+  if (clone.defaultPrevented) event.preventDefault();
+}
+
 slideIframe.addEventListener('load', () => {
+  try {
+    const win = slideIframe.contentWindow;
+    if (win) {
+      win.removeEventListener('keydown', forwardIframeKeydown);
+      win.addEventListener('keydown', forwardIframeKeydown);
+    }
+  } catch { /* cross-origin */ }
   try {
     const doc = slideIframe.contentDocument;
     if (doc && doc.body) {

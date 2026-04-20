@@ -8,6 +8,9 @@ export function renderThumbnailStrip() {
   if (!slideStrip) return;
   slideStrip.innerHTML = '';
 
+  const countEl = document.getElementById('slide-sidebar-count');
+  if (countEl) countEl.textContent = String(state.slides.length);
+
   state.slides.forEach((slide, i) => {
     const thumb = document.createElement('div');
     thumb.className = 'slide-thumb' + (i === state.currentIndex ? ' active' : '');
