@@ -146,8 +146,17 @@ function syncInlineInputs(snapshot) {
     popoverTextInput.value = snapshot?.textValue || '';
     popoverSizeInput.value = String(snapshot?.fontSize || 24);
   }
-  popoverTextColorInput.value = snapshot?.textColor || '#111111';
-  popoverBgColorInput.value = snapshot?.backgroundColor || '#ffffff';
+  const textColor = snapshot?.textColor || '#111111';
+  const bgColor = snapshot?.backgroundColor || '#ffffff';
+  popoverTextColorInput.value = textColor;
+  popoverBgColorInput.value = bgColor;
+  popoverTextColorInput.closest('.sidebar-swatch')?.style.setProperty('--swatch-color', textColor);
+  popoverBgColorInput.closest('.sidebar-swatch')?.style.setProperty('--swatch-color', bgColor);
+}
+
+function setSwatchDisabled(inputEl, disabled) {
+  const wrapper = inputEl.closest('.sidebar-swatch');
+  if (wrapper) wrapper.setAttribute('aria-disabled', disabled ? 'true' : 'false');
 }
 
 export function updateObjectEditorControls() {
@@ -188,6 +197,8 @@ export function updateObjectEditorControls() {
   popoverApplyText.disabled = !capabilities.textEditable;
   popoverTextColorInput.disabled = !capabilities.textColorEditable;
   popoverBgColorInput.disabled = !capabilities.backgroundEditable;
+  setSwatchDisabled(popoverTextColorInput, !capabilities.textColorEditable);
+  setSwatchDisabled(popoverBgColorInput, !capabilities.backgroundEditable);
   popoverSizeInput.disabled = !capabilities.sizeEditable;
   popoverApplySize.disabled = !capabilities.sizeEditable;
 
