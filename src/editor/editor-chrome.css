@@ -1,0 +1,608 @@
+/* ══════════════════════════════════════════════════════════════
+   Editor chrome overrides · β Studio Daylight
+   loads AFTER the editor's inline <style> block so this cascade wins.
+   strategy:
+     1. remap legacy vars (--bg-0, --surface-*, --text-*, --border-*) to the new β palette
+     2. update font stack to Geist + Pretendard + JetBrains Mono
+     3. restyle topbar / status chip / action buttons / sidebar shell / inspector header
+        to match the Editor.html mockup
+   NOTE: we keep the original editor markup untouched — only CSS cascades do the talking.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 1. remap legacy vars to new β tokens ─────────────────── */
+/* NOTE: --panel / --panel-2 are defined directly by tokens.css; do NOT
+   re-declare them as `var(--panel)` etc — that creates a self-referencing
+   custom property which resolves to the initial (empty) value and leaves
+   modal backgrounds transparent. */
+:root,
+[data-theme="light"],
+[data-theme="dark"] {
+  --bg-0:           var(--bg);
+  --bg-1:           var(--bg-2);
+  --border:         var(--line);
+  --border-soft:    var(--line-2);
+  --border-subtle:  var(--line-2);
+  --border-medium:  var(--line);
+  --border-strong:  var(--line);
+  --border-hover:   var(--muted-2);
+  --border-input:   var(--line);
+  --border-btn:     var(--line);
+  --text-0:         var(--ink);
+  --text-1:         var(--ink-2);
+  --text-2:         var(--muted);
+  --text-muted:     var(--muted);
+  --text-bright:    var(--ink);
+  --surface-0:      var(--bg-2);
+  --surface-1:      var(--panel-2);
+  --surface-2:      var(--panel-2);
+  --surface-3:      var(--panel);
+  --surface-hover:  var(--panel-2);
+  --surface-btn:    var(--panel-2);
+  --ring:           var(--accent-glow);
+  --success:        var(--lime);
+  --sans:           var(--font-sans);
+  --mono:           var(--font-mono);
+}
+
+/* ── 2. base typography ───────────────────────────────────── */
+html,
+body {
+  font-family: var(--font-sans) !important;
+  letter-spacing: -0.005em !important;
+}
+
+/* ── 3. editor-container shell ────────────────────────────── */
+.editor-container {
+  background: var(--bg);
+}
+
+/* ── 4. TOPBAR ────────────────────────────────────────────── */
+.nav-bar {
+  height: 52px !important;
+  background: color-mix(in srgb, var(--bg-2) 85%, transparent) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line) !important;
+  padding: 0 18px !important;
+  gap: 12px !important;
+}
+
+.nav-brand {
+  display: flex !important;
+  align-items: center;
+  gap: 9px !important;
+  font-weight: 700;
+  font-size: 14px !important;
+  letter-spacing: -0.01em !important;
+  color: var(--ink) !important;
+  text-decoration: none;
+}
+/* brand mark — match browser/generate .brand img */
+.nav-brand img {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 7px !important;
+  object-fit: cover;
+  display: block;
+}
+.nav-brand-text {
+  white-space: nowrap;
+}
+
+.nav-deck-name {
+  color: var(--muted) !important;
+  font-size: 12.5px !important;
+  padding-left: 12px;
+  margin-left: 4px;
+  border-left: 1px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 280px !important;
+  font-weight: 500 !important;
+}
+.nav-deck-name::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lime);
+  box-shadow: 0 0 6px var(--lime);
+  flex-shrink: 0;
+}
+
+.slide-counter {
+  font-family: var(--font-mono) !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  color: var(--muted-2) !important;
+}
+
+/* ── 5. nav buttons — neutral panel ───────────────────────── */
+.nav-bar button:not(.theme-toggle),
+.nav-bar .nav-bar-btn {
+  height: 30px !important;
+  background: var(--panel) !important;
+  color: var(--muted) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  padding: 0 11px !important;
+  font-size: 12px !important;
+  font-family: inherit;
+  transition: all var(--ease);
+}
+.nav-bar button:not(.theme-toggle):hover,
+.nav-bar .nav-bar-btn:hover {
+  background: var(--panel) !important;
+  color: var(--ink) !important;
+  border-color: var(--muted-2) !important;
+}
+.nav-bar button:not(.theme-toggle):disabled,
+.nav-bar .nav-bar-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ghost icon buttons */
+.nav-bar .nav-bar-btn.ghost,
+.nav-bar .nav-bar-btn.nav-icon-btn {
+  width: 30px !important;
+  height: 30px !important;
+  padding: 0 !important;
+  display: inline-grid;
+  place-items: center;
+}
+.nav-bar .nav-bar-btn.ghost:not(.nav-emphasis) {
+  background: var(--panel) !important;
+  color: var(--muted) !important;
+}
+
+/* primary generate / run button — gradient + glow */
+.nav-bar .nav-bar-btn.nav-emphasis,
+.nav-bar .btn-new-deck,
+.nav-bar [data-variant="primary"],
+.nav-bar .generate-btn {
+  background: linear-gradient(180deg, var(--accent-2), var(--accent)) !important;
+  color: #fff !important;
+  border: 0 !important;
+  box-shadow: var(--glow-accent) !important;
+  font-weight: 600 !important;
+  padding: 0 14px !important;
+  width: auto !important;
+}
+.nav-bar .nav-bar-btn.nav-emphasis:hover,
+.nav-bar .btn-new-deck:hover,
+.nav-bar .generate-btn:hover {
+  filter: brightness(1.04);
+  transform: translateY(-0.5px);
+}
+
+/* ── 6. slide-status chip → mono IDLE / RUNNING style ─────── */
+.slide-status-chip {
+  font-family: var(--font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.14em !important;
+  padding: 5px 10px !important;
+  border-radius: 7px !important;
+  border: 1px solid var(--line) !important;
+  background: var(--panel) !important;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.slide-status-chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted-2);
+}
+.slide-status-chip.idle { color: var(--muted) !important; background: var(--panel) !important; }
+.slide-status-chip.idle::before { background: var(--muted); }
+.slide-status-chip.running {
+  color: var(--accent) !important;
+  background: var(--panel) !important;
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line)) !important;
+  animation: none !important;
+}
+.slide-status-chip.running::before {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+  animation: chrome-pulse 1.2s ease-in-out infinite;
+}
+.slide-status-chip.success {
+  color: var(--lime) !important;
+  background: var(--panel) !important;
+  border-color: color-mix(in srgb, var(--lime) 40%, var(--line)) !important;
+}
+.slide-status-chip.success::before { background: var(--lime); box-shadow: 0 0 6px var(--lime); }
+@keyframes chrome-pulse { 0%, 100% { opacity: 1 } 50% { opacity: .4 } }
+
+/* ── 7. slide-nav-group (pager) — rounded pill ────────────── */
+.slide-nav-group {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px !important;
+  padding: 3px 4px !important;
+  gap: 2px !important;
+  margin: 0 4px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+.slide-nav-group .nav-bar-btn.ghost {
+  background: transparent !important;
+  border: 0 !important;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 6px !important;
+}
+.slide-nav-group .nav-bar-btn.ghost:hover {
+  background: var(--panel-2) !important;
+  color: var(--ink) !important;
+}
+
+/* ── 8. main stage — dot grid background ──────────────────── */
+.slide-stage,
+#slide-stage,
+.main-stage {
+  background: var(--bg) !important;
+  background-image: radial-gradient(circle at 1px 1px, var(--dot-color) 1px, transparent 0) !important;
+  background-size: 22px 22px !important;
+}
+
+/* ── 9. SIDEBAR / INSPECTOR ────────────────────────────────── */
+.sidebar {
+  background: var(--bg-2) !important;
+  border-left: 1px solid var(--line) !important;
+}
+
+/* inspector header / sidebar mode tabs */
+.sidebar-mode-tabs,
+.sidebar-header {
+  background: var(--bg-2) !important;
+  border-bottom: 1px solid var(--line-2) !important;
+}
+.sidebar-mode-tab {
+  background: var(--panel) !important;
+  border: 1px solid var(--line) !important;
+  color: var(--muted) !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  font-family: inherit;
+  transition: all var(--ease);
+}
+.sidebar-mode-tab:hover {
+  color: var(--ink-2) !important;
+  border-color: var(--muted-2) !important;
+  background: var(--panel) !important;
+}
+.sidebar-mode-tab.active {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 12%, transparent),
+    color-mix(in srgb, var(--accent) 4%, transparent)
+  ) !important;
+  color: var(--accent) !important;
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line)) !important;
+}
+
+.sidebar-panel,
+.sidebar-section {
+  background: transparent !important;
+}
+
+.sidebar-label,
+.sidebar-section-label,
+.sec-lbl {
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  color: var(--muted) !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.sidebar-textarea,
+.sidebar-input,
+textarea.sidebar-input {
+  border: 1px solid var(--line) !important;
+  border-radius: 9px !important;
+  background: var(--panel) !important;
+  color: var(--ink) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 12.5px !important;
+  line-height: 1.55 !important;
+  transition: all var(--ease);
+}
+.sidebar-textarea:focus,
+.sidebar-input:focus {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line)) !important;
+  box-shadow: 0 0 0 3px var(--accent-glow) !important;
+  outline: 0;
+}
+
+/* sidebar primary CTA — gradient "Run edit" */
+.sidebar-btn-primary {
+  height: 42px !important;
+  border-radius: 10px !important;
+  color: #fff !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  background: linear-gradient(180deg, var(--accent-2), var(--accent)) !important;
+  box-shadow: var(--glow-accent) !important;
+  border: 0 !important;
+  transition: filter .15s, transform .15s;
+}
+.sidebar-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.04);
+  transform: translateY(-0.5px);
+  background: linear-gradient(180deg, var(--accent-2), var(--accent)) !important;
+}
+.sidebar-btn-primary:disabled {
+  background: var(--panel) !important;
+  color: var(--muted) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* sidebar neutral buttons */
+.sidebar-btn,
+.sidebar-btn-sm {
+  background: var(--panel) !important;
+  border: 1px solid var(--line) !important;
+  color: var(--ink-2) !important;
+  border-radius: 7px !important;
+  font-family: inherit;
+  transition: all var(--ease);
+}
+.sidebar-btn:hover:not(:disabled),
+.sidebar-btn-sm:hover:not(:disabled) {
+  background: var(--panel) !important;
+  border-color: var(--muted-2) !important;
+  color: var(--ink) !important;
+}
+
+/* ── 10. toolbar sections — tool cluster pill ─────────────── */
+.toolbar-section {
+  background: var(--panel) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+  padding: 4px !important;
+  gap: 2px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+.toolbar-section button,
+.toolbar-section .tool-btn {
+  background: transparent !important;
+  border: 0 !important;
+  height: 30px !important;
+  padding: 0 11px !important;
+  border-radius: 7px !important;
+  color: var(--muted) !important;
+  font-size: 12px !important;
+  font-family: inherit;
+  transition: all var(--ease);
+}
+.toolbar-section button:hover,
+.toolbar-section .tool-btn:hover {
+  color: var(--ink-2) !important;
+  background: transparent !important;
+}
+.toolbar-section button.active,
+.toolbar-section button.on,
+.toolbar-section .tool-btn.active {
+  background: var(--panel-2) !important;
+  color: var(--ink) !important;
+  box-shadow: inset 0 0 0 1px var(--line-2) !important;
+}
+.toolbar-divider {
+  background: var(--line-2) !important;
+}
+
+/* ── 11. skip link ────────────────────────────────────────── */
+.skip-link {
+  background: var(--accent) !important;
+  color: #fff !important;
+  font-family: var(--font-mono) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.1em !important;
+}
+
+/* ── 12. rail / slide thumbnails (if present) ─────────────── */
+.slide-rail,
+.slide-thumbnails {
+  background: var(--bg-2) !important;
+  border-right: 1px solid var(--line) !important;
+}
+.slide-thumb {
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  transition: all var(--ease);
+}
+.slide-thumb:hover { border-color: var(--muted-2) !important; }
+.slide-thumb.active,
+.slide-thumb.selected {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--accent-glow) !important;
+}
+
+/* ── 13. modal shell (reuse legacy classes) ───────────────── */
+.modal-overlay,
+.deck-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 12, 0.55) !important;
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 24px;
+  animation: sg-menu-fade 180ms ease-out;
+}
+[data-theme="light"] .modal-overlay,
+[data-theme="light"] .deck-modal-overlay {
+  background: rgba(15, 17, 22, 0.28) !important;
+}
+.modal-overlay[hidden],
+.deck-modal-overlay[hidden] { display: none; }
+.modal,
+.deck-modal {
+  background: var(--panel) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--shadow-lift) !important;
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal h3,
+.deck-modal h3 {
+  font-family: var(--font-sans) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  font-style: normal !important;
+  letter-spacing: -0.015em !important;
+  color: var(--ink) !important;
+  margin: 0 !important;
+}
+/* deck-modal sub-components (used in editor delete modal too) */
+.deck-modal-head {
+  padding: 22px 26px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid var(--line-2);
+}
+.deck-modal-icon {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.deck-modal-icon.is-danger {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+.deck-modal-head-text { flex: 1; min-width: 0; }
+.deck-modal-eyebrow {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.deck-modal h3 .danger-em { color: var(--danger) !important; font-style: normal; }
+.deck-modal-body {
+  padding: 18px 26px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.deck-modal-body p {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.55;
+  margin: 0;
+}
+.deck-modal-body p strong { color: var(--ink); font-weight: 600; }
+.deck-modal-actions {
+  padding: 14px 22px;
+  background: var(--bg-2);
+  border-top: 1px solid var(--line-2);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.deck-modal-actions button {
+  height: 36px;
+  border-radius: 8px;
+  padding: 0 14px;
+  font-size: 12.5px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  transition: border-color 150ms ease, color 150ms ease, filter 150ms ease, transform 80ms ease;
+}
+.btn-modal-cancel {
+  background: var(--panel);
+  color: var(--ink-2);
+  border-color: var(--line);
+}
+.btn-modal-cancel:hover { border-color: var(--muted-2); color: var(--ink); }
+.btn-modal-danger {
+  background: var(--danger);
+  color: #fff;
+  font-weight: 600;
+}
+.btn-modal-danger:hover { filter: brightness(1.05); }
+
+/* ── 14. BBox / Select overlays ───────────────────────────── */
+.bbox {
+  border: 1.5px dashed var(--bbox) !important;
+  background: var(--bbox-fill) !important;
+}
+.bbox .tag,
+.bbox-tag {
+  background: var(--bbox) !important;
+  color: #fff !important;
+  font-family: var(--font-mono) !important;
+  font-size: 9.5px !important;
+  letter-spacing: 0.06em !important;
+}
+.selbox,
+.selection-box {
+  border: 1.5px solid var(--sel) !important;
+}
+
+/* ── 15. hide brand img with light/dark fallback → mark ──── */
+/* (legacy logo images remain, but the border-radius/size tweak above
+    makes them read as a branded mark) */
+
+/* ── 16. nav-emphasis (the Generate CTA) ──────────────────── */
+.nav-bar-btn.nav-emphasis svg,
+.nav-bar-btn.nav-emphasis .ico {
+  stroke: #fff !important;
+  color: #fff !important;
+}
+
+/* ── 18. INSPECTOR: sidebar header ────────────────────────── */
+/* Title/header typography is defined inline in editor.html to match
+   .slide-sidebar-title (11px uppercase + dot indicator). No background
+   or border here — keeps the header flush with the slide-sidebar style. */
+.editor-sidebar-kbd {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--muted);
+  padding: 3px 7px;
+  background: var(--panel);
+  border-radius: 5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+/* collapse toggle styling lives inline in editor.html to match .slide-sidebar-toggle
+   (24x24, transparent, no border) — no overrides needed here. */
+
+/* when the sidebar is collapsed the title should fade out cleanly */
+.editor-sidebar.collapsed .editor-sidebar-title,
+.editor-sidebar.collapsed .editor-sidebar-kbd {
+  display: none;
+}
