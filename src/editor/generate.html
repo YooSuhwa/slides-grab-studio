@@ -2841,14 +2841,19 @@
             $("bar-fill").style.width = `${pct}%`;
           } catch {}
         });
-        es.addEventListener("runComplete", (e) => {
+        es.addEventListener("generateFinished", (e) => {
           try {
             const d = JSON.parse(e.data);
             if (S.runId && d.runId && d.runId !== S.runId) return;
+            clearInterval(S.logTimer);
+            if (!d.success) {
+              appendLog(d.message || "generation failed", null, "warn");
+              alert(`슬라이드 생성 실패: ${d.message || "unknown"}`);
+              return;
+            }
             appendLog("complete", null, "ok");
             setGenStep(4, true);
             $("bar-fill").style.width = "100%";
-            clearInterval(S.logTimer);
             showReady(d);
           } catch {}
         });
