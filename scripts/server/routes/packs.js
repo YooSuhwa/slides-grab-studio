@@ -1,11 +1,11 @@
 import { join } from 'node:path';
 import { readFile } from 'node:fs/promises';
 
-import { listPacks, resolvePack, getPackInfo } from '../../../src/resolve.js';
+import { listPacks, resolvePack, getPackInfo, getCommonTypes } from '../../../src/resolve.js';
 
 /**
  * Pack API routes.
- * Routes: GET /api/packs, GET /api/packs/:id/preview, GET /packs-gallery
+ * Routes: GET /api/packs, GET /api/packs/:id/preview, GET /packs-gallery, GET /api/types
  */
 export function createPacksRouter(ctx) {
   const { express, PACKAGE_ROOT } = ctx;
@@ -20,6 +20,16 @@ export function createPacksRouter(ctx) {
     try {
       const packs = listPacks();
       res.json(packs);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Common slide types (source of truth: packs/common-types.json)
+  router.get('/api/types', (_req, res) => {
+    try {
+      const types = getCommonTypes();
+      res.json(types);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

@@ -32,10 +32,14 @@ export function createDecksRouter(ctx) {
           const deckStat = await stat(deckPath);
           let hasOutline = false;
           try { await stat(join(deckPath, 'slide-outline.md')); hasOutline = true; } catch { /* no outline */ }
+          const birth = deckStat.birthtime && deckStat.birthtime.getTime() > 0
+            ? deckStat.birthtime
+            : deckStat.mtime;
           decks.push({
             name: entry.name,
             slideCount: slideFiles.length,
             lastModified: deckStat.mtime.toISOString(),
+            createdAt: birth.toISOString(),
             hasOutline,
             firstSlide: slideFiles[0] || null,
           });

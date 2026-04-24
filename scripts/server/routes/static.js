@@ -26,6 +26,10 @@ export function createStaticRouter(ctx) {
   router.get('/editor.css', (_req, res) => { res.type('text/css').sendFile(join(editorDir, 'editor.css')); });
   router.get('/browser.css', (_req, res) => { res.type('text/css').sendFile(join(editorDir, 'browser.css')); });
   router.get('/gallery.css', (_req, res) => { res.type('text/css').sendFile(join(editorDir, 'gallery.css')); });
+  router.get('/generate.css',      (_req, res) => { res.type('text/css').sendFile(join(editorDir, 'generate.css')); });
+  router.get('/tokens.css',        (_req, res) => { res.type('text/css').sendFile(join(editorDir, 'tokens.css')); });
+  router.get('/editor-chrome.css', (_req, res) => { res.type('text/css').sendFile(join(editorDir, 'editor-chrome.css')); });
+  router.get('/pack-picker.css',   (_req, res) => { res.type('text/css').sendFile(join(editorDir, 'pack-picker.css')); });
 
   // Serve pack assets (preview images, etc.)
   const localPacksDir = join(process.cwd(), 'packs');
@@ -38,6 +42,8 @@ export function createStaticRouter(ctx) {
 
   const editorHtmlPath = join(PACKAGE_ROOT, 'src', 'editor', 'editor.html');
   const browserHtmlPath = join(PACKAGE_ROOT, 'src', 'editor', 'browser.html');
+  const generateHtmlPath = join(PACKAGE_ROOT, 'src', 'editor', 'generate.html');
+  const galleryHtmlPath = join(PACKAGE_ROOT, 'src', 'editor', 'gallery.html');
 
   router.get('/', async (_req, res) => {
     try {
@@ -55,6 +61,24 @@ export function createStaticRouter(ctx) {
       res.type('html').send(html);
     } catch (err) {
       res.status(500).send(`Failed to load editor: ${err.message}`);
+    }
+  });
+
+  router.get('/generate', async (_req, res) => {
+    try {
+      const html = await readFile(generateHtmlPath, 'utf-8');
+      res.type('html').send(html);
+    } catch (err) {
+      res.status(500).send(`Failed to load generate page: ${err.message}`);
+    }
+  });
+
+  router.get('/gallery', async (_req, res) => {
+    try {
+      const html = await readFile(galleryHtmlPath, 'utf-8');
+      res.type('html').send(html);
+    } catch (err) {
+      res.status(500).send(`Failed to load gallery: ${err.message}`);
     }
   });
 
