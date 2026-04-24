@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+
 import { WebSocketServer } from 'ws';
 import { PDFDocument } from 'pdf-lib';
 
@@ -10,8 +12,18 @@ import {
 } from '../../html2svg.js';
 
 import { SLIDE_PX, SCREENSHOT_SCALE } from '../../../src/slide-dimensions.js';
+import { notesPathFor } from '../../../src/notes-paths.js';
 import { broadcastSSE } from '../sse.js';
 import { listSlideFiles, getScreenshotBrowser, withScreenshotPage, getDeckLabel } from '../helpers.js';
+
+async function loadSlideNotes(slidesDirectory, slideFile) {
+  try {
+    const text = await readFile(notesPathFor(slidesDirectory, slideFile), 'utf8');
+    return text.trim();
+  } catch {
+    return '';
+  }
+}
 
 /**
  * PDF export and Figma export routes + WebSocket setup.
@@ -64,8 +76,10 @@ export function createPdfFigmaRouter(ctx) {
   }
 
   router.post('/api/pdf-export', async (req, res) => {
-    const { scope, slide } = req.body ?? {};
-    if (!['current', 'all'].includes(scope)) return res.status(400).json({ error: 'scope must be current or all' });
+    const { scope, slide, slides } = req.body ?? {};
+    if (!['current', 'all', 'specific'].includes(scope)) {
+      return res.status(400).json({ error: 'scope must be current, all, or specific' });
+    }
 
     if (scope === 'current') {
       const slideFile = typeof slide === 'string' ? slide.trim() : '';
@@ -85,6 +99,16 @@ export function createPdfFigmaRouter(ctx) {
     let slideFiles;
     try { slideFiles = await listSlideFiles(slidesDirectory); } catch (err) { return res.status(500).json({ error: err.message }); }
     if (slideFiles.length === 0) return res.status(400).json({ error: 'No slide files found.' });
+
+    if (scope === 'specific') {
+      if (!Array.isArray(slides) || slides.length === 0) {
+        return res.status(400).json({ error: 'scope=specific requires a non-empty slides array.' });
+      }
+      const set = new Set(slideFiles);
+      const missing = slides.filter((s) => !set.has(s));
+      if (missing.length > 0) return res.status(400).json({ error: `Slides not found: ${missing.join(', ')}` });
+      slideFiles = slideFiles.filter((s) => slides.includes(s));
+    }
 
     const exportId = `pdf-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
     activePdfExport = true;
@@ -132,8 +156,10 @@ export function createPdfFigmaRouter(ctx) {
 
   router.post('/api/figma-export', async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    const { scope, slide, scale = SCREENSHOT_SCALE, width = SLIDE_PX.width, height = SLIDE_PX.height } = req.body ?? {};
-    if (!['current', 'all'].includes(scope)) return res.status(400).json({ error: 'scope must be current or all' });
+    const { scope, slide, slides, scale = SCREENSHOT_SCALE, width = SLIDE_PX.width, height = SLIDE_PX.height, includeNotes = true } = req.body ?? {};
+    if (!['current', 'all', 'specific'].includes(scope)) {
+      return res.status(400).json({ error: 'scope must be current, all, or specific' });
+    }
     if (ctx.figmaClients.size === 0) return res.status(400).json({ error: 'No Figma plugin connected.' });
     if (activeFigmaExport) return res.status(409).json({ error: 'A Figma export is already in progress.' });
 
@@ -150,6 +176,15 @@ export function createPdfFigmaRouter(ctx) {
     } else {
       try { slideFiles = await listSlideFiles(slidesDirectory); } catch (err) { return res.status(500).json({ error: err.message }); }
       if (slideFiles.length === 0) return res.status(400).json({ error: 'No slide files found.' });
+      if (scope === 'specific') {
+        if (!Array.isArray(slides) || slides.length === 0) {
+          return res.status(400).json({ error: 'scope=specific requires a non-empty slides array.' });
+        }
+        const set = new Set(slideFiles);
+        const missing = slides.filter((s) => !set.has(s));
+        if (missing.length > 0) return res.status(400).json({ error: `Slides not found: ${missing.join(', ')}` });
+        slideFiles = slideFiles.filter((s) => slides.includes(s));
+      }
     }
 
     activeFigmaExport = true;
@@ -166,7 +201,8 @@ export function createPdfFigmaRouter(ctx) {
             const rawSvg = await renderSlideToSvg(page, sf, slidesDirectory, bundlePath, { baseUrl });
             return scaleSvg(resizeSvg(rawSvg, numW, numH), numScale);
           });
-          const msg = JSON.stringify({ type: 'slide', name: sf.replace(/\.html$/i, ''), svg, current: i + 1, total: slideFiles.length });
+          const notes = includeNotes ? await loadSlideNotes(slidesDirectory, sf) : '';
+          const msg = JSON.stringify({ type: 'slide', name: sf.replace(/\.html$/i, ''), svg, notes, current: i + 1, total: slideFiles.length });
           for (const ws of ctx.figmaClients) { try { ws.send(msg); } catch { /* client gone */ } }
           broadcastSSE(ctx.sseClients, 'figmaExportProgress', { current: i + 1, total: slideFiles.length, file: sf });
         }

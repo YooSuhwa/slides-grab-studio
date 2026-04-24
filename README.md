@@ -61,7 +61,14 @@ The Structured mode uses a 3-tier fallback: DOM extraction → OpenAI GPT-4o vis
 Export all slides as SVG or PNG files, bundled into a single ZIP archive via Playwright + `dom-to-svg`.
 
 **Figma:**
-Connect the companion Figma plugin via WebSocket to activate the "Send to Figma" button in the editor. Once the plugin is connected, slides are transferred directly into your Figma file — the button is hidden by default until the plugin handshake is established.
+Connect a companion Figma plugin via WebSocket to activate the "Send to Figma" button in the editor. Once the plugin is connected, slides are transferred directly into your Figma file — the button is hidden by default until the plugin handshake is established.
+
+Two companion plugins live in `_util/figma-plugin/` (separate monorepo):
+
+- `packages/slides-to-figma/` — for **Figma Slides** files (each SVG becomes a new slide)
+- `packages/html-to-figma-design/` — for **Figma Design** files (each SVG becomes a frame, laid out horizontally)
+
+Build once with `cd _util/figma-plugin && npm install && npm run build`, then import the desired `manifest.json` via Figma Desktop → Plugins → Development → Import. Both plugins connect to `ws://localhost:3456/figma-ws`.
 
 ### 7. Built-in Slide Validation
 
