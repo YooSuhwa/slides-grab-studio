@@ -1,0 +1,3603 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>slides-grab-studio · Generate</title>
+    <link rel="icon" type="image/png" href="/asset/buddy_logo_round.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/tokens.css" />
+    <link rel="stylesheet" href="/generate.css" />
+    <link rel="stylesheet" href="/pack-picker.css" />
+    <script>
+      (function () {
+        var t =
+          localStorage.getItem("sgs-theme") || localStorage.getItem("sg-theme");
+        document.documentElement.setAttribute(
+          "data-theme",
+          t === "dark" ? "dark" : "light",
+        );
+      })();
+    </script>
+  </head>
+  <body>
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="slides-grab-studio home">
+        <img class="logo-dark" src="/asset/buddy_logo_round(dark).png" alt="" />
+        <img
+          class="logo-light"
+          src="/asset/buddy_logo_round(light).png"
+          alt=""
+        />
+        <span class="brand-text">slides-grab-studio</span>
+      </a>
+      <div class="crumb">
+        <span class="mono" style="font-size: 11px">workspace</span><span>/</span
+        ><span class="now" id="crumb-now">새 덱 만들기</span>
+      </div>
+      <div class="spacer"></div>
+      <button
+        class="theme-toggle"
+        id="themeBtn"
+        aria-label="Toggle theme"
+        type="button"
+      >
+        <span class="thumb" id="themeThumb">☀</span>
+      </button>
+    </header>
+
+    <!-- STEP STRIP (hidden in review-only mode) -->
+    <div class="step-strip">
+      <span class="lbl on" id="s1"><span class="n">1</span>주제 입력</span>
+      <span class="bar" id="b1"></span>
+      <span class="lbl" id="s2"><span class="n">2</span>아웃라인</span>
+      <span class="bar" id="b2"></span>
+      <span class="lbl" id="s3"><span class="n">3</span>생성 중</span>
+      <span class="bar" id="b3"></span>
+      <span class="lbl" id="s4"><span class="n">4</span>편집 준비</span>
+    </div>
+
+    <!-- REVIEW HERO (visible only in review-only mode, injected via body.review-only) -->
+    <div class="review-hero">
+      <div>
+        <div class="r-sub">아웃라인 검토 · 보기 전용</div>
+        <div class="r-title" id="review-hero-title">—</div>
+      </div>
+      <a class="r-back" id="review-hero-back" href="/editor">← 에디터로</a>
+    </div>
+
+    <div class="page">
+      <!-- PHASE 1 : COMPOSE -->
+      <div class="view on" id="view-compose">
+        <div class="compose-hero">
+          <div class="eyebrow">새 덱 · STEP 1</div>
+          <h1>어떤 덱을 <em>만들어볼까요</em>?</h1>
+          <p>
+            주제만 알려주세요. AI가 아웃라인, 슬라이드, 이미지까지 한 번에
+            만들어 드립니다. 파일이나 URL에서 컨텍스트를 가져올 수도 있어요.
+          </p>
+        </div>
+
+        <div class="compose-card">
+          <div class="compose-left">
+            <div class="prompt-wrap">
+              <div class="label">주제 · 프롬프트</div>
+              <textarea
+                id="topic-input"
+                placeholder="예: 2026년 Q2 AX 전략 방향 — 임원 10분 브리핑&#10;&#10;톤, 분량, 대상, 금기어, 스타일까지 한 곳에 자연어로 자유롭게 적어주세요."
+              ></textarea>
+              <div class="footer">
+                <span class="chip">
+                  <svg
+                    class="ico"
+                    viewBox="0 0 24 24"
+                    style="width: 12px; height: 12px; color: var(--accent)"
+                  >
+                    <path
+                      d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z"
+                    />
+                  </svg>
+                  스마트 프롬프트
+                </span>
+                <span class="chip">
+                  <svg
+                    class="ico"
+                    viewBox="0 0 24 24"
+                    style="width: 12px; height: 12px"
+                  >
+                    <path
+                      d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                    />
+                  </svg>
+                  한국어
+                </span>
+                <span class="count" id="char-count">0 / 2000</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="sub-label">빠른 시작</div>
+              <div class="quick-grabs" id="quick-grabs">
+                <span
+                  class="qg"
+                  data-seed="주간 보고 덱 · 10분 · 핵심 지표 중심"
+                  ><span class="p">+</span> 주간 보고</span
+                >
+                <span
+                  class="qg"
+                  data-seed="런치 키노트 · 신제품 소개 · 20분 · 고객용"
+                  ><span class="p">+</span> 런치 키노트</span
+                >
+                <span
+                  class="qg"
+                  data-seed="팀 올핸즈 · 분기 리뷰 · 30분 · 전 직원"
+                  ><span class="p">+</span> 팀 올핸즈</span
+                >
+                <span class="qg" data-seed="교육 자료 · 초보자용 · 실전 가이드"
+                  ><span class="p">+</span> 교육 자료</span
+                >
+                <span class="qg" data-seed="PRD 요약 · 핵심 기능 · 로드맵"
+                  ><span class="p">+</span> PRD 요약</span
+                >
+                <span
+                  class="qg"
+                  data-seed="회고 리포트 · 지난 분기 · lessons learned"
+                  ><span class="p">+</span> 회고 리포트</span
+                >
+              </div>
+            </div>
+
+            <div>
+              <div class="sub-label">
+                컨텍스트 소스 <span class="hint">(선택)</span>
+              </div>
+              <div class="source-row">
+                <button
+                  type="button"
+                  class="source-chip"
+                  id="src-file"
+                  title="PDF · MD · TXT 파일을 주제 컨텍스트로 첨부"
+                >
+                  <div class="ico-wrap">
+                    <svg class="ico" viewBox="0 0 24 24">
+                      <path
+                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                      />
+                      <path d="M14 2v6h6" />
+                    </svg>
+                  </div>
+                  <div class="nm">파일 업로드</div>
+                  <div class="sub">PDF · MD · TXT</div>
+                </button>
+                <button
+                  type="button"
+                  class="source-chip"
+                  id="src-url"
+                  title="블로그 · 문서 URL에서 본문 추출"
+                >
+                  <div class="ico-wrap">
+                    <svg class="ico" viewBox="0 0 24 24">
+                      <path
+                        d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+                      />
+                      <path
+                        d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+                      />
+                    </svg>
+                  </div>
+                  <div class="nm">URL 가져오기</div>
+                  <div class="sub">블로그 · 문서</div>
+                </button>
+              </div>
+              <div class="source-attached" id="src-attached" hidden></div>
+            </div>
+          </div>
+
+          <div class="compose-right">
+            <div class="setting">
+              <div class="lbl">덱 이름</div>
+              <input
+                type="text"
+                id="deck-name-input"
+                class="model-line"
+                style="
+                  font-family: var(--font-mono);
+                  font-size: 12px;
+                  color: var(--ink-2);
+                  background: var(--panel-2);
+                  border: 1px solid var(--line-2);
+                  height: 34px;
+                  padding: 0 10px;
+                  border-radius: 8px;
+                  outline: 0;
+                  width: 100%;
+                "
+                placeholder="자동 생성 (비워두면 주제 기반)"
+              />
+            </div>
+
+            <div class="setting">
+              <div class="pack-header">
+                <div class="lbl">디자인 팩</div>
+                <button
+                  type="button"
+                  class="pack-all-btn"
+                  id="pack-all-btn"
+                  title="전체 팩 보기"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect x="3" y="3" width="7" height="7" rx="1" />
+                    <rect x="14" y="3" width="7" height="7" rx="1" />
+                    <rect x="3" y="14" width="7" height="7" rx="1" />
+                    <rect x="14" y="14" width="7" height="7" rx="1" />
+                  </svg>
+                  전체 보기
+                </button>
+              </div>
+              <div class="pack-row" id="pack-row">
+                <!-- populated from /api/packs -->
+              </div>
+              <div class="pack-desc" id="pack-desc">
+                <b>—</b> · 팩을 선택하세요
+              </div>
+            </div>
+
+            <div class="setting">
+              <div class="lbl">
+                분량 · 슬라이드
+                <span class="hint-sub">(권장치 · ±2장 범위에서 자동 조정)</span>
+              </div>
+              <div class="slider-wrap">
+                <div class="slider" id="slide-slider">
+                  <div class="fill" id="slide-fill"></div>
+                  <div class="thumb" id="slide-thumb"></div>
+                </div>
+                <div class="val" id="slide-val">9</div>
+              </div>
+              <div class="slider-meta">
+                <span>3</span><span id="slide-est">≈ 10분 발표</span
+                ><span>30</span>
+              </div>
+            </div>
+
+            <div class="setting">
+              <div class="lbl">톤 &amp; 무드</div>
+              <div class="segmented" id="tone-seg">
+                <button class="on" data-val="professional">프로페셔널</button>
+                <button data-val="friendly">친근하게</button>
+                <button data-val="technical">기술적</button>
+              </div>
+            </div>
+
+            <div class="setting">
+              <div class="lbl">언어</div>
+              <div class="segmented" id="lang-seg">
+                <button class="on" data-val="ko">한국어</button>
+                <button data-val="en">English</button>
+                <button data-val="auto">Auto</button>
+              </div>
+            </div>
+
+            <div class="setting">
+              <div class="lbl">이미지</div>
+              <div class="segmented" id="image-seg">
+                <button class="on" data-val="on">사용</button>
+                <button data-val="off">사용 안 함</button>
+              </div>
+            </div>
+
+            <div class="model-line">
+              <svg class="ico" viewBox="0 0 24 24" style="color: var(--accent)">
+                <path
+                  d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z"
+                />
+              </svg>
+              <span class="name" id="model-name">claude-sonnet-4-6</span>
+              <span class="change">변경</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="compose-actions">
+          <div class="sp"></div>
+          <a class="btn-secondary" href="/">취소</a>
+          <button class="btn-primary" id="btn-generate">생성</button>
+        </div>
+      </div>
+
+      <!-- PHASE 2a : PLANNING (outline is being built) -->
+      <div class="view" id="view-plan">
+        <div class="plan-grid">
+          <!-- LEFT : context -->
+          <aside class="plan-ctx">
+            <div class="gen-prompt-echo">
+              <div class="label">아웃라인 생성 중 · 원본 프롬프트</div>
+              <div class="text" id="plan-prompt-text">—</div>
+              <div class="meta">
+                <span><b id="plan-pack">—</b> · pack</span>
+                <span><b id="plan-count">0</b> slides</span>
+                <span
+                  ><b id="plan-lang">한국어</b> ·
+                  <span id="plan-tone">프로페셔널</span></span
+                >
+              </div>
+            </div>
+
+            <div class="plan-source-card" id="plan-source-card" hidden></div>
+
+            <div class="plan-pack-sig" id="plan-pack-sig">
+              <div class="thumb"></div>
+              <div class="info">
+                <div class="lbl">pack · signature</div>
+                <div class="nm" id="plan-pack-name">—</div>
+                <div class="mood" id="plan-pack-mood">시각 디자인 팩</div>
+              </div>
+            </div>
+          </aside>
+
+          <!-- RIGHT : progress -->
+          <section class="plan-progress">
+            <div class="gen-progress-card plan-card">
+              <div class="gen-head">
+                <span class="pulse"></span>
+                <span class="title">아웃라인 짜는 중…</span>
+                <span class="etr">
+                  <svg
+                    class="ico"
+                    viewBox="0 0 24 24"
+                    style="width: 12px; height: 12px"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 6v6l4 2" />
+                  </svg>
+                  경과 <b id="plan-etr">00:00</b>
+                </span>
+              </div>
+
+              <div class="plan-bar-indet"><div class="seg"></div></div>
+
+              <div class="plan-substages">
+                <div class="gen-step" id="plan-sub-1">
+                  <div class="head"><span class="mark"></span>01 · ANALYZE</div>
+                  <div class="nm">주제 분해</div>
+                </div>
+                <div class="gen-step" id="plan-sub-2">
+                  <div class="head">
+                    <span class="mark"></span>02 · STRUCTURE
+                  </div>
+                  <div class="nm">섹션 배치</div>
+                </div>
+                <div class="gen-step" id="plan-sub-3">
+                  <div class="head">
+                    <span class="mark"></span>03 · SEQUENCE
+                  </div>
+                  <div class="nm">슬라이드 순서</div>
+                </div>
+                <div class="gen-step" id="plan-sub-4">
+                  <div class="head"><span class="mark"></span>04 · DRAFT</div>
+                  <div class="nm">제목·노트 초안</div>
+                </div>
+              </div>
+
+              <div class="plan-hint" id="plan-hint">핵심 메시지 뽑는 중…</div>
+            </div>
+
+            <div class="plan-log-card">
+              <div class="head">
+                <span class="t">LIVE</span><span class="nm">plan log</span>
+              </div>
+              <div class="gen-log" id="plan-log">
+                <div class="line">
+                  <span class="t">00:00</span><span class="tag ok">INIT</span
+                  ><span class="msg">주제 분석 대기 중…</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="plan-skeleton">
+          <div class="head">
+            <span class="t">outline · skeleton</span>
+            <span class="n"><b id="plan-skel-count">0</b> slides</span>
+          </div>
+          <div class="rows" id="plan-skel-rows"></div>
+        </div>
+
+        <div class="gen-footer">
+          <button class="cancel-btn" id="btn-plan-cancel" type="button">
+            <svg class="ico" viewBox="0 0 24 24">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+            취소
+          </button>
+          <span class="tip" id="plan-tip"
+            >주제 구조를 먼저 잡아드릴게요. 다음 단계에서 수정할 수
+            있어요.</span
+          >
+          <span
+            class="chip-info"
+            title="서버에서 아웃라인 생성은 계속 진행됩니다"
+          >
+            <svg
+              class="ico"
+              viewBox="0 0 24 24"
+              style="width: 12px; height: 12px"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            브라우저를 닫아도 계속 진행됩니다
+          </span>
+        </div>
+      </div>
+
+      <!-- PHASE 2b : REVIEW (outline editable) -->
+      <div class="view" id="view-review">
+        <div class="compose-hero" style="margin: 24px 0 18px">
+          <div class="eyebrow">새 덱 · STEP 2 · 아웃라인 검토</div>
+          <h1 style="font-size: 40px">이대로 <em>잡아올까요</em>?</h1>
+          <p>
+            AI가 짠 아웃라인을 먼저 확인하세요. 제목·순서·메모는 바로 고칠 수
+            있어요. 저장은 자동으로 됩니다.
+          </p>
+        </div>
+
+        <!-- echo · prompt summary -->
+        <div class="review-echo" id="review-echo">
+          <div class="lbl">prompt</div>
+          <div class="body">
+            <div class="topic" id="echo-topic">—</div>
+            <div class="meta" id="echo-meta"><!-- chips injected --></div>
+          </div>
+          <button class="edit-btn" id="echo-edit-btn" type="button">
+            Edit prompt
+          </button>
+        </div>
+
+        <!-- deck name -->
+        <div class="deck-name-row">
+          <span class="lbl">Deck name</span>
+          <input
+            id="review-deck-name"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- toolbar -->
+        <div class="outline-tbar">
+          <div class="tb-group" id="density-group">
+            <button class="tb-btn on" type="button" data-density="expanded">
+              <svg
+                class="ico"
+                viewBox="0 0 24 24"
+                style="width: 12px; height: 12px"
+              >
+                <path d="M3 6h18M3 12h18M3 18h18" />
+              </svg>
+              Expanded
+            </button>
+            <button class="tb-btn" type="button" data-density="compact">
+              <svg
+                class="ico"
+                viewBox="0 0 24 24"
+                style="width: 12px; height: 12px"
+              >
+                <path d="M4 6h16M4 12h10M4 18h16" />
+              </svg>
+              Compact
+            </button>
+          </div>
+          <span class="tb-sep"></span>
+          <button class="tb-btn" id="tb-add-slide" type="button">
+            <svg
+              class="ico"
+              viewBox="0 0 24 24"
+              style="width: 12px; height: 12px"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add slide
+          </button>
+          <button
+            class="tb-btn"
+            id="tb-regen-all"
+            type="button"
+            disabled
+            title="coming soon"
+          >
+            <svg
+              class="ico"
+              viewBox="0 0 24 24"
+              style="width: 12px; height: 12px"
+            >
+              <path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" />
+            </svg>
+            Regenerate all
+          </button>
+          <span class="spacer"></span>
+          <button
+            class="md-toggle"
+            id="md-toggle"
+            type="button"
+            aria-pressed="false"
+          >
+            <svg
+              class="ico"
+              viewBox="0 0 24 24"
+              style="width: 12px; height: 12px"
+            >
+              <path d="M4 7h16M4 12h16M4 17h10" />
+            </svg>
+            Markdown 직접 편집
+          </button>
+        </div>
+
+        <!-- markdown escape-hatch (hidden by default) -->
+        <div class="md-panel" id="md-panel">
+          <div class="md-box">
+            <textarea id="outline-raw" spellcheck="false"></textarea>
+            <div class="md-foot">
+              <span id="outline-save-status" style="color: var(--lime)"
+                >● 저장됨</span
+              >
+              <span class="spacer"></span>
+              <span id="outline-char">0 chars</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- main grid -->
+        <div class="outline-grid">
+          <div class="col-main">
+            <div class="cards" id="cards"><!-- cards injected --></div>
+          </div>
+
+          <aside class="col-side">
+            <div class="side-card">
+              <div class="side-lbl">
+                Slides <span class="ct" id="side-ct">0</span>
+              </div>
+              <div class="mini" id="mini"><!-- mini rows injected --></div>
+            </div>
+
+            <div class="side-card">
+              <div class="side-lbl">Composition</div>
+              <div class="mix" id="comp-mix"><!-- segments injected --></div>
+              <div class="mix-leg" id="comp-leg"><!-- legend injected --></div>
+            </div>
+
+            <div class="side-card">
+              <div class="side-lbl">Health</div>
+              <div id="health-list"><!-- checks injected --></div>
+            </div>
+
+            <div class="tip">
+              <div class="h">Pro tip</div>
+              <div class="b">
+                제목·글머리·프롬프트를 클릭하면 바로 편집돼요. 복잡한 수정은
+                <b>Markdown 직접 편집</b>으로 전환하세요.
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <!-- keep legacy id for renderOutlinePreview safety; no longer in DOM -->
+        <span id="outline-count" hidden aria-hidden="true">0</span>
+      </div>
+
+      <!-- REVISION DOCK (floating, only visible in view-review) -->
+      <div class="revdock hidden" id="revdock">
+        <div class="rev-left">
+          <div class="rev-label">AI에게 수정 요청</div>
+          <div class="rev-input">
+            <textarea
+              id="rev-textarea"
+              placeholder="수정 요청을 입력하세요. 예: 더 간결하게, 숫자 데이터 추가, 처음 3장만 남기기..."
+            ></textarea>
+          </div>
+          <div class="rev-status" id="rev-meta" hidden></div>
+        </div>
+        <div class="rev-actions">
+          <button
+            class="rev-sec"
+            id="rev-revise"
+            type="button"
+            title="Shift+Enter"
+          >
+            <svg
+              class="ico"
+              viewBox="0 0 24 24"
+              style="width: 12px; height: 12px"
+            >
+              <path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.7 3L21 8" />
+              <path d="M21 3v5h-5" />
+              <path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.7-3L3 16" />
+            </svg>
+            Revise
+          </button>
+          <button class="rev-pri" id="btn-confirm-outline" type="button">
+            <svg
+              class="ico"
+              viewBox="0 0 24 24"
+              style="width: 12px; height: 12px"
+            >
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+            Approve
+          </button>
+        </div>
+      </div>
+
+      <!-- legacy replan button: kept for JS binding compatibility (hidden) -->
+      <button
+        id="btn-replan"
+        type="button"
+        hidden
+        aria-hidden="true"
+        style="display: none"
+      ></button>
+
+      <!-- PHASE 3 : GENERATING -->
+      <div class="view" id="view-generate">
+        <div class="gen-hero">
+          <div class="gen-prompt-echo">
+            <div class="label">생성 중 · 원본 프롬프트</div>
+            <div class="text" id="gen-prompt-text">—</div>
+            <div class="meta">
+              <span><b id="gen-pack">—</b> · pack</span>
+              <span><b id="gen-count">0</b> slides</span>
+              <span
+                ><b id="gen-lang">한국어</b> ·
+                <span id="gen-tone">프로페셔널</span></span
+              >
+            </div>
+          </div>
+          <div class="gen-progress-card">
+            <div class="gen-head">
+              <span class="pulse"></span>
+              <span class="title"
+                >슬라이드 생성 중 · <em id="slide-cur">0 / 0</em></span
+              >
+              <span class="etr">
+                <svg
+                  class="ico"
+                  viewBox="0 0 24 24"
+                  style="width: 12px; height: 12px"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 6v6l4 2" />
+                </svg>
+                경과 <b id="etr-val">00:00</b>
+              </span>
+            </div>
+            <div class="gen-bar"><div class="fill" id="bar-fill"></div></div>
+            <div class="gen-steps">
+              <div class="gen-step" id="step-01">
+                <div class="head"><span class="mark"></span>01 · OUTLINE</div>
+                <div class="nm">주제 구조 추출</div>
+              </div>
+              <div class="gen-step" id="step-02">
+                <div class="head"><span class="mark"></span>02 · LAYOUT</div>
+                <div class="nm">팩 레이아웃 매핑</div>
+              </div>
+              <div class="gen-step" id="step-03">
+                <div class="head"><span class="mark"></span>03 · CONTENT</div>
+                <div class="nm">본문 카피 생성</div>
+              </div>
+              <div class="gen-step" id="step-04">
+                <div class="head"><span class="mark"></span>04 · FINISH</div>
+                <div class="nm">이미지 · 폴리시</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="gen-stream">
+          <div class="gen-log" id="gen-log">
+            <div class="line">
+              <span class="t">00:00</span><span class="tag ok">INIT</span
+              ><span class="msg">대기 중…</span>
+            </div>
+          </div>
+          <div class="gen-thumbs" id="gen-thumbs"></div>
+        </div>
+
+        <div class="gen-footer">
+          <button class="cancel-btn" id="btn-cancel">
+            <svg class="ico" viewBox="0 0 24 24">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+            취소
+          </button>
+          <span class="tip"
+            >백그라운드로 돌려두면 다른 덱 작업하면서 기다릴 수 있어요.</span
+          >
+          <a class="bg-btn" href="/">
+            <svg class="ico" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+            </svg>
+            갤러리에서 계속 기다리기
+          </a>
+        </div>
+      </div>
+
+      <!-- PHASE 3 : READY -->
+      <div class="view" id="view-ready">
+        <div class="ready-hero">
+          <div class="ready-preview">
+            <div class="main" id="ready-preview-art">
+              <div class="title-big" id="ready-title">잡았어요</div>
+              <div class="sub-big" id="ready-sub">—</div>
+            </div>
+            <div class="slide-tray" id="ready-tray"></div>
+          </div>
+          <div class="ready-panel">
+            <div class="done-tag">
+              ● <span id="done-time">00초</span> 만에 완료
+            </div>
+            <h2><span id="ready-count">0</span>장 모두 <em>잡았어요.</em></h2>
+            <div class="summary">
+              <div class="item">
+                <span class="v" id="sum-slides">0</span
+                ><span class="l">slides</span>
+              </div>
+              <div class="item">
+                <span class="v" id="sum-words">0</span
+                ><span class="l">words</span>
+              </div>
+              <div class="item">
+                <span class="v" id="sum-pack">—</span
+                ><span class="l">pack</span>
+              </div>
+            </div>
+            <div class="ready-actions">
+              <div class="primary-row">
+                <a class="btn-primary" id="btn-open-editor" href="/editor">
+                  <svg class="ico" viewBox="0 0 24 24">
+                    <path
+                      d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                    />
+                    <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z" />
+                  </svg>
+                  편집기에서 열기
+                </a>
+              </div>
+              <div class="secondary-row">
+                <button>
+                  <svg class="ico" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  Present
+                </button>
+                <button>
+                  <svg class="ico" viewBox="0 0 24 24">
+                    <path
+                      d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
+                    />
+                  </svg>
+                  Export
+                </button>
+                <button>
+                  <svg class="ico" viewBox="0 0 24 24">
+                    <circle cx="18" cy="5" r="3" />
+                    <circle cx="6" cy="12" r="3" />
+                    <circle cx="18" cy="19" r="3" />
+                    <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
+                  </svg>
+                  공유
+                </button>
+              </div>
+            </div>
+            <div class="ready-notes">
+              AI가 초안을 만들었어요. 편집기에서 슬라이드별로 텍스트·이미지를
+              자연어로 고칠 수 있어요. <b>(BBox / Select)</b>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PACK PICKER MODAL — now injected by pack-picker.js module on demand -->
+
+    <!-- MODEL PICKER MODAL -->
+    <div class="src-modal-backdrop" id="model-modal" hidden aria-hidden="true">
+      <div
+        class="src-modal model-modal"
+        role="dialog"
+        aria-labelledby="model-modal-title"
+      >
+        <div class="src-modal-head">
+          <h3 id="model-modal-title">생성 모델</h3>
+          <button
+            class="src-modal-close"
+            id="model-modal-close"
+            aria-label="닫기"
+            type="button"
+          >
+            <svg class="ico" viewBox="0 0 24 24">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="src-modal-body model-modal-body" id="model-list"></div>
+      </div>
+    </div>
+
+    <!-- CONTEXT SOURCE MODAL -->
+    <div class="src-modal-backdrop" id="src-modal" hidden aria-hidden="true">
+      <div class="src-modal" role="dialog" aria-labelledby="src-modal-title">
+        <div class="src-modal-head">
+          <h3 id="src-modal-title">컨텍스트 추가</h3>
+          <button
+            class="src-modal-close"
+            id="src-modal-close"
+            aria-label="닫기"
+          >
+            <svg class="ico" viewBox="0 0 24 24">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="src-modal-body">
+          <!-- FILE PANEL -->
+          <div class="src-panel" data-panel="file" hidden>
+            <div class="src-dropzone" id="src-dropzone">
+              <svg
+                class="ico"
+                viewBox="0 0 24 24"
+                style="width: 28px; height: 28px"
+              >
+                <path
+                  d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"
+                />
+              </svg>
+              <div class="src-dropzone-text">
+                파일을 드래그하거나
+                <button type="button" class="src-link" id="src-browse">
+                  선택</button
+                >하세요
+              </div>
+              <div class="src-dropzone-hint">
+                PDF · MD · TXT · 최대 5개 · 총 10MB
+              </div>
+            </div>
+            <input
+              type="file"
+              id="src-file-input"
+              multiple
+              accept=".pdf,.md,.markdown,.txt"
+              hidden
+            />
+            <div class="src-file-list" id="src-file-list"></div>
+          </div>
+
+          <!-- URL PANEL -->
+          <div class="src-panel" data-panel="url" hidden>
+            <label for="src-url-input" class="src-field-label"
+              >웹 페이지 URL</label
+            >
+            <input
+              type="url"
+              id="src-url-input"
+              class="src-input"
+              placeholder="https://example.com/article"
+            />
+            <div class="src-dropzone-hint">
+              공개 블로그 · 문서 링크에서 본문을 추출해 컨텍스트로 사용합니다.
+            </div>
+          </div>
+        </div>
+
+        <div class="src-modal-foot">
+          <button class="btn-secondary" id="src-cancel" type="button">
+            취소
+          </button>
+          <button class="btn-primary" id="src-submit" type="button">
+            컨텍스트로 사용
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import {
+        openPackPicker,
+        closePackPicker,
+        ensurePreviewCss,
+      } from "/js/pack-picker.js";
+
+      /* ─────── state ─────── */
+      const S = {
+        packs: [],
+        selectedPack: null,
+        models: [],
+        slideCount: 9,
+        tone: "professional",
+        lang: "ko",
+        useImages: true,
+        model: "claude-sonnet-4-6",
+        planRunId: null,
+        runId: null,
+        deckName: "",
+        startTime: 0,
+        planStartTime: 0,
+        eventSource: null,
+        logTimer: null,
+        planTimer: null,
+        planHintTimer: null,
+        planSubstage: 0,
+        planHintIdx: 0,
+        deckPath: "",
+        outline: null,
+        outlineSaveTimer: null,
+        // Attached context source for import flow. Null when none.
+        // { kind: 'files', files: [{file, name, type}] } or { kind: 'url', url }
+        attachedSource: null,
+        // True when page was entered via ?deck=<name> from the editor for review-only.
+        // Hides the compose wizard chrome and skips pack-auto default.
+        reviewOnly: false,
+      };
+
+      /* ─────── els ─────── */
+      const $ = (id) => document.getElementById(id);
+      const topic = $("topic-input"),
+        charCount = $("char-count"),
+        deckNameInput = $("deck-name-input");
+      const slideVal = $("slide-val"),
+        slideFill = $("slide-fill"),
+        slideThumb = $("slide-thumb"),
+        slideSlider = $("slide-slider"),
+        slideEst = $("slide-est");
+      const packRow = $("pack-row"),
+        packDesc = $("pack-desc");
+      const btnGenerate = $("btn-generate"),
+        btnCancel = $("btn-cancel");
+
+      /* ─────── utils ─────── */
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const fmtTime = (ms) => {
+        const s = Math.floor(ms / 1000);
+        return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+      };
+
+      /* ─────── requirements composer ─────── */
+      // Tone/lang segmented → structured hint. User writes freely in topic;
+      // this only prepends tone/lang so the LLM has machine-readable context
+      // on top of whatever detail the user embedded in the main prompt.
+      function buildRequirements() {
+        const toneLabel =
+          {
+            professional: "프로페셔널",
+            friendly: "친근한",
+            technical: "기술적",
+          }[S.tone] || "";
+        const langLabel =
+          S.lang === "ko"
+            ? "한국어"
+            : S.lang === "en"
+              ? "English"
+              : "자동 감지";
+        const parts = [];
+        if (toneLabel) parts.push(`톤: ${toneLabel}`);
+        parts.push(`언어: ${langLabel}`);
+        parts.push(
+          "사용자 주제 프롬프트에 톤·대상·분량·제약 등 추가 지시사항이 자연어로 섞여 있을 수 있으니 전체 문맥을 주의 깊게 해석하세요.",
+        );
+        return parts.join(" · ");
+      }
+
+      /* ─────── context source modal (file + url import) ─────── */
+      const MAX_SRC_FILES = 5;
+      const MAX_SRC_BYTES = 10 * 1024 * 1024;
+      const SRC_EXTS = ["pdf", "md", "markdown", "txt"];
+
+      const srcModal = $("src-modal");
+      const srcClose = $("src-modal-close");
+      const srcCancel = $("src-cancel");
+      const srcSubmit = $("src-submit");
+      const srcBrowse = $("src-browse");
+      const srcFileInput = $("src-file-input");
+      const srcDropzone = $("src-dropzone");
+      const srcFileListEl = $("src-file-list");
+      const srcUrlInput = $("src-url-input");
+      const srcAttached = $("src-attached");
+      const srcPanels = srcModal.querySelectorAll(".src-panel");
+
+      let _srcPanel = "file"; // 'file' | 'url'
+      let _draftFiles = []; // [{file, name, type}] while modal open
+
+      function openSrcModal(panel) {
+        _srcPanel = panel;
+        srcPanels.forEach((p) => {
+          p.hidden = p.dataset.panel !== panel;
+        });
+        // Preload draft from an existing attachment (allow editing)
+        if (S.attachedSource?.kind === "files" && panel === "file") {
+          _draftFiles = [...S.attachedSource.files];
+        } else if (S.attachedSource?.kind === "url" && panel === "url") {
+          srcUrlInput.value = S.attachedSource.url || "";
+        } else {
+          _draftFiles = panel === "file" ? [] : _draftFiles;
+          if (panel === "url" && !S.attachedSource) srcUrlInput.value = "";
+        }
+        renderDraftFiles();
+        srcModal.hidden = false;
+        srcModal.setAttribute("aria-hidden", "false");
+        setTimeout(
+          () => (panel === "url" ? srcUrlInput : srcBrowse)?.focus(),
+          30,
+        );
+      }
+      function closeSrcModal() {
+        srcModal.hidden = true;
+        srcModal.setAttribute("aria-hidden", "true");
+        _draftFiles = [];
+        srcFileInput.value = "";
+      }
+
+      function renderDraftFiles() {
+        if (!_draftFiles.length) {
+          srcFileListEl.innerHTML = "";
+          return;
+        }
+        srcFileListEl.innerHTML = _draftFiles
+          .map(
+            (e, i) => `
+        <div class="src-file-row">
+          <span class="nm">${esc(e.name)}</span>
+          <span class="sz">${fmtBytes(e.file.size)}</span>
+          <button class="rm" type="button" data-i="${i}" aria-label="제거">×</button>
+        </div>`,
+          )
+          .join("");
+        srcFileListEl.querySelectorAll(".rm").forEach((btn) =>
+          btn.addEventListener("click", () => {
+            _draftFiles.splice(Number(btn.dataset.i), 1);
+            renderDraftFiles();
+          }),
+        );
+      }
+      function fmtBytes(n) {
+        if (n < 1024) return `${n} B`;
+        if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+        return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+      }
+      function totalDraftBytes() {
+        return _draftFiles.reduce((s, e) => s + e.file.size, 0);
+      }
+      function addDraftFiles(list) {
+        for (const file of list) {
+          if (_draftFiles.length >= MAX_SRC_FILES) break;
+          if (
+            _draftFiles.some(
+              (e) => e.name === file.name && e.file.size === file.size,
+            )
+          )
+            continue;
+          const ext = (file.name.split(".").pop() || "").toLowerCase();
+          if (!SRC_EXTS.includes(ext)) continue;
+          if (totalDraftBytes() + file.size > MAX_SRC_BYTES) break;
+          _draftFiles.push({
+            file,
+            name: file.name,
+            type: ext === "pdf" ? "pdf" : "text",
+          });
+        }
+        renderDraftFiles();
+        srcFileInput.value = "";
+      }
+
+      function renderAttachedPill() {
+        if (!S.attachedSource) {
+          srcAttached.hidden = true;
+          srcAttached.innerHTML = "";
+          return;
+        }
+        let label = "";
+        if (S.attachedSource.kind === "files") {
+          const n = S.attachedSource.files.length;
+          label = n === 1 ? S.attachedSource.files[0].name : `${n}개 파일`;
+        } else if (S.attachedSource.kind === "url") {
+          try {
+            label = new URL(S.attachedSource.url).hostname;
+          } catch {
+            label = S.attachedSource.url;
+          }
+        }
+        srcAttached.hidden = false;
+        srcAttached.innerHTML = `
+        <span class="src-pill">
+          <span class="src-pill-name">${esc(label)}</span>
+          <button class="src-pill-remove" type="button" aria-label="제거">×</button>
+        </span>`;
+        srcAttached
+          .querySelector(".src-pill-remove")
+          .addEventListener("click", () => {
+            S.attachedSource = null;
+            renderAttachedPill();
+          });
+      }
+
+      // chip → open modal
+      $("src-file").addEventListener("click", () => openSrcModal("file"));
+      $("src-url").addEventListener("click", () => openSrcModal("url"));
+      srcClose.addEventListener("click", closeSrcModal);
+      srcCancel.addEventListener("click", closeSrcModal);
+      srcModal.addEventListener("click", (e) => {
+        if (e.target === srcModal) closeSrcModal();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !srcModal.hidden) closeSrcModal();
+      });
+
+      // file input + dropzone
+      srcBrowse.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        srcFileInput.click();
+      });
+      srcFileInput.addEventListener("change", () =>
+        addDraftFiles(srcFileInput.files || []),
+      );
+      srcDropzone.addEventListener("click", () => srcFileInput.click());
+      srcDropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        srcDropzone.classList.add("dragover");
+      });
+      srcDropzone.addEventListener("dragleave", () =>
+        srcDropzone.classList.remove("dragover"),
+      );
+      srcDropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        srcDropzone.classList.remove("dragover");
+        addDraftFiles(e.dataTransfer?.files || []);
+      });
+
+      // modal submit — just stash the attachment; actual import fires on main Generate click
+      srcSubmit.addEventListener("click", () => {
+        if (_srcPanel === "file") {
+          if (!_draftFiles.length) {
+            srcFileInput.click();
+            return;
+          }
+          S.attachedSource = { kind: "files", files: [..._draftFiles] };
+        } else {
+          const url = srcUrlInput.value.trim();
+          if (!url) {
+            srcUrlInput.focus();
+            return;
+          }
+          if (!/^https?:\/\//i.test(url)) {
+            alert("https:// 또는 http:// URL을 입력하세요.");
+            return;
+          }
+          S.attachedSource = { kind: "url", url };
+        }
+        renderAttachedPill();
+        closeSrcModal();
+      });
+
+      /* ─────── pack picker — via shared module ─────── */
+      const packAllBtn = $("pack-all-btn");
+
+      packAllBtn.addEventListener("click", () => {
+        openPackPicker({
+          packs: S.packs,
+          initialPackId: S.selectedPack || null,
+          eyebrow: `apply pack · ${S.packs.length} available`,
+          titleHtml: "Pick a <em>design pack</em>",
+          hint: "선택한 팩의 디자인으로 모든 슬라이드가 생성됩니다.",
+          applyLabel: "적용하기",
+          defaultHighlightId: "simple_light",
+          onApply: (packId) => {
+            selectPack(packId);
+            closePackPicker();
+          },
+        });
+      });
+
+      /* ─────── model picker modal ─────── */
+      const modelModal = $("model-modal");
+      const modelList = $("model-list");
+      const modelChange = document.querySelector(".model-line .change");
+      const modelNameEl = $("model-name");
+
+      async function loadModels() {
+        try {
+          const res = await fetch("/api/models");
+          if (!res.ok) return;
+          const payload = await res.json();
+          const ms = Array.isArray(payload.models) ? payload.models : [];
+          if (ms.length) {
+            S.models = ms;
+            if (payload.defaultModel) {
+              S.model = payload.defaultModel;
+              modelNameEl.textContent = S.model;
+            }
+          }
+        } catch {
+          /* keep default */
+        }
+      }
+
+      function renderModelList() {
+        const ms = S.models || [S.model];
+        modelList.innerHTML = ms
+          .map((m) => {
+            const kind = /opus/i.test(m)
+              ? "opus"
+              : /sonnet/i.test(m)
+                ? "sonnet"
+                : /haiku/i.test(m)
+                  ? "haiku"
+                  : /gpt/i.test(m)
+                    ? "gpt"
+                    : /o\d/i.test(m)
+                      ? "o-series"
+                      : "model";
+            return `<button type="button" class="model-opt${m === S.model ? " on" : ""}" data-m="${esc(m)}">
+          <span class="mod-dot"></span>
+          <span class="mod-name">${esc(m)}</span>
+          <span class="mod-badge">${esc(kind)}</span>
+        </button>`;
+          })
+          .join("");
+        modelList.querySelectorAll(".model-opt").forEach((el) =>
+          el.addEventListener("click", () => {
+            S.model = el.dataset.m;
+            modelNameEl.textContent = S.model;
+            renderModelList();
+            setTimeout(closeModelModal, 100);
+          }),
+        );
+      }
+      function openModelModal() {
+        renderModelList();
+        modelModal.hidden = false;
+        modelModal.setAttribute("aria-hidden", "false");
+      }
+      function closeModelModal() {
+        modelModal.hidden = true;
+        modelModal.setAttribute("aria-hidden", "true");
+      }
+      if (modelChange) {
+        modelChange.style.cursor = "pointer";
+        modelChange.addEventListener("click", openModelModal);
+      }
+      $("model-modal-close").addEventListener("click", closeModelModal);
+      modelModal.addEventListener("click", (e) => {
+        if (e.target === modelModal) closeModelModal();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !modelModal.hidden) closeModelModal();
+      });
+
+      /* ─────── file reading helpers ─────── */
+      function readFileAsText(file) {
+        return new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () =>
+            resolve(typeof r.result === "string" ? r.result : "");
+          r.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+          r.readAsText(file, "utf-8");
+        });
+      }
+      function readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () =>
+            resolve((r.result || "").toString().split(",")[1] || "");
+          r.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+          r.readAsDataURL(file);
+        });
+      }
+
+      /* ─────── import dispatchers ─────── */
+      // Each returns the POST response JSON ({ runId, ... }) or throws.
+      async function importUrl(url, { userPrompt }) {
+        const res = await fetch("/api/import-doc?sourceType=url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url,
+            model: S.model,
+            slideCount: String(S.slideCount),
+            packId: S.selectedPack,
+            userPrompt,
+            useImages: S.useImages,
+          }),
+        });
+        if (!res.ok)
+          throw new Error(
+            (await res.json().catch(() => ({}))).error || `HTTP ${res.status}`,
+          );
+        return res.json();
+      }
+      async function importSinglePdf(file, { userPrompt }) {
+        const buffer = await file.arrayBuffer();
+        const qs = new URLSearchParams({
+          sourceType: "pdf",
+          model: S.model,
+          slideCount: String(S.slideCount),
+          packId: S.selectedPack || "",
+          userPrompt,
+          useImages: String(S.useImages),
+        });
+        const res = await fetch(`/api/import-doc?${qs}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/pdf" },
+          body: buffer,
+        });
+        if (!res.ok)
+          throw new Error(
+            (await res.json().catch(() => ({}))).error || `HTTP ${res.status}`,
+          );
+        return res.json();
+      }
+      async function importSingleText(file, { userPrompt }) {
+        const content = await readFileAsText(file);
+        if (!content.trim()) throw new Error("파일이 비어 있습니다.");
+        const res = await fetch("/api/import-md", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content,
+            model: S.model,
+            slideCount: String(S.slideCount),
+            packId: S.selectedPack,
+            userPrompt,
+            useImages: S.useImages,
+          }),
+        });
+        if (!res.ok)
+          throw new Error(
+            (await res.json().catch(() => ({}))).error || `HTTP ${res.status}`,
+          );
+        return res.json();
+      }
+      async function importMultiFiles(entries, { userPrompt }) {
+        const files = [];
+        for (const e of entries) {
+          if (e.type === "pdf")
+            files.push({
+              name: e.name,
+              type: "pdf",
+              base64: await readFileAsBase64(e.file),
+            });
+          else
+            files.push({
+              name: e.name,
+              type: "text",
+              content: await readFileAsText(e.file),
+            });
+        }
+        const res = await fetch("/api/import-files", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            files,
+            model: S.model,
+            slideCount: String(S.slideCount),
+            packId: S.selectedPack,
+            userPrompt,
+            useImages: S.useImages,
+          }),
+        });
+        if (!res.ok)
+          throw new Error(
+            (await res.json().catch(() => ({}))).error || `HTTP ${res.status}`,
+          );
+        return res.json();
+      }
+
+      /** Kick off the outline plan via import route. Returns runId. */
+      async function dispatchImport() {
+        // topic + requirements ride along as userPrompt for the import LLM
+        const userPrompt = [topic.value.trim(), buildRequirements()]
+          .filter(Boolean)
+          .join("\n\n");
+        if (S.attachedSource.kind === "url") {
+          return importUrl(S.attachedSource.url, { userPrompt });
+        }
+        const files = S.attachedSource.files;
+        if (files.length >= 2) return importMultiFiles(files, { userPrompt });
+        const only = files[0];
+        return only.type === "pdf"
+          ? importSinglePdf(only.file, { userPrompt })
+          : importSingleText(only.file, { userPrompt });
+      }
+
+      /* ─────── step strip ─────── */
+      // phase → step index (1..4). plan + review both live under step 2 (아웃라인).
+      function setStep(phase) {
+        const stepOf = {
+          compose: 1,
+          plan: 2,
+          review: 2,
+          generate: 3,
+          ready: 4,
+        };
+        const p = stepOf[phase];
+        ["s1", "s2", "s3", "s4"].forEach((id, i) => {
+          const el = $(id);
+          el.classList.remove("on", "done");
+          if (i + 1 < p) el.classList.add("done");
+          else if (i + 1 === p) el.classList.add("on");
+        });
+        $("b1").classList.toggle("done", p > 1);
+        $("b2").classList.toggle("done", p > 2);
+        $("b3").classList.toggle("done", p > 3);
+        [
+          "view-compose",
+          "view-plan",
+          "view-review",
+          "view-generate",
+          "view-ready",
+        ].forEach((v) => {
+          $(v).classList.toggle("on", v === `view-${phase}`);
+        });
+        // floating revdock is tied to review view only
+        const dock = $("revdock");
+        if (dock) dock.classList.toggle("hidden", phase !== "review");
+        const crumbTxt = {
+          compose: "새 덱 만들기",
+          plan: "아웃라인 생성 중…",
+          review: "아웃라인 검토",
+          generate: "슬라이드 생성 중…",
+          ready: "준비 완료",
+        };
+        $("crumb-now").textContent = crumbTxt[phase];
+      }
+
+      /* ─────── theme ─────── */
+      const applyTheme = (t) => {
+        document.documentElement.setAttribute("data-theme", t);
+        document.body.setAttribute("data-theme", t);
+        $("themeThumb").textContent = t === "dark" ? "☾" : "☀";
+      };
+      applyTheme(
+        document.documentElement.getAttribute("data-theme") || "light",
+      );
+      $("themeBtn").addEventListener("click", () => {
+        const next =
+          document.documentElement.getAttribute("data-theme") === "dark"
+            ? "light"
+            : "dark";
+        applyTheme(next);
+        localStorage.setItem("sgs-theme", next);
+      });
+
+      /* ─────── prompt / char count ─────── */
+      const params = new URLSearchParams(location.search);
+      if (params.get("prompt")) topic.value = params.get("prompt");
+      topic.addEventListener("input", () => {
+        charCount.textContent = `${topic.value.length} / 2000`;
+      });
+      charCount.textContent = `${topic.value.length} / 2000`;
+
+      /* ─────── quick grabs ─────── */
+      document.querySelectorAll(".quick-grabs .qg").forEach((el) => {
+        el.addEventListener("click", () => {
+          topic.value = el.dataset.seed || "";
+          topic.dispatchEvent(new Event("input"));
+          topic.focus();
+        });
+      });
+
+      /* ─────── slide count slider ─────── */
+      function setSlideCount(n) {
+        S.slideCount = Math.max(3, Math.min(30, Math.round(n)));
+        slideVal.textContent = S.slideCount;
+        const pct = ((S.slideCount - 3) / 27) * 100;
+        slideFill.style.width = `${pct}%`;
+        slideThumb.style.left = `${pct}%`;
+        const mins = Math.round(S.slideCount * 1.1);
+        slideEst.textContent = `≈ ${mins}분 발표`;
+      }
+      let dragging = false;
+      const sliderUpdate = (e) => {
+        const rect = slideSlider.getBoundingClientRect();
+        const x =
+          ((e.touches?.[0]?.clientX ?? e.clientX) - rect.left) / rect.width;
+        setSlideCount(3 + x * 27);
+      };
+      slideSlider.addEventListener("mousedown", (e) => {
+        dragging = true;
+        sliderUpdate(e);
+      });
+      document.addEventListener("mousemove", (e) => {
+        if (dragging) sliderUpdate(e);
+      });
+      document.addEventListener("mouseup", () => {
+        dragging = false;
+      });
+      slideSlider.addEventListener("click", sliderUpdate);
+      setSlideCount(9);
+
+      /* ─────── tone + lang segmented ─────── */
+      document.querySelectorAll("#tone-seg button").forEach((b) =>
+        b.addEventListener("click", () => {
+          document
+            .querySelectorAll("#tone-seg button")
+            .forEach((x) => x.classList.toggle("on", x === b));
+          S.tone = b.dataset.val;
+        }),
+      );
+      document.querySelectorAll("#lang-seg button").forEach((b) =>
+        b.addEventListener("click", () => {
+          document
+            .querySelectorAll("#lang-seg button")
+            .forEach((x) => x.classList.toggle("on", x === b));
+          S.lang = b.dataset.val;
+        }),
+      );
+      document.querySelectorAll("#image-seg button").forEach((b) =>
+        b.addEventListener("click", () => {
+          document
+            .querySelectorAll("#image-seg button")
+            .forEach((x) => x.classList.toggle("on", x === b));
+          S.useImages = b.dataset.val === "on";
+        }),
+      );
+
+      /* ─────── packs ─────── */
+      async function loadPacks() {
+        try {
+          const res = await fetch("/api/packs");
+          S.packs = (await res.json()) || [];
+        } catch {
+          S.packs = [];
+        }
+        renderPacks();
+      }
+      /* ─────── recent pack tracking (persisted) ─────── */
+      const RECENT_KEY = "sgs-recent-packs";
+      const RECENT_MAX = 10;
+      function loadRecentPacks() {
+        try {
+          const raw = localStorage.getItem(RECENT_KEY);
+          const arr = raw ? JSON.parse(raw) : [];
+          return Array.isArray(arr)
+            ? arr.filter((x) => typeof x === "string")
+            : [];
+        } catch {
+          return [];
+        }
+      }
+      function pushRecentPack(id) {
+        if (!id || id === "auto") return;
+        const next = [id, ...loadRecentPacks().filter((x) => x !== id)].slice(
+          0,
+          RECENT_MAX,
+        );
+        try {
+          localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+        } catch {
+          /* quota */
+        }
+      }
+
+      /* ─────── side pack tiles ─────── */
+      const AUTO_PACK = {
+        id: "auto",
+        name: "AI 추천",
+        description: "주제에 맞춰 AI가 자동 선택",
+        isAuto: true,
+      };
+
+      function packMiniHtml(p, isOn) {
+        if (p.isAuto) {
+          return `<button type="button" class="pack-mini pack-mini-auto${isOn ? " on" : ""}" data-pack="auto" title="AI 추천 — 주제에 맞춰 자동 선택">
+          <span class="auto-art">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3l1.6 4.6L18 9.2l-4.4 1.6L12 15.4l-1.6-4.6L6 9.2l4.4-1.6z" />
+              <circle cx="18.5" cy="17" r=".9" /><circle cx="5.5" cy="17.5" r=".7" />
+            </svg>
+          </span>
+          <span class="name">AI 추천</span>
+        </button>`;
+        }
+        return `<button type="button" class="pack-mini${isOn ? " on" : ""}" data-pack="${esc(p.id)}" title="${esc(p.name || p.id)}">
+        <span class="preview-inner preview-${esc(p.id)}">
+          <span class="el el-1"></span><span class="el el-2"></span><span class="el el-3"></span>
+        </span>
+        <span class="name">${esc(p.name || p.id)}</span>
+      </button>`;
+      }
+      function scaleSideMinis() {
+        packRow.querySelectorAll(".pack-mini").forEach((mini) => {
+          const inner = mini.querySelector(".preview-inner");
+          if (!inner) return;
+          const w = mini.clientWidth;
+          if (!w) return;
+          inner.style.transform = `scale(${w / 280})`;
+        });
+      }
+      function pickSideTiles() {
+        // Tile 1: AI 추천. Tiles 2-4: most recent. Backfill with first packs (excluding auto).
+        const recent = loadRecentPacks();
+        const recentObjs = recent
+          .map((id) => S.packs.find((p) => p.id === id))
+          .filter(Boolean);
+        const fillers = S.packs.filter(
+          (p) => !recentObjs.some((r) => r.id === p.id),
+        );
+        const trio = [...recentObjs, ...fillers].slice(0, 3);
+        return [AUTO_PACK, ...trio];
+      }
+      async function renderPacks() {
+        if (!S.packs.length) {
+          packRow.innerHTML =
+            '<div style="grid-column:1/-1;font-size:11px;color:var(--muted);padding:8px">팩을 불러올 수 없음</div>';
+          return;
+        }
+        if (!S.selectedPack && !S.reviewOnly) S.selectedPack = "auto";
+        const tiles = pickSideTiles();
+        packRow.innerHTML = tiles
+          .map((p) => packMiniHtml(p, p.id === S.selectedPack))
+          .join("");
+        packRow.querySelectorAll(".pack-mini").forEach((el) =>
+          el.addEventListener("click", () => {
+            if (el.dataset.pack === "auto") {
+              selectPack("auto");
+              return;
+            }
+            openPackPicker({
+              packs: S.packs,
+              initialPackId: el.dataset.pack,
+              hideApply: true,
+              eyebrow: `${S.packs.length} packs available`,
+              titleHtml: "Pick a <em>design pack</em>",
+              hint: "",
+            });
+          }),
+        );
+        updatePackDesc();
+        await ensurePreviewCss(S.packs);
+        scaleSideMinis();
+        requestAnimationFrame(scaleSideMinis);
+      }
+      function selectPack(id) {
+        S.selectedPack = id;
+        pushRecentPack(id);
+        // If the chosen pack isn't currently shown in the side row, re-render to surface it as recent.
+        if (!packRow.querySelector(`.pack-mini[data-pack="${id}"]`)) {
+          renderPacks();
+        } else {
+          packRow
+            .querySelectorAll(".pack-mini")
+            .forEach((x) => x.classList.toggle("on", x.dataset.pack === id));
+        }
+        updatePackDesc();
+      }
+      function updatePackDesc() {
+        if (S.selectedPack === "auto") {
+          packDesc.innerHTML =
+            "<b>AI 추천</b> · 주제에 어울리는 팩을 자동 선택";
+          return;
+        }
+        const p = S.packs.find((x) => x.id === S.selectedPack);
+        if (!p) {
+          packDesc.innerHTML = "<b>—</b> · 팩을 선택하세요";
+          return;
+        }
+        packDesc.innerHTML = `<b>${esc(p.name || p.id)}</b> · ${esc(p.description || p.type || "design pack")}`;
+      }
+
+      /* ─────── outline helpers ─────── */
+      function serializeOutline(o) {
+        // Reconstruct raw markdown from parseOutline() output: rawHeader + slide blocks + rawFooter
+        if (!o) return "";
+        const slides = (o.slides || []).map((s) => s.rawBlock || "").join("");
+        return (o.rawHeader || "") + slides + (o.rawFooter || "");
+      }
+      function derivedDeckName(topicText) {
+        return (
+          deckNameInput.value.trim() ||
+          topicText
+            .split(/[.\n·]/)[0]
+            .trim()
+            .slice(0, 40)
+            .replace(/[<>:"/\\|?*\s]+/g, "-") ||
+          "new-deck"
+        );
+      }
+
+      /* ─────── PHASE 1 → PHASE 2 : start planning ─────── */
+      async function startPlan() {
+        const topicText = topic.value.trim();
+        const hasAttachment = !!S.attachedSource;
+        // Topic required unless we have an attached source (file/URL provides the content).
+        if (!topicText && !hasAttachment) {
+          topic.focus();
+          return;
+        }
+        btnGenerate.disabled = true;
+        btnGenerate.classList.add("disabled");
+
+        // 1) reset deck state server-side (creates a fresh scratch deck dir)
+        try {
+          await fetch("/api/decks/new", { method: "POST" });
+        } catch {
+          /* continue */
+        }
+
+        // 2) derive deck name (import routes pick their own; this is only used for the topic path)
+        S.deckName = derivedDeckName(topicText || "imported-deck");
+
+        // 3) connect SSE (before POST so we don't miss early events)
+        bindSSE();
+
+        // 4) kick off outline plan — route based on attachment
+        try {
+          let data;
+          if (hasAttachment) {
+            data = await dispatchImport();
+          } else {
+            const res = await fetch("/api/plan", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                topic: topicText,
+                requirements: buildRequirements(),
+                slideCount: String(S.slideCount),
+                packId: S.selectedPack,
+                model: S.model,
+                useImages: S.useImages,
+              }),
+            });
+            data = await res.json();
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+          }
+          S.planRunId = data.runId;
+        } catch (err) {
+          btnGenerate.disabled = false;
+          btnGenerate.classList.remove("disabled");
+          alert(`Plan failed: ${err.message}`);
+          return;
+        }
+
+        // 5) show plan view
+        setStep("plan");
+        const echo =
+          topicText ||
+          (S.attachedSource?.kind === "url"
+            ? `URL: ${S.attachedSource.url}`
+            : `${S.attachedSource?.files?.length || 0}개 파일에서 아웃라인 생성 중`);
+        $("plan-prompt-text").textContent = echo;
+        $("plan-pack").textContent = S.selectedPack || "—";
+        $("plan-count").textContent = S.slideCount;
+        $("plan-lang").textContent =
+          S.lang === "ko" ? "한국어" : S.lang === "en" ? "English" : "Auto";
+        $("plan-tone").textContent = {
+          professional: "프로페셔널",
+          friendly: "친근하게",
+          technical: "기술적",
+        }[S.tone];
+        $("plan-log").innerHTML = "";
+        renderPlanSource();
+        renderPlanPackSig();
+        renderPlanSkeleton(S.slideCount);
+        resetPlanSubstages();
+        setPlanSubstage(1);
+        startPlanHintRotator();
+        startPlanTimer();
+      }
+
+      function startPlanTimer() {
+        S.planStartTime = Date.now();
+        if (S.planTimer) clearInterval(S.planTimer);
+        S.planTimer = setInterval(() => {
+          $("plan-etr").textContent = fmtTime(Date.now() - S.planStartTime);
+        }, 500);
+      }
+      function appendPlanLog(msg, tag = "ok") {
+        if (!msg) return;
+        const log = $("plan-log");
+        const t = fmtTime(Date.now() - S.planStartTime);
+        const tagTxt = (tag || "LOG").toString().slice(0, 5).toUpperCase();
+        const line = document.createElement("div");
+        line.className = "line";
+        line.innerHTML = `<span class="t">${esc(t)}</span><span class="tag ${esc(tag)}">${esc(tagTxt)}</span><span class="msg">${esc(msg)}</span>`;
+        log.appendChild(line);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      /* ─────── PHASE 2a : richer plan view helpers ─────── */
+      const PLAN_HINTS = {
+        1: [
+          "핵심 메시지 뽑는 중…",
+          "주제를 소재·대상·목적으로 분해…",
+          "문장의 중심축 잡는 중…",
+        ],
+        2: [
+          "섹션 경계 그어보는 중…",
+          "시작–본론–마무리 배치…",
+          "주요 장면 후보 정리…",
+        ],
+        3: [
+          "슬라이드 순서 조립 중…",
+          "리듬이 지루하지 않게 배열…",
+          "제목별 분량 저울질…",
+        ],
+        4: ["초안 제목 뽑는 중…", "노트 문장 다듬는 중…", "마지막 정돈…"],
+      };
+      const PLAN_TIPS = {
+        1: "주제 구조를 먼저 잡아드릴게요. 다음 단계에서 수정할 수 있어요.",
+        2: "핵심 섹션을 나누고 있어요. 잠시만요…",
+        3: "슬라이드 순서를 조립 중입니다.",
+        4: "마무리 초안을 뽑는 중입니다.",
+      };
+
+      function renderPlanSource() {
+        const card = $("plan-source-card");
+        const src = S.attachedSource;
+        if (!src) {
+          card.hidden = true;
+          card.innerHTML = "";
+          return;
+        }
+        card.hidden = false;
+        if (src.kind === "files" && src.files?.length) {
+          const files = src.files
+            .map((f) => {
+              const name = f.name || "file";
+              const ext = ((name.split(".").pop() || "FILE") + "")
+                .toUpperCase()
+                .slice(0, 5);
+              return `<div class="file"><span class="ext">${esc(ext)}</span><span class="nm">${esc(name)}</span></div>`;
+            })
+            .join("");
+          card.innerHTML = `<div class="lbl">첨부 · 파일 ${src.files.length}</div><div class="files">${files}</div>`;
+        } else if (src.kind === "url" && src.url) {
+          let host = src.url,
+            path = "";
+          try {
+            const u = new URL(src.url);
+            host = u.hostname;
+            path = (u.pathname || "") + (u.search || "");
+          } catch {}
+          const fav = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=32`;
+          card.innerHTML = `<div class="lbl">첨부 · URL</div>
+          <div class="url-card">
+            <img src="${esc(fav)}" alt="" onerror="this.remove()" />
+            <div class="hp">
+              <span class="host">${esc(host)}</span>
+              ${path && path !== "/" ? `<span class="path">${esc(path)}</span>` : ""}
+            </div>
+          </div>`;
+        } else {
+          card.hidden = true;
+          card.innerHTML = "";
+        }
+      }
+
+      function renderPlanPackSig() {
+        const pack = (S.packs || []).find((p) => p.id === S.selectedPack);
+        const name = pack?.name || S.selectedPack || "—";
+        const mood =
+          pack?.mood || pack?.tagline || pack?.description || "시각 디자인 팩";
+        $("plan-pack-name").textContent = name;
+        $("plan-pack-mood").textContent = mood;
+        const thumb = $("plan-pack-sig").querySelector(".thumb");
+        if (S.selectedPack) {
+          thumb.innerHTML = `<img src="/api/packs/${encodeURIComponent(S.selectedPack)}/preview" alt="" onerror="this.remove()" />`;
+        } else {
+          thumb.innerHTML = "";
+        }
+      }
+
+      function renderPlanSkeleton(n) {
+        const rows = $("plan-skel-rows");
+        $("plan-skel-count").textContent = n;
+        const count = Math.max(1, Math.min(30, Number(n) || 0));
+        let html = "";
+        for (let i = 1; i <= count; i += 1) {
+          html += `<div class="plan-skel-row">
+          <span class="idx">${String(i).padStart(2, "0")}</span>
+          <div class="bar"><div class="fill"></div></div>
+          <span class="chip"></span>
+        </div>`;
+        }
+        rows.innerHTML = html;
+      }
+
+      function resetPlanSubstages() {
+        S.planSubstage = 0;
+        for (let i = 1; i <= 4; i += 1) {
+          const el = $(`plan-sub-${i}`);
+          if (el) el.classList.remove("active", "done");
+        }
+      }
+
+      function setPlanSubstage(n) {
+        if (!n || n < 1 || n > 4) return;
+        if (S.planSubstage === n) return;
+        S.planSubstage = n;
+        for (let i = 1; i <= 4; i += 1) {
+          const el = $(`plan-sub-${i}`);
+          if (!el) continue;
+          el.classList.remove("active");
+          if (i < n) el.classList.add("done");
+          if (i === n) el.classList.add("active");
+          if (i > n) el.classList.remove("done");
+        }
+        const tip = $("plan-tip");
+        if (tip && PLAN_TIPS[n]) tip.textContent = PLAN_TIPS[n];
+        S.planHintIdx = 0;
+        rotatePlanHint(true);
+      }
+
+      function markAllPlanSubstagesDone() {
+        for (let i = 1; i <= 4; i += 1) {
+          const el = $(`plan-sub-${i}`);
+          if (el) {
+            el.classList.remove("active");
+            el.classList.add("done");
+          }
+        }
+      }
+
+      function rotatePlanHint(immediate) {
+        const el = $("plan-hint");
+        if (!el) return;
+        const phrases = PLAN_HINTS[S.planSubstage || 1] || PLAN_HINTS[1];
+        const next = phrases[S.planHintIdx % phrases.length];
+        S.planHintIdx += 1;
+        if (immediate) {
+          el.textContent = next;
+          el.classList.remove("swap");
+          return;
+        }
+        el.classList.add("swap");
+        setTimeout(() => {
+          el.textContent = next;
+          el.classList.remove("swap");
+        }, 320);
+      }
+
+      function startPlanHintRotator() {
+        stopPlanHintRotator();
+        S.planHintIdx = 0;
+        rotatePlanHint(true);
+        S.planHintTimer = setInterval(() => rotatePlanHint(false), 2500);
+      }
+
+      function stopPlanHintRotator() {
+        if (S.planHintTimer) {
+          clearInterval(S.planHintTimer);
+          S.planHintTimer = null;
+        }
+      }
+
+      function detectPlanSubstage(step) {
+        const s = (step || "").toString();
+        if (/draft|초안|final|finaliz|정돈|마무리|note|제목/i.test(s)) return 4;
+        if (/sequen|order|arrange|배치|순서|리듬|flow/i.test(s)) return 3;
+        if (/structur|section|outline|sections|구조|섹션|배열/i.test(s))
+          return 2;
+        if (/analy|topic|understand|parse|분석|이해|분해|주제/i.test(s))
+          return 1;
+        return 0;
+      }
+
+      function settleSkelRow(i, title, type) {
+        const rows = $("plan-skel-rows");
+        const row = rows?.children[i - 1];
+        if (!row) return;
+        const safeTitle = (title || "").trim() || "(제목 작성 중…)";
+        const safeType = (type || "").trim();
+        if (row.classList.contains("settled")) {
+          const t = row.querySelector(".title");
+          if (t) t.textContent = safeTitle;
+          const tp = row.querySelector(".type");
+          if (safeType) {
+            if (tp) tp.textContent = safeType;
+            else
+              row.insertAdjacentHTML(
+                "beforeend",
+                `<span class="type">${esc(safeType)}</span>`,
+              );
+          } else if (tp) tp.remove();
+          return;
+        }
+        row.classList.add("settled");
+        row.innerHTML = `
+        <span class="idx">${String(i).padStart(2, "0")}</span>
+        <span class="title">${esc(safeTitle)}</span>
+        ${safeType ? `<span class="type">${esc(safeType)}</span>` : ""}
+      `;
+      }
+
+      function applyPartialOutline(outline, deckName) {
+        if (deckName) S.deckName = deckName;
+        const slides = (outline && outline.slides) || [];
+        if (!slides.length) return;
+        const rows = $("plan-skel-rows");
+        if (!rows) return;
+        const wanted = Math.max(
+          slides.length,
+          rows.children.length,
+          S.slideCount || 0,
+        );
+        if (rows.children.length !== wanted) renderPlanSkeleton(wanted);
+        slides.forEach((s, idx) => settleSkelRow(idx + 1, s.title, s.type));
+        $("plan-skel-count").textContent = String(slides.length);
+        $("plan-count").textContent = String(slides.length);
+        if (slides.some((s) => (s.title || "").trim())) setPlanSubstage(4);
+        else if (S.planSubstage < 2) setPlanSubstage(2);
+      }
+
+      /* ─────── PHASE 2b : outline review render + autosave ─────── */
+      const KIND_MAP = {
+        cover: "cover",
+        outro: "cover",
+        closing: "cover",
+        "section-divider": "cover",
+        "split-layout": "split",
+        "two-column": "split",
+        split: "split",
+        "image-text": "image-text",
+        "image-layout": "image-text",
+        quote: "quote",
+        testimonial: "quote",
+        list: "list",
+        "numbered-list": "list",
+        ranking: "list",
+      };
+      const KIND_LABEL = {
+        cover: "Cover",
+        content: "Content",
+        split: "Split",
+        "image-text": "Image-text",
+        quote: "Quote",
+        list: "List",
+      };
+      function kindOf(type) {
+        return KIND_MAP[(type || "").toLowerCase()] || "content";
+      }
+
+      // Parse a slide's details[] lines into a view model for card rendering.
+      // Lossless-ish: every line is categorized; unknowns go to `misc` for fidelity.
+      function toCardView(slide) {
+        const vm = {
+          bullets: [], // [{ text }]
+          splitSlots: {}, // { left, right, bottom, top, ... }
+          listItems: [], // from indented sub-bullets under `- content:` when no key
+          presenterNote: "",
+          imagePrompt: "",
+          imageSearch: "",
+          misc: [],
+        };
+        const lines = slide.details || [];
+        let mode = null;
+        for (const raw of lines) {
+          const plain = raw.replace(/\*\*(.*?)\*\*/g, "$1");
+          const indented = /^\s{2,}-/.test(raw);
+          if (!indented) {
+            const m = plain.match(/^-\s*([a-zA-Z][\w-]*)\s*:\s*(.*)$/);
+            if (!m) {
+              vm.misc.push(raw);
+              mode = null;
+              continue;
+            }
+            const key = m[1].toLowerCase();
+            const val = m[2].trim();
+            if (key === "content") {
+              if (val) vm.bullets.push({ text: val });
+              mode = "content";
+            } else if (
+              key === "presenter-note" ||
+              key === "presenter_note" ||
+              key === "note"
+            ) {
+              vm.presenterNote = val;
+              mode = "presenter-note";
+            } else if (
+              key === "image-prompt" ||
+              key === "image" ||
+              key === "image-generate"
+            ) {
+              vm.imagePrompt = val;
+              mode = "image-prompt";
+            } else if (key === "image-search") {
+              vm.imageSearch = val;
+              mode = "image-search";
+            } else {
+              vm.misc.push(raw);
+              mode = null;
+            }
+          } else if (mode === "content") {
+            const sub = raw.match(/^\s+-\s*([a-zA-Z][\w-]*)\s*:\s*(.*)$/);
+            // Only recognized split-layout slot names become splitSlots;
+            // everything else (e.g. `- item1: …`) is a regular list bullet.
+            const KNOWN_SLOTS = new Set(["left", "right", "top", "bottom"]);
+            if (sub && KNOWN_SLOTS.has(sub[1].toLowerCase())) {
+              vm.splitSlots[sub[1].toLowerCase()] = sub[2].trim();
+            } else {
+              const plain2 = raw.replace(/^\s+-\s*/, "").trim();
+              if (plain2) vm.listItems.push(plain2);
+            }
+          } else {
+            vm.misc.push(raw);
+          }
+        }
+        return vm;
+      }
+
+      function renderMD(text) {
+        // Minimal **bold** → <b> rendering for card display (same pattern used by outline.js).
+        return esc(text || "").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+      }
+
+      function showReview(outline, deckName) {
+        if (S.planTimer) {
+          clearInterval(S.planTimer);
+          S.planTimer = null;
+        }
+        stopPlanHintRotator();
+        markAllPlanSubstagesDone();
+        S.outline = outline || { title: "", slides: [] };
+        if (deckName) S.deckName = deckName;
+
+        const raw = serializeOutline(S.outline);
+        $("outline-raw").value = raw;
+        $("outline-char").textContent = `${raw.length} chars`;
+        setSaveStatus("saved");
+        renderReview(S.outline);
+        setStep("review");
+      }
+
+      function renderReview(o) {
+        renderEcho(o);
+        renderDeckName(o);
+        renderOutlineCards(o);
+        renderSidebar(o);
+        renderCompositionMix(o);
+        renderHealthChecks(o);
+        $("outline-count").textContent = o?.slides?.length || 0;
+        if (S.reviewOnly && typeof applyReviewLock === "function")
+          applyReviewLock();
+      }
+
+      function renderEcho(o) {
+        const topicText = (topic && topic.value.trim()) || o?.title || "—";
+        $("echo-topic").textContent = topicText ? `"${topicText}"` : "—";
+        const tone =
+          {
+            professional: "프로페셔널",
+            friendly: "친근하게",
+            technical: "기술적",
+          }[S.tone] ||
+          S.tone ||
+          "—";
+        const lang =
+          S.lang === "ko" ? "한국어" : S.lang === "en" ? "English" : "Auto";
+        const resolvedSelected =
+          S.selectedPack === "auto" && S.reviewOnly ? "" : S.selectedPack;
+        const pack = o?.pack || resolvedSelected || "—";
+        const len = o?.slides?.length || S.slideCount || 0;
+        const model = S.model || "—";
+        $("echo-meta").innerHTML = `
+        <span class="chip"><span class="sw"></span>Pack · <b>${esc(pack)}</b></span>
+        <span class="chip">Length · <b>${len} slides</b></span>
+        <span class="chip">Tone · <b>${esc(tone)}</b></span>
+        <span class="chip">Language · <b>${esc(lang)}</b></span>
+        <span class="chip">Model · <b>${esc(model)}</b></span>
+      `;
+      }
+
+      function renderDeckName(o) {
+        const el = $("review-deck-name");
+        if (!el) return;
+        el.value = o?.deckName || S.deckName || "";
+      }
+
+      function renderOutlineCards(o) {
+        const slides = o?.slides || [];
+        const root = $("cards");
+        if (!slides.length) {
+          const hasRaw = !!(o?.rawHeader || "").trim();
+          const msg =
+            S.reviewOnly && hasRaw
+              ? "이 덱의 아웃라인은 카드 편집 포맷(<code>### Slide N</code>)을 사용하지 않습니다.<br>오른쪽 상단 <b>Markdown 직접 편집</b>을 눌러 원본을 확인·수정하세요."
+              : "아직 슬라이드가 없습니다.";
+          root.innerHTML = `<div class="region-empty" style="padding:24px;text-align:center;color:var(--muted);font-size:12px;line-height:1.7;background:var(--panel);border:1px dashed var(--line);border-radius:12px">${msg}</div>`;
+          return;
+        }
+        const focusedIdx = S.focusedSlideIdx ?? 0;
+        root.innerHTML = slides
+          .map((s, i) => {
+            const kind = kindOf(s.type);
+            const vm = toCardView(s);
+            return `
+          <article class="out-card ${i === focusedIdx ? "focused" : ""}" data-kind="${kind}" data-idx="${i}">
+            <div class="card-gut">
+              <span class="card-num">${String(i + 1).padStart(2, "0")}</span>
+              <button class="kind-pill kind-pill-btn" type="button" data-role="kind-trigger" title="슬라이드 타입 변경" aria-haspopup="menu" aria-expanded="false">
+                <span class="kp-label">${esc(KIND_LABEL[kind])}</span>
+                <svg class="kp-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="card-head-row">
+                <div class="title-input" contenteditable spellcheck="false" data-placeholder="(제목을 입력하세요)" data-role="title">${esc(s.title || "")}</div>
+                <button class="card-menu-btn" type="button" data-role="card-menu" aria-haspopup="menu" aria-expanded="false" aria-label="슬라이드 작업 메뉴">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+                </button>
+              </div>
+              ${renderCardContent(kind, vm)}
+            </div>
+          </article>`;
+          })
+          .join("");
+      }
+
+      // Flatten a card's structured view model back to plain-text lines for the
+      // unified .content-box. One line per logical item:
+      //   - split slots → "left: …", "right: …", "bottom: …"
+      //   - bullets / listItems → each on its own line (no leading dash)
+      //   - quote → body line, then cite line (with leading "— ")
+      function vmToText(vm, kind) {
+        const lines = [];
+        if (
+          kind === "split" &&
+          (vm.splitSlots.left || vm.splitSlots.right || vm.splitSlots.bottom)
+        ) {
+          if (vm.splitSlots.left) lines.push(`left: ${vm.splitSlots.left}`);
+          if (vm.splitSlots.right) lines.push(`right: ${vm.splitSlots.right}`);
+          if (vm.splitSlots.bottom)
+            lines.push(`bottom: ${vm.splitSlots.bottom}`);
+        } else {
+          vm.bullets.forEach((b) => lines.push(b.text));
+          vm.listItems.forEach((t) => lines.push(t));
+        }
+        return lines.join("\n");
+      }
+
+      function renderCardContent(kind, vm) {
+        const ce = 'contenteditable="true" spellcheck="false"';
+        let parts = "";
+
+        const slots = vm.splitSlots || {};
+        const hasSplitSlots = !!(
+          slots.top ||
+          slots.left ||
+          slots.right ||
+          slots.bottom
+        );
+        const items = [];
+        vm.bullets.forEach((b) => items.push(b.text));
+        vm.listItems.forEach((t) => items.push(t));
+
+        // 1) Main content region (bullets or single line)
+        const liRow = (text) =>
+          `<li class="li-row"><span class="li-text" ${ce} data-role="li-text">${renderMD(text)}</span><button class="li-del" type="button" data-role="li-del" contenteditable="false" tabindex="-1" aria-label="항목 삭제"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></li>`;
+        const addBulletBtn = `<button class="add-bullet" type="button" data-role="add-bullet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>항목 추가</button>`;
+
+        if (kind !== "quote") {
+          if (items.length >= 2) {
+            parts += `<div class="content-wrap"><ul class="content-list" data-role="content">${items.map(liRow).join("")}</ul>${addBulletBtn}</div>`;
+          } else if (items.length === 1) {
+            parts += `<div class="content-wrap"><ul class="content-list single-item" data-role="content">${liRow(items[0])}</ul>${addBulletBtn}</div>`;
+          } else if (!hasSplitSlots && kind !== "split") {
+            parts += `<div class="content-wrap"><ul class="content-list is-empty" data-role="content" data-placeholder="항목을 추가하세요"></ul>${addBulletBtn}</div>`;
+          }
+        } else {
+          const body = items[0] || "";
+          const cite = items[1] || "";
+          parts += `<div class="content-box q-block" ${ce} data-role="content" data-placeholder="인용구 본문\n— 출처">${renderMD(body)}${cite ? "\n" + renderMD(cite) : ""}</div>`;
+        }
+
+        // 2) Structured slots — rendered as labeled cells below the main content
+        const cell = (slot, label, placeholder) => `
+            <div class="split-col">
+              <span class="sl">${label}</span>
+              <div class="st" ${ce} data-role="split-slot" data-slot="${slot}" data-placeholder="${esc(placeholder)}">${renderMD(slots[slot] || "")}</div>
+            </div>`;
+        if (slots.top) {
+          parts += `<div class="split-row split-single">${cell("top", "Top", "상단 영역")}</div>`;
+        }
+        if (kind === "split" || slots.left || slots.right) {
+          parts += `<div class="split-row">${cell("left", "Left", "왼쪽 내용")}${cell("right", "Right", "오른쪽 내용")}</div>`;
+        }
+        if (slots.bottom) {
+          parts += `<div class="split-row split-single">${cell("bottom", "Bottom", "하단 영역")}</div>`;
+        }
+
+        // asset chips (still structured — separate fields in the outline schema)
+        const assets = [];
+        if (vm.imagePrompt)
+          assets.push(
+            `<div class="asset"><span class="tag gen">image · generate</span><span class="atxt" ${ce} data-role="image-prompt">${renderMD(vm.imagePrompt)}</span></div>`,
+          );
+        if (vm.imageSearch)
+          assets.push(
+            `<div class="asset"><span class="tag search">image · search</span><span class="atxt" ${ce} data-role="image-search">${renderMD(vm.imageSearch)}</span></div>`,
+          );
+        if (vm.presenterNote)
+          assets.push(
+            `<div class="asset"><span class="tag note">presenter note</span><span class="atxt" ${ce} data-role="presenter-note">${renderMD(vm.presenterNote)}</span></div>`,
+          );
+        if (assets.length)
+          parts += `<div class="assets"><div class="assets-label">Meta</div>${assets.join("")}</div>`;
+        return parts;
+      }
+
+      // Deterministically rebuild a slide's markdown block from the current
+      // card DOM + underlying slide meta. Preserves misc (unrecognized) lines.
+      function serializeSlideBlock(slide, cardEl, slideNum) {
+        const readText = (el) =>
+          el ? el.innerText.replace(/\u00A0/g, " ").trim() : "";
+        const title = (
+          cardEl.querySelector(".title-input")?.innerText ||
+          slide.title ||
+          ""
+        ).trim();
+
+        // Prefer explicit <li> items when content is a <ul>; else split innerText.
+        let contentLines = [];
+        const contentEl = cardEl.querySelector('[data-role="content"]');
+        if (contentEl) {
+          if (contentEl.tagName === "UL") {
+            contentLines = Array.from(contentEl.querySelectorAll(":scope > li"))
+              .map((li) => {
+                const textEl = li.querySelector('[data-role="li-text"]');
+                const src = textEl || li;
+                return src.innerText.replace(/\u00A0/g, " ").trim();
+              })
+              .filter(Boolean);
+          } else {
+            contentLines = contentEl.innerText
+              .replace(/\u00A0/g, " ")
+              .split("\n")
+              .map((l) => l.trim().replace(/^[-•*]\s+/, ""))
+              .filter(Boolean);
+          }
+        }
+
+        // Split-layout slots (left / right / bottom) if present
+        const splitSlots = {};
+        cardEl.querySelectorAll('[data-role="split-slot"]').forEach((el) => {
+          const slot = el.dataset.slot;
+          const val = readText(el);
+          if (slot && val) splitSlots[slot] = val;
+        });
+
+        const imagePrompt = readText(
+          cardEl.querySelector('[data-role="image-prompt"]'),
+        );
+        const imageSearch = readText(
+          cardEl.querySelector('[data-role="image-search"]'),
+        );
+        const presenterNote = readText(
+          cardEl.querySelector('[data-role="presenter-note"]'),
+        );
+
+        const lines = [];
+        lines.push(`### Slide ${slideNum} - ${title}`);
+        lines.push(`- type: ${slide.type || "content"}`);
+        lines.push(`- title: ${title}`);
+        if (slide.style) lines.push(`- style: ${slide.style}`);
+
+        const splitKeys = Object.keys(splitSlots);
+        if (splitKeys.length) {
+          lines.push("- content:");
+          ["top", "left", "right", "bottom"].forEach((k) => {
+            if (splitSlots[k]) lines.push(`  - ${k}: ${splitSlots[k]}`);
+          });
+        } else if (contentLines.length === 1) {
+          lines.push(`- content: ${contentLines[0]}`);
+        } else if (contentLines.length > 1) {
+          lines.push("- content:");
+          contentLines.forEach((l) => lines.push(`  - ${l}`));
+        }
+
+        if (imagePrompt) lines.push(`- image-generate: ${imagePrompt}`);
+        if (imageSearch) lines.push(`- image-search: ${imageSearch}`);
+        if (presenterNote) lines.push(`- presenter-note: ${presenterNote}`);
+
+        // preserve unknown lines from original details (misc)
+        const vm = toCardView(slide);
+        vm.misc.forEach((m) => lines.push(m));
+
+        return lines.join("\n") + "\n\n";
+      }
+
+      function renderSidebar(o) {
+        const slides = o?.slides || [];
+        $("side-ct").textContent = slides.length;
+        const focusedIdx = S.focusedSlideIdx ?? 0;
+        if (!slides.length) {
+          $("mini").innerHTML =
+            '<div style="color:var(--muted);font-size:11px;padding:6px">—</div>';
+          return;
+        }
+        $("mini").innerHTML = slides
+          .map((s, i) => {
+            const kind = kindOf(s.type);
+            const vm = toCardView(s);
+            const short =
+              vm.bullets.length + vm.listItems.length < 2 ||
+              !(s.title || "").trim();
+            return `
+          <button type="button" class="m ${i === focusedIdx ? "on" : ""}" data-kind="${kind}" data-idx="${i}">
+            <span class="n">${String(i + 1).padStart(2, "0")}</span>
+            <span class="br"></span>
+            <span class="nm">${esc(s.title || "(제목 없음)")}</span>
+            <span class="wd ${short ? "" : "hide"}" title="내용이 짧거나 제목이 비어있어요"></span>
+          </button>`;
+          })
+          .join("");
+      }
+
+      function renderCompositionMix(o) {
+        const slides = o?.slides || [];
+        const counts = {
+          cover: 0,
+          content: 0,
+          split: 0,
+          "image-text": 0,
+          quote: 0,
+          list: 0,
+        };
+        slides.forEach((s) => {
+          counts[kindOf(s.type)]++;
+        });
+        const total = slides.length || 1;
+        const colors = {
+          cover: "var(--accent)",
+          content: "var(--sky)",
+          split: "var(--violet)",
+          "image-text": "var(--teal)",
+          quote: "var(--amber)",
+          list: "var(--lime)",
+        };
+        const labels = {
+          cover: "Cover · Outro",
+          content: "Content",
+          split: "Split",
+          "image-text": "Image · Text",
+          quote: "Quote",
+          list: "List",
+        };
+        const segs = Object.keys(counts)
+          .filter((k) => counts[k] > 0)
+          .map(
+            (k) =>
+              `<div style="background:${colors[k]};width:${(counts[k] / total) * 100}%"></div>`,
+          )
+          .join("");
+        $("comp-mix").innerHTML =
+          segs || `<div style="background:var(--line);width:100%"></div>`;
+        $("comp-leg").innerHTML =
+          Object.keys(counts)
+            .filter((k) => counts[k] > 0)
+            .map(
+              (k) => `
+        <div class="ml">
+          <span class="sw" style="background:${colors[k]}"></span>
+          <span class="nm">${labels[k]}</span>
+          <span class="ct">${counts[k]}</span>
+        </div>`,
+            )
+            .join("") ||
+          '<div class="ml"><span class="nm" style="color:var(--muted-2)">—</span></div>';
+      }
+
+      function renderHealthChecks(o) {
+        const slides = o?.slides || [];
+        const checks = [];
+        // flow check
+        const kinds = slides.map((s) => kindOf(s.type));
+        const hasIntro = kinds[0] === "cover";
+        const hasOutro = kinds[kinds.length - 1] === "cover";
+        if (slides.length >= 3 && hasIntro && hasOutro) {
+          checks.push({
+            ok: true,
+            html: `<b>흐름</b> · 도입 · 본문 · 마무리 순서가 자연스러워요.`,
+          });
+        } else if (slides.length >= 3) {
+          checks.push({
+            ok: false,
+            html: `<b>흐름</b> · 도입/마무리 커버 슬라이드를 추가하면 더 매끄러워요.`,
+          });
+        }
+        // short-slide check
+        const shortSlides = slides.filter((s) => {
+          const vm = toCardView(s);
+          return (
+            vm.bullets.length + vm.listItems.length < 2 &&
+            kindOf(s.type) !== "cover" &&
+            kindOf(s.type) !== "quote"
+          );
+        });
+        if (shortSlides.length === 0 && slides.length > 0) {
+          checks.push({
+            ok: true,
+            html: `<b>밀도</b> · 모든 본문 슬라이드에 충분한 내용이 있어요.`,
+          });
+        } else if (shortSlides.length > 0) {
+          checks.push({
+            ok: false,
+            html: `<b>짧은 슬라이드 ${shortSlides.length}개</b> · 글머리를 2개 이상 권장해요.`,
+          });
+        }
+        // duplicate titles
+        const titles = slides
+          .map((s) => (s.title || "").trim())
+          .filter(Boolean);
+        const dupes = titles.filter((t, i) => titles.indexOf(t) !== i);
+        checks.push(
+          dupes.length === 0
+            ? {
+                ok: true,
+                html: `<b>중복 없음</b> · 각 슬라이드 제목이 고유해요.`,
+              }
+            : {
+                ok: false,
+                html: `<b>제목 중복</b> · "${esc(dupes[0])}" 가 반복돼요.`,
+              },
+        );
+
+        $("health-list").innerHTML = checks
+          .map(
+            (c) => `
+        <div class="check">
+          <span class="dt ${c.ok ? "ok" : "wn"}">${c.ok ? "✓" : "!"}</span>
+          <div class="t">${c.html}</div>
+        </div>`,
+          )
+          .join("");
+      }
+
+      function setSaveStatus(state, msg) {
+        const el = $("outline-save-status");
+        if (!el) return;
+        if (state === "saving") {
+          el.innerHTML = "● 저장 중…";
+          el.style.color = "var(--warn)";
+        } else if (state === "saved") {
+          el.innerHTML = "● 저장됨";
+          el.style.color = "var(--lime)";
+        } else if (state === "error") {
+          el.innerHTML = `● 저장 실패: ${esc(msg || "")}`;
+          el.style.color = "var(--danger)";
+        }
+      }
+
+      // Debounced autosave. Source of truth = S.outline (serialized) in card mode,
+      // or raw textarea in markdown mode. Server re-parses on PUT and returns canonical outline.
+      function scheduleOutlineSave(source) {
+        if (S.reviewOnly) return;
+        if (S.outlineSaveTimer) clearTimeout(S.outlineSaveTimer);
+        setSaveStatus("saving");
+        S.pendingSaveSource = source || S.pendingSaveSource || "card";
+        S.outlineSaveTimer = setTimeout(persistOutline, 400);
+      }
+
+      async function persistOutline() {
+        if (S.reviewOnly) return;
+        const src = S.pendingSaveSource || "card";
+        const content =
+          src === "raw" ? $("outline-raw").value : serializeOutline(S.outline);
+        $("outline-char").textContent = `${content.length} chars`;
+        try {
+          const res = await fetch("/api/outline", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content }),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const parsed = await res.json();
+          S.outline = parsed;
+          // keep raw textarea in sync if we came from card mode
+          if (src !== "raw") $("outline-raw").value = serializeOutline(parsed);
+          // Only re-render cards when the MD panel was the edit source.
+          // Card edits already mutated the DOM to match; re-rendering here
+          // would destroy the focused <li> and break continuous Enter-typing.
+          if (src === "raw") renderReview(parsed);
+          setSaveStatus("saved");
+        } catch (err) {
+          setSaveStatus("error", err.message);
+        } finally {
+          S.pendingSaveSource = null;
+        }
+      }
+
+      // Edit a single slide's title in its rawBlock (surgical — preserves rest verbatim).
+      function applyTitleEdit(idx, newTitle) {
+        const slide = S.outline?.slides?.[idx];
+        if (!slide) return;
+        slide.title = newTitle;
+        let block = slide.rawBlock || "";
+        // replace the `### Slide N - Title` header line
+        block = block.replace(
+          /^(###\s+Slide\s+\d+)(\s*[-–—].*)?\s*\n/m,
+          `$1 - ${newTitle}\n`,
+        );
+        // replace the inline `- title: ...` line if present
+        block = block.replace(/^(-\s*title:\s*).*$/m, `$1${newTitle}`);
+        slide.rawBlock = block;
+      }
+
+      /* ─────── PHASE 2b → PHASE 3 : confirm outline → generate slides ─────── */
+      async function confirmOutline() {
+        // flush any pending save first
+        if (S.outlineSaveTimer) {
+          clearTimeout(S.outlineSaveTimer);
+          await persistOutline();
+        }
+
+        const btn = $("btn-confirm-outline");
+        btn.disabled = true;
+        btn.classList.add("disabled");
+
+        const topicText = topic.value.trim();
+        startTimer();
+        try {
+          const res = await fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              topic: topicText,
+              slideCount: String(S.slideCount),
+              packId: S.selectedPack,
+              deckName: S.deckName,
+              model: S.model,
+              fromOutline: true,
+              useImages: S.useImages,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+          S.runId = data.runId;
+          S.deckPath = data.deckPath || "";
+        } catch (err) {
+          btn.disabled = false;
+          btn.classList.remove("disabled");
+          alert(`Generation failed: ${err.message}`);
+          return;
+        }
+
+        // ensure SSE is still connected (same instance from startPlan)
+        if (!S.eventSource || S.eventSource.readyState === 2) bindSSE();
+
+        // show generate view
+        setStep("generate");
+        $("gen-prompt-text").textContent = topicText;
+        $("gen-pack").textContent = S.selectedPack || "—";
+        const n = S.outline?.slides?.length || S.slideCount;
+        S.slideCount = n;
+        $("gen-count").textContent = n;
+        $("gen-lang").textContent =
+          S.lang === "ko" ? "한국어" : S.lang === "en" ? "English" : "Auto";
+        $("gen-tone").textContent = {
+          professional: "프로페셔널",
+          friendly: "친근하게",
+          technical: "기술적",
+        }[S.tone];
+        renderThumbsGrid();
+      }
+
+      function renderThumbsGrid() {
+        const grid = $("gen-thumbs");
+        let html = "";
+        for (let i = 1; i <= S.slideCount; i += 1) {
+          html += `<div class="thumb-slot pending" data-slot="${i}"><div class="idx">${String(i).padStart(2, "0")}</div><div class="skel"><div class="l w1"></div><div class="l w2"></div><div class="l w3"></div></div></div>`;
+        }
+        grid.innerHTML = html;
+      }
+
+      function startTimer() {
+        S.startTime = Date.now();
+        if (S.logTimer) clearInterval(S.logTimer);
+        S.logTimer = setInterval(() => {
+          $("etr-val").textContent = fmtTime(Date.now() - S.startTime);
+        }, 500);
+      }
+
+      function bindSSE() {
+        if (S.eventSource) S.eventSource.close();
+        const es = new EventSource("/api/events");
+        S.eventSource = es;
+
+        es.addEventListener("planStarted", (e) => {
+          try {
+            const d = JSON.parse(e.data);
+            appendPlanLog(`plan · ${d.topic || ""}`.trim(), "ok");
+          } catch {}
+        });
+        es.addEventListener("planFinished", async (e) => {
+          try {
+            const d = JSON.parse(e.data);
+            const isRevise = S.reviseRunId && d.runId === S.reviseRunId;
+            if (!isRevise && S.planRunId && d.runId && d.runId !== S.planRunId)
+              return;
+            if (!d.success) {
+              appendPlanLog(d.message || "plan failed", "warn");
+              if (isRevise) {
+                setReviseBusy(false, `수정 실패: ${d.message || "unknown"}`);
+                S.reviseRunId = null;
+                return;
+              }
+              alert(`아웃라인 생성 실패: ${d.message || "unknown"}`);
+              if (S.planTimer) {
+                clearInterval(S.planTimer);
+                S.planTimer = null;
+              }
+              stopPlanHintRotator();
+              resetPlanSubstages();
+              setStep("compose");
+              btnGenerate.disabled = false;
+              btnGenerate.classList.remove("disabled");
+              return;
+            }
+            // server already persisted slide-outline.md and returned parsed outline
+            let outline = d.outline;
+            if (!outline) {
+              try {
+                const r = await fetch("/api/outline");
+                if (r.ok) outline = await r.json();
+              } catch {}
+            }
+            if (isRevise) {
+              S.reviseRunId = null;
+              S.outline = outline;
+              renderReview(outline);
+              $("rev-textarea").value = "";
+              setReviseBusy(false, "수정 완료");
+              return;
+            }
+            showReview(outline, d.deckName);
+          } catch {}
+        });
+
+        es.addEventListener("planPartial", (e) => {
+          try {
+            const d = JSON.parse(e.data);
+            if (S.planRunId && d.runId && d.runId !== S.planRunId) return;
+            applyPartialOutline(d.outline, d.deckName);
+          } catch {}
+        });
+
+        es.addEventListener("progress", (e) => {
+          try {
+            const d = JSON.parse(e.data);
+            if (d.phase === "plan") {
+              appendPlanLog(d.step || d.message || "", "ok");
+              const sub = detectPlanSubstage(d.step || d.message || "");
+              if (sub) setPlanSubstage(sub);
+              return;
+            }
+            appendLog(d.step || d.message || "", d.phase, "ok");
+            // map phases to step cards (generate view)
+            if (/outline/i.test(d.step || "")) setGenStep(1);
+            else if (/layout|pack/i.test(d.step || "")) setGenStep(2);
+            else if (/content|slide/i.test(d.step || "")) setGenStep(3);
+            else if (/image|finish|polish/i.test(d.step || "")) setGenStep(4);
+          } catch {}
+        });
+        es.addEventListener("generateLog", (e) => {
+          try {
+            const d = JSON.parse(e.data);
+            if (S.runId && d.runId && d.runId !== S.runId) return;
+            const raw = (d.chunk || "").trim();
+            if (!raw) return;
+            // Show only non-JSON, non-empty lines (skip tool-use XML/JSON noise)
+            const lines = raw.split("\n").filter(l => {
+              const t = l.trim();
+              return t && !t.startsWith("{") && !t.startsWith("[") && !t.startsWith("<");
+            });
+            for (const line of lines.slice(0, 2)) {
+              const clean = line.trim().slice(0, 100);
+              if (clean) appendLog(clean, "LOG", "ok");
+            }
+          } catch {}
+        });
+        es.addEventListener("generated", (e) => {
+          try {
+            const d = JSON.parse(e.data);
+            markThumbDone(d.slideIndex);
+            appendLog(`slide ${d.slideIndex} ready`, null, "ok");
+            $("slide-cur").textContent =
+              `${d.completed || d.slideIndex || 0} / ${S.slideCount}`;
+            const pct = Math.min(
+              100,
+              ((d.completed || d.slideIndex || 0) / S.slideCount) * 100,
+            );
+            $("bar-fill").style.width = `${pct}%`;
+          } catch {}
+        });
+        es.addEventListener("runComplete", (e) => {
+          try {
+            const d = JSON.parse(e.data);
+            if (S.runId && d.runId && d.runId !== S.runId) return;
+            appendLog("complete", null, "ok");
+            setGenStep(4, true);
+            $("bar-fill").style.width = "100%";
+            clearInterval(S.logTimer);
+            showReady(d);
+          } catch {}
+        });
+        es.addEventListener("error", () => {
+          /* swallow; will reconnect */
+        });
+      }
+
+      function appendLog(msg, phase, tag = "ok") {
+        if (!msg) return;
+        if (!S.startTime) S.startTime = Date.now();
+        const log = $("gen-log");
+        const t = fmtTime(Date.now() - S.startTime);
+        const tagTxt = (phase || tag || "LOG")
+          .toString()
+          .slice(0, 5)
+          .toUpperCase();
+        const line = document.createElement("div");
+        line.className = "line";
+        line.innerHTML = `<span class="t">${esc(t)}</span><span class="tag ${esc(tag)}">${esc(tagTxt)}</span><span class="msg">${esc(msg)}</span>`;
+        log.appendChild(line);
+        log.scrollTop = log.scrollHeight;
+      }
+      function setGenStep(n, done = false) {
+        for (let i = 1; i <= 4; i += 1) {
+          const el = $(`step-0${i}`);
+          el.classList.remove("active");
+          if (i < n || (i === n && done)) el.classList.add("done");
+        }
+        if (!done) $(`step-0${n}`).classList.add("active");
+      }
+      function markThumbDone(i) {
+        const slot = document.querySelector(`.thumb-slot[data-slot="${i}"]`);
+        if (slot) {
+          slot.classList.remove("pending", "active");
+          slot.classList.add("done");
+        }
+      }
+
+      function showReady(d) {
+        setStep("ready");
+        const sec = Math.round((Date.now() - S.startTime) / 1000);
+        $("done-time").textContent = `${sec}초`;
+        $("ready-count").textContent = S.slideCount;
+        $("sum-slides").textContent = S.slideCount;
+        $("sum-words").textContent = (S.slideCount * 120).toLocaleString();
+        $("sum-pack").textContent = S.selectedPack || "—";
+        $("ready-title").textContent =
+          topic.value.split("\n")[0].slice(0, 28) || "잡았어요";
+        $("ready-sub").textContent =
+          `${S.selectedPack || "pack"} · ${S.slideCount} slides`;
+        // tray
+        let tray = "";
+        for (let i = 1; i <= S.slideCount; i += 1) {
+          tray += `<div class="mini${i === 1 ? " on" : ""}"><div class="n">${String(i).padStart(2, "0")}</div></div>`;
+        }
+        $("ready-tray").innerHTML = tray;
+        // open editor link
+        const deckPath = S.deckPath || S.deckName;
+        $("btn-open-editor").href =
+          `/editor?deck=${encodeURIComponent(S.deckName || deckPath)}`;
+        if (S.eventSource) {
+          S.eventSource.close();
+          S.eventSource = null;
+        }
+      }
+
+      /* ─────── actions ─────── */
+      btnGenerate.addEventListener("click", startPlan);
+      topic.addEventListener("keydown", (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+          e.preventDefault();
+          startPlan();
+        }
+      });
+
+      function hardReset() {
+        if (S.eventSource) {
+          S.eventSource.close();
+          S.eventSource = null;
+        }
+        if (S.logTimer) {
+          clearInterval(S.logTimer);
+          S.logTimer = null;
+        }
+        if (S.planTimer) {
+          clearInterval(S.planTimer);
+          S.planTimer = null;
+        }
+        if (S.outlineSaveTimer) {
+          clearTimeout(S.outlineSaveTimer);
+          S.outlineSaveTimer = null;
+        }
+        stopPlanHintRotator();
+        resetPlanSubstages();
+        const skelRows = $("plan-skel-rows");
+        if (skelRows) skelRows.innerHTML = "";
+        const skelCount = $("plan-skel-count");
+        if (skelCount) skelCount.textContent = "0";
+        const srcCard = $("plan-source-card");
+        if (srcCard) {
+          srcCard.hidden = true;
+          srcCard.innerHTML = "";
+        }
+        btnGenerate.disabled = false;
+        btnGenerate.classList.remove("disabled");
+        const bc = $("btn-confirm-outline");
+        if (bc) {
+          bc.disabled = false;
+          bc.classList.remove("disabled");
+        }
+      }
+
+      btnCancel.addEventListener("click", () => {
+        hardReset();
+        setStep("compose");
+      });
+      $("btn-plan-cancel").addEventListener("click", () => {
+        hardReset();
+        setStep("compose");
+      });
+      $("btn-replan").addEventListener("click", () => {
+        hardReset();
+        setStep("compose");
+      });
+      $("btn-confirm-outline").addEventListener("click", confirmOutline);
+
+      /* ─────── review-view interactions ─────── */
+      // outline textarea autosave (raw markdown mode) + cmd+enter confirm
+      $("outline-raw").addEventListener("input", () =>
+        scheduleOutlineSave("raw"),
+      );
+      $("outline-raw").addEventListener("keydown", (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+          e.preventDefault();
+          confirmOutline();
+        }
+      });
+
+      // deck-name inline edit (review view)
+      $("review-deck-name").addEventListener("change", (e) => {
+        const v = e.target.value.trim();
+        if (!v) return;
+        S.deckName = v;
+        if (S.outline) S.outline.deckName = v;
+      });
+
+      // density toggle
+      $("density-group").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-density]");
+        if (!btn) return;
+        $("density-group")
+          .querySelectorAll(".tb-btn")
+          .forEach((b) => b.classList.toggle("on", b === btn));
+        const compact = btn.dataset.density === "compact";
+        $("cards").classList.toggle("is-compact", compact);
+        document.documentElement.style.setProperty(
+          "--out-card-gap",
+          compact ? "6px" : "12px",
+        );
+      });
+
+      // markdown-mode toggle
+      $("md-toggle").addEventListener("click", () => {
+        const on = $("md-toggle").classList.toggle("on");
+        $("md-toggle").setAttribute("aria-pressed", String(on));
+        $("md-panel").classList.toggle("show", on);
+        const grid = document.querySelector(".outline-grid");
+        if (grid) grid.style.display = on ? "none" : "";
+        try {
+          localStorage.setItem("sgs-outline-mode", on ? "md" : "cards");
+        } catch {
+          /* ignore */
+        }
+        if (on) {
+          $("outline-raw").value = serializeOutline(
+            S.outline || { slides: [] },
+          );
+          $("outline-char").textContent =
+            `${$("outline-raw").value.length} chars`;
+          setTimeout(() => $("outline-raw").focus(), 40);
+        }
+      });
+
+      // card-level actions (delegated)
+      $("cards").addEventListener("click", (e) => {
+        const card = e.target.closest(".out-card");
+        if (!card) return;
+        const idx = Number(card.dataset.idx);
+
+        // Bullet delete button
+        const liDelBtn = e.target.closest('[data-role="li-del"]');
+        if (liDelBtn) {
+          e.stopPropagation();
+          const li = liDelBtn.closest("li.li-row");
+          if (li) {
+            li.remove();
+            rebuildSlideFromCard(idx);
+          }
+          return;
+        }
+
+        // Add bullet button
+        const addBulletBtn = e.target.closest('[data-role="add-bullet"]');
+        if (addBulletBtn) {
+          e.stopPropagation();
+          const ul = card.querySelector('[data-role="content"].content-list');
+          if (ul) {
+            ul.classList.remove("is-empty", "single-item");
+            const li = document.createElement("li");
+            li.className = "li-row";
+            li.innerHTML = `<span class="li-text" contenteditable="true" data-role="li-text"></span><button class="li-del" type="button" data-role="li-del" contenteditable="false" tabindex="-1" aria-label="항목 삭제"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
+            ul.appendChild(li);
+            li.querySelector(".li-text").focus();
+          }
+          return;
+        }
+
+        // Type pill dropdown trigger
+        const pill = e.target.closest('[data-role="kind-trigger"]');
+        if (pill) {
+          e.stopPropagation();
+          openKindMenu(card, idx, pill);
+          return;
+        }
+
+        // Card actions dropdown trigger (⋮)
+        const menuBtn = e.target.closest('[data-role="card-menu"]');
+        if (menuBtn) {
+          e.stopPropagation();
+          openCardMenu(card, idx, menuBtn);
+          return;
+        }
+
+        // Legacy data-act (kept for safety if any buttons remain)
+        const actBtn = e.target.closest("[data-act]");
+        if (actBtn) {
+          e.stopPropagation();
+          doCardAction(idx, actBtn.dataset.act);
+          return;
+        }
+        focusCard(idx);
+      });
+
+      // inline-edit blur → rebuild rawBlock for that slide
+      $("cards").addEventListener(
+        "blur",
+        (e) => {
+          const card = e.target.closest(".out-card");
+          if (!card) return;
+          const role = e.target.dataset?.role;
+          if (!role) return;
+          const idx = Number(card.dataset.idx);
+          if (role === "title") {
+            const newTitle = e.target.textContent.trim();
+            const slide = S.outline?.slides?.[idx];
+            if (!slide) return;
+            slide.title = newTitle;
+            const miniEl = $("mini").querySelectorAll(".m")[idx];
+            if (miniEl)
+              miniEl.querySelector(".nm").textContent =
+                newTitle || "(제목 없음)";
+          }
+          rebuildSlideFromCard(idx);
+        },
+        true,
+      );
+
+      // Keyboard behavior inside cards:
+      //  · Enter on title / asset chips → commit (blur)
+      //  · Enter on li-text → new empty li below, focus it
+      //  · Backspace at start of empty li-text → remove that li, focus prev
+      //
+      // NOTE: All Enter/Backspace branches below explicitly skip when the user
+      // is mid-IME composition (Korean, Japanese, Chinese). Pressing Enter to
+      // commit an IME string must NOT trigger our split action — otherwise the
+      // tail of the composing string ("내용" → "용") leaks onto the new row.
+      $("cards").addEventListener("keydown", (e) => {
+        const role = e.target.dataset?.role;
+        if (!role) return;
+        if (e.isComposing || e.keyCode === 229) return;
+        const card = e.target.closest(".out-card");
+        if (!card) return;
+        const idx = Number(card.dataset.idx);
+
+        if (
+          e.key === "Enter" &&
+          (role === "title" ||
+            role === "image-prompt" ||
+            role === "image-search" ||
+            role === "presenter-note")
+        ) {
+          e.preventDefault();
+          e.target.blur();
+          return;
+        }
+
+        if (role === "li-text") {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            const li = e.target.closest("li.li-row");
+            const ul = li?.parentElement;
+            if (!ul) return;
+            ul.classList.remove("is-empty", "single-item");
+            const newLi = document.createElement("li");
+            newLi.className = "li-row";
+            newLi.innerHTML = `<span class="li-text" contenteditable="true" data-role="li-text"></span><button class="li-del" type="button" data-role="li-del" contenteditable="false" tabindex="-1" aria-label="항목 삭제"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
+            li.after(newLi);
+            newLi.querySelector(".li-text").focus();
+            return;
+          }
+          if (e.key === "Backspace" && e.target.innerText.trim() === "") {
+            const li = e.target.closest("li.li-row");
+            const ul = li?.parentElement;
+            const prev = li?.previousElementSibling;
+            if (li && ul && ul.children.length > 1) {
+              e.preventDefault();
+              li.remove();
+              const target = prev?.querySelector(".li-text");
+              if (target) {
+                target.focus();
+                // Place caret at end
+                const range = document.createRange();
+                range.selectNodeContents(target);
+                range.collapse(false);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+              }
+              rebuildSlideFromCard(idx);
+              return;
+            }
+          }
+        }
+      });
+
+      function rebuildSlideFromCard(idx) {
+        const slide = S.outline?.slides?.[idx];
+        const card = document.querySelector(
+          `#cards .out-card[data-idx="${idx}"]`,
+        );
+        if (!slide || !card) return;
+        const newBlock = serializeSlideBlock(slide, card, idx + 1);
+        if (newBlock === slide.rawBlock) return;
+        // also update the structured slide fields so subsequent re-renders are consistent
+        slide.rawBlock = newBlock;
+        scheduleOutlineSave("card");
+      }
+
+      function focusCard(idx) {
+        S.focusedSlideIdx = idx;
+        document
+          .querySelectorAll("#cards .out-card")
+          .forEach((c, i) => c.classList.toggle("focused", i === idx));
+        document
+          .querySelectorAll("#mini .m")
+          .forEach((m, i) => m.classList.toggle("on", i === idx));
+      }
+
+      function makeBlankSlide() {
+        // rawBlock must be a valid `### Slide N` block — serializeOutline joins
+        // rawBlocks verbatim, and the server re-parses on PUT. Empty rawBlock
+        // would vanish on the round-trip. The number is placeholder; the server
+        // re-parses slice boundaries by pattern, not by the literal index.
+        return {
+          type: "content",
+          title: "새 슬라이드",
+          style: "",
+          details: ["- content: 내용을 입력하세요"],
+          rawBlock:
+            "### Slide 0 - 새 슬라이드\n- type: content\n- title: 새 슬라이드\n- content: 내용을 입력하세요\n\n",
+        };
+      }
+
+      // Close any floating dropdown (type pill / card menu)
+      function closeFloatingMenus() {
+        document
+          .querySelectorAll(".card-dropdown")
+          .forEach((el) => el.remove());
+        document
+          .querySelectorAll('[aria-expanded="true"]')
+          .forEach((b) => b.setAttribute("aria-expanded", "false"));
+      }
+
+      // Position a dropdown next to an anchor; returns the menu element.
+      function spawnDropdown(anchor, items) {
+        closeFloatingMenus();
+        const rect = anchor.getBoundingClientRect();
+        const menu = document.createElement("div");
+        menu.className = "card-dropdown";
+        menu.setAttribute("role", "menu");
+        menu.innerHTML = items
+          .map((it) =>
+            it.sep
+              ? '<div class="dd-sep" role="separator"></div>'
+              : `<button class="dd-item${it.danger ? " danger" : ""}" type="button" role="menuitem" data-val="${esc(it.val)}"${it.disabled ? " disabled" : ""}>${it.icon || ""}<span class="dd-label">${esc(it.label)}</span>${it.hint ? `<span class="dd-hint">${esc(it.hint)}</span>` : ""}</button>`,
+          )
+          .join("");
+        document.body.appendChild(menu);
+        const mw = menu.offsetWidth;
+        const left = Math.min(
+          Math.max(8, rect.left),
+          window.innerWidth - mw - 8,
+        );
+        menu.style.left = `${left}px`;
+        menu.style.top = `${rect.bottom + 6 + window.scrollY}px`;
+        anchor.setAttribute("aria-expanded", "true");
+
+        const onOutside = (ev) => {
+          if (!menu.contains(ev.target) && ev.target !== anchor) {
+            closeFloatingMenus();
+            document.removeEventListener("click", onOutside, true);
+            document.removeEventListener("keydown", onKey);
+          }
+        };
+        const onKey = (ev) => {
+          if (ev.key === "Escape") {
+            closeFloatingMenus();
+            document.removeEventListener("click", onOutside, true);
+            document.removeEventListener("keydown", onKey);
+            anchor.focus();
+          }
+        };
+        setTimeout(() => {
+          document.addEventListener("click", onOutside, true);
+          document.addEventListener("keydown", onKey);
+        }, 0);
+        return menu;
+      }
+
+      // KIND_OPTIONS is populated from /api/types (packs/common-types.json)
+      // at boot; fallback list below is used if the fetch fails.
+      let KIND_OPTIONS = [
+        { val: "cover", label: "cover", hint: "title cover slide" },
+        { val: "content", label: "content", hint: "general text content" },
+        {
+          val: "split-layout",
+          label: "split-layout",
+          hint: "left text + right image",
+        },
+        { val: "image-text", label: "image-text", hint: "image + description" },
+        { val: "quote", label: "quote", hint: "single quote" },
+        { val: "highlight", label: "highlight", hint: "key insight callout" },
+      ];
+      async function loadCommonTypes() {
+        try {
+          const res = await fetch("/api/types");
+          if (!res.ok) return;
+          const types = await res.json();
+          const keys = Object.keys(types);
+          if (!keys.length) return;
+          KIND_OPTIONS = keys.map((k) => ({
+            val: k,
+            label: k,
+            hint: types[k] || "",
+          }));
+        } catch {
+          /* keep fallback */
+        }
+      }
+
+      function openKindMenu(card, idx, anchor) {
+        const slide = S.outline?.slides?.[idx];
+        if (!slide) return;
+        const current = (slide.type || "content").toLowerCase();
+        // If current type isn't in common-types.json, surface it at top so user
+        // can see it's still the active type.
+        const inList = KIND_OPTIONS.some((o) => o.val === current);
+        const list = inList
+          ? KIND_OPTIONS
+          : [
+              { val: current, label: current, hint: "(custom)" },
+              ...KIND_OPTIONS,
+            ];
+        const items = list.map((o) => ({
+          val: o.val,
+          label: o.val === current ? `✓  ${o.label}` : o.label,
+          hint: o.hint,
+        }));
+        const menu = spawnDropdown(anchor, items);
+        menu.classList.add("kind-dropdown");
+        menu.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-val]");
+          if (!btn) return;
+          const val = btn.dataset.val;
+          slide.type = val;
+          // Rewrite the `- type:` line in rawBlock so the server-side round-trip
+          // preserves the new type (serializeOutline just concatenates rawBlocks).
+          if (slide.rawBlock) {
+            if (/^-\s*type:\s*/im.test(slide.rawBlock)) {
+              slide.rawBlock = slide.rawBlock.replace(
+                /^(-\s*type:\s*).*$/m,
+                `$1${val}`,
+              );
+            } else {
+              slide.rawBlock = slide.rawBlock.replace(
+                /^(###\s+Slide\s+\d+.*\n)/m,
+                `$1- type: ${val}\n`,
+              );
+            }
+          }
+          closeFloatingMenus();
+          renderReview(S.outline);
+          scheduleOutlineSave("card");
+        });
+      }
+
+      function openCardMenu(card, idx, anchor) {
+        const slides = S.outline?.slides || [];
+        const isFirst = idx === 0;
+        const isLast = idx === slides.length - 1;
+        const isOnly = slides.length <= 1;
+        const items = [
+          { val: "up", label: "위로 이동", disabled: isFirst },
+          { val: "down", label: "아래로 이동", disabled: isLast },
+          { sep: true },
+          { val: "insert-above", label: "위에 슬라이드 삽입" },
+          { val: "insert-below", label: "아래에 슬라이드 삽입" },
+          { val: "duplicate", label: "복제" },
+          { sep: true },
+          { val: "delete", label: "삭제", danger: true, disabled: isOnly },
+        ];
+        const menu = spawnDropdown(anchor, items);
+        menu.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-val]:not([disabled])");
+          if (!btn) return;
+          closeFloatingMenus();
+          doCardAction(idx, btn.dataset.val);
+        });
+      }
+
+      function doCardAction(idx, act) {
+        const slides = S.outline?.slides;
+        if (!slides) return;
+        if (act === "up" && idx > 0) {
+          const [s] = slides.splice(idx, 1);
+          slides.splice(idx - 1, 0, s);
+          S.focusedSlideIdx = idx - 1;
+        } else if (act === "down" && idx < slides.length - 1) {
+          const [s] = slides.splice(idx, 1);
+          slides.splice(idx + 1, 0, s);
+          S.focusedSlideIdx = idx + 1;
+        } else if (act === "insert-above") {
+          slides.splice(idx, 0, makeBlankSlide());
+          S.focusedSlideIdx = idx;
+        } else if (act === "insert-below") {
+          slides.splice(idx + 1, 0, makeBlankSlide());
+          S.focusedSlideIdx = idx + 1;
+        } else if (act === "duplicate") {
+          const copy = JSON.parse(JSON.stringify(slides[idx]));
+          slides.splice(idx + 1, 0, copy);
+          S.focusedSlideIdx = idx + 1;
+        } else if (act === "delete") {
+          if (slides.length <= 1) return;
+          slides.splice(idx, 1);
+          S.focusedSlideIdx = Math.max(0, idx - 1);
+        } else {
+          return;
+        }
+        renderReview(S.outline);
+        scheduleOutlineSave("card");
+      }
+
+      // mini-map navigation
+      $("mini").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-idx]");
+        if (!btn) return;
+        const idx = Number(btn.dataset.idx);
+        focusCard(idx);
+        const card = document.querySelector(
+          `#cards .out-card[data-idx="${idx}"]`,
+        );
+        if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+
+      // toolbar: add slide
+      $("tb-add-slide").addEventListener("click", () => {
+        const slides = (S.outline && S.outline.slides) || [];
+        const n = slides.length + 1;
+        const block = `### Slide ${n}\n- type: content\n- title: 새 슬라이드\n- content: 내용을 입력하세요\n\n`;
+        slides.push({
+          type: "content",
+          title: "새 슬라이드",
+          style: "",
+          details: ["- content: 내용을 입력하세요"],
+          rawBlock: block,
+        });
+        if (!S.outline)
+          S.outline = { title: "", slides, rawHeader: "", rawFooter: "" };
+        S.focusedSlideIdx = slides.length - 1;
+        renderReview(S.outline);
+        scheduleOutlineSave("card");
+      });
+
+      // echo · edit prompt → back to compose
+      $("echo-edit-btn").addEventListener("click", () => {
+        setStep("compose");
+      });
+
+      // revdock · Revise → POST /api/plan/revise
+      function setReviseBusy(busy, message) {
+        const dock = $("revdock");
+        const cards = $("cards");
+        const ta = $("rev-textarea");
+        const revise = $("rev-revise");
+        const approve = $("btn-confirm-outline");
+        const meta = $("rev-meta");
+        if (dock) dock.classList.toggle("is-busy", busy);
+        if (cards) cards.classList.toggle("is-busy", busy);
+        if (ta) ta.disabled = busy;
+        if (revise) revise.disabled = busy;
+        if (approve) approve.disabled = busy;
+        if (meta) {
+          if (busy) {
+            meta.hidden = false;
+            meta.innerHTML = `<span class="status-dot"></span>수정 중… ${esc(message || "")}`;
+          } else if (message) {
+            meta.hidden = false;
+            meta.innerHTML = esc(message);
+            setTimeout(() => {
+              if (meta) {
+                meta.hidden = true;
+                meta.innerHTML = "";
+              }
+            }, 3500);
+          } else {
+            meta.hidden = true;
+            meta.innerHTML = "";
+          }
+        }
+      }
+
+      async function submitRevise() {
+        const ta = $("rev-textarea");
+        const feedback = (ta?.value || "").trim();
+        if (!feedback) {
+          ta?.focus();
+          return;
+        }
+        if (S.reviseRunId) return; // already running
+
+        // flush any pending local edits first
+        if (S.outlineSaveTimer) {
+          clearTimeout(S.outlineSaveTimer);
+          await persistOutline();
+        }
+
+        setReviseBusy(true, "피드백 전송 중");
+        try {
+          // ensure SSE is alive
+          if (!S.eventSource || S.eventSource.readyState === 2) bindSSE();
+          const res = await fetch("/api/plan/revise", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ feedback, deckName: S.deckName || "" }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+          S.reviseRunId = data.runId;
+          setReviseBusy(true, "AI가 수정 중…");
+        } catch (err) {
+          setReviseBusy(false, `실패: ${err.message}`);
+        }
+      }
+
+      $("rev-revise").addEventListener("click", submitRevise);
+      $("rev-textarea").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && e.shiftKey) {
+          e.preventDefault();
+          submitRevise();
+        }
+      });
+
+      /* ─────── init ─────── */
+      // Pre-flight: detect review-only entry (from editor's outline button)
+      // before packs render, so renderPacks() doesn't force selectedPack = 'auto'.
+      // Plain `?deck=X` (e.g. editor-init.js redirect for outline-only decks)
+      // stays editable so users can continue to generate slides.
+      const _initParams = new URLSearchParams(window.location.search);
+      if (_initParams.get("deck") && _initParams.get("view") === "1") {
+        S.reviewOnly = true;
+        document.body.classList.add("review-only");
+      }
+
+      // Strip all editable affordances in review-only mode. Safe to call repeatedly.
+      function applyReviewLock() {
+        if (!S.reviewOnly) return;
+        document
+          .querySelectorAll("#view-review [contenteditable]")
+          .forEach((el) => el.removeAttribute("contenteditable"));
+        const raw = $("outline-raw");
+        if (raw) raw.readOnly = true;
+        const dn = $("review-deck-name");
+        if (dn) dn.readOnly = true;
+      }
+
+      async function bootstrapFromDeckParam() {
+        const deckName = _initParams.get("deck");
+        if (!deckName) return false;
+        try {
+          const sw = await fetch("/api/decks/switch", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ deckName }),
+          });
+          if (!sw.ok) throw new Error(`switch ${sw.status}`);
+          const res = await fetch("/api/outline");
+          if (!res.ok) throw new Error(`outline ${res.status}`);
+          const outline = await res.json();
+          S.deckName = deckName;
+          if (outline.pack) S.selectedPack = outline.pack;
+          if (Array.isArray(outline.slides))
+            S.slideCount = outline.slides.length || S.slideCount;
+          // compose echo topic (before showReview reads it)
+          if (topic && outline.title) topic.value = outline.title;
+          showReview(outline, deckName);
+          applyReviewLock();
+          // deck name in crumb (showReview's setStep sets it to the phase label first)
+          const crumb = $("crumb-now");
+          if (crumb) crumb.textContent = `${deckName} · 아웃라인 검토`;
+          const rhTitle = $("review-hero-title");
+          if (rhTitle) rhTitle.textContent = deckName;
+          const rhBack = $("review-hero-back");
+          if (rhBack)
+            rhBack.href = `/editor?deck=${encodeURIComponent(deckName)}`;
+          return true;
+        } catch (err) {
+          console.warn("[generate] deck bootstrap failed:", err);
+          return false;
+        }
+      }
+
+      (async () => {
+        await Promise.all([loadPacks(), loadModels(), loadCommonTypes()]);
+        const bootstrapped = await bootstrapFromDeckParam();
+        if (!bootstrapped) setStep("compose");
+      })();
+
+      // debug hook (non-enumerable, opt-in for tests)
+      Object.defineProperty(window, "__sg", {
+        value: {
+          showReview,
+          renderReview,
+          get S() {
+            return S;
+          },
+        },
+        writable: false,
+      });
+    </script>
+  </body>
+</html>

@@ -1,47 +1,266 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Deck Browser - slides-grab-studio</title>
-  <link rel="icon" type="image/png" href="/asset/buddy_logo_round.png">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-  <link rel="stylesheet" href="/browser.css">
-  <script>(function(){var t=localStorage.getItem('sg-theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia('(prefers-color-scheme: light)').matches)document.documentElement.setAttribute('data-theme','light')})();</script>
-</head>
-<body>
-  <div class="browser-container">
-    <div class="nav-bar">
-      <div class="nav-brand"><img class="logo-dark" src="/asset/buddy_logo_round(dark).png" alt=""><img class="logo-light" src="/asset/buddy_logo_round(light).png" alt=""><span class="nav-brand-text">slides-grab<span>-studio</span></span></div>
-      <div class="nav-spacer"></div>
-      <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle light/dark mode">
-        <svg class="theme-icon theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        <svg class="theme-icon theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>slides-grab-studio · Pack Gallery</title>
+    <link rel="icon" type="image/png" href="/asset/buddy_logo_round.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/tokens.css" />
+    <link rel="stylesheet" href="/browser.css" />
+    <link rel="stylesheet" href="/pack-picker.css" />
+    <script>
+      (function () {
+        var t =
+          localStorage.getItem("sgs-theme") || localStorage.getItem("sg-theme");
+        if (t === "dark")
+          document.documentElement.setAttribute("data-theme", "dark");
+        else document.documentElement.setAttribute("data-theme", "light");
+      })();
+    </script>
+  </head>
+  <body data-theme="light">
+    <!-- ═════ TOP BAR ═════ -->
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="slides-grab-studio home">
+        <img class="logo-dark" src="/asset/buddy_logo_round(dark).png" alt="" />
+        <img
+          class="logo-light"
+          src="/asset/buddy_logo_round(light).png"
+          alt=""
+        />
+        <span class="brand-text">slides-grab-studio</span>
+      </a>
+      <div class="brand-crumb">
+        <span class="mono" style="font-size: 11px">workspace</span>
+      </div>
+      <div class="spacer"></div>
+      <button
+        class="theme-toggle"
+        id="themeBtn"
+        aria-label="Toggle theme"
+        type="button"
+      >
+        <span class="thumb" id="themeThumb">☀</span>
       </button>
-      <button class="btn-new-deck" id="btn-new-deck">+ New Deck</button>
-    </div>
+    </header>
 
-    <div class="main-content" id="main-content">
-      <div class="search-bar">
-        <label for="search-input" class="sr-only">Search decks</label>
-        <input class="search-input" id="search-input" type="text" placeholder="Search decks..." autocomplete="off">
+    <!-- ═════ PAGE ═════ -->
+    <main class="page">
+      <!-- header -->
+      <div class="page-header">
+        <div class="page-title">
+          <span class="eyebrow">Workspace · slides-grab</span>
+          <h1>오늘 어떤 <em>덱</em>을 만들어볼까요?</h1>
+        </div>
+        <div class="header-stats">
+          <div class="stat">
+            <span class="v" id="stat-decks">0</span><span class="l">decks</span>
+          </div>
+          <div class="stat">
+            <span class="v" id="stat-packs">0</span><span class="l">packs</span>
+          </div>
+          <div class="stat">
+            <span class="v" id="stat-slides">0</span
+            ><span class="l">slides</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- hero generate -->
+      <div class="hero-generate">
+        <div class="hero-left">
+          <span class="kicker">● AI READY · CLAUDE SONNET 4.6</span>
+          <h2>주제만 입력하면 <em>초안까지</em> 한 번에.</h2>
+          <form class="hero-input" id="hero-form">
+            <svg class="ico" viewBox="0 0 24 24" style="color: var(--muted)">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+            <input
+              id="hero-prompt"
+              placeholder="예: 2026년 Q2 AX 전략 보고 · 10분 · 임원용"
+              autocomplete="off"
+            />
+            <button class="go" type="submit">
+              <svg class="ico" viewBox="0 0 24 24">
+                <path d="M5 12h14M13 5l7 7-7 7" />
+              </svg>
+              생성
+            </button>
+          </form>
+          <div class="hero-suggestions">
+            <span
+              class="sugg"
+              data-prompt="2026년 Q2 사업 전략 보고 · 10분 · 임원 대상"
+              ><span class="plus">+</span>분기 전략 보고</span
+            >
+            <span class="sugg" data-prompt="신제품 런칭 발표 · 15분 · 외부 고객"
+              ><span class="plus">+</span>제품 런칭</span
+            >
+            <span class="sugg" data-prompt="신입 온보딩 세션 · 30분 · 실습 포함"
+              ><span class="plus">+</span>온보딩 자료</span
+            >
+            <span class="sugg" data-prompt="주간 팀 회고 · 5분 · 내부"
+              ><span class="plus">+</span>주간 회고</span
+            >
+          </div>
+        </div>
+        <div class="hero-right">
+          <div class="hero-mini" id="hero-mini"></div>
+          <div class="hero-info">
+            <b id="hero-pack-count">9</b>개 팩 · 골라서 시작
+          </div>
+        </div>
+      </div>
+
+      <!-- filter bar -->
+      <div class="filter-bar">
+        <div class="chip-tabs" id="chip-tabs">
+          <button class="on" data-filter="all">
+            All <span class="ct" id="ct-all">0</span>
+          </button>
+          <button data-filter="recent">
+            최근 <span class="ct" id="ct-recent">0</span>
+          </button>
+          <button data-filter="outline">
+            아웃라인 <span class="ct" id="ct-outline">0</span>
+          </button>
+        </div>
+        <div class="tag-chips"></div>
+        <div class="sort-wrap" id="sort-wrap">
+          <button
+            class="sort sort-btn"
+            id="sort-btn"
+            type="button"
+            aria-haspopup="listbox"
+            aria-expanded="false"
+          >
+            <svg
+              class="ico"
+              viewBox="0 0 24 24"
+              style="width: 12px; height: 12px"
+            >
+              <path d="M3 6h18M6 12h12M10 18h4" />
+            </svg>
+            정렬: <b id="sort-label">최근 편집순</b>
+          </button>
+          <div class="sort-menu" id="sort-menu" hidden role="listbox">
+            <button role="option" data-sort="recent" class="on" type="button">
+              최근 편집순
+            </button>
+            <button role="option" data-sort="name" type="button">
+              이름순 (가나다/A–Z)
+            </button>
+            <button role="option" data-sort="created" type="button">
+              등록순 (오래된→최신)
+            </button>
+            <button role="option" data-sort="slides" type="button">
+              슬라이드 개수순
+            </button>
+          </div>
+        </div>
+        <label
+          class="search"
+          style="width: 260px; cursor: text"
+          for="search-input"
+        >
+          <svg class="ico" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.3-4.3" />
+          </svg>
+          <input
+            id="search-input"
+            type="text"
+            placeholder="Search decks…"
+            autocomplete="off"
+            style="
+              flex: 1;
+              background: transparent;
+              border: 0;
+              outline: 0;
+              font-size: 12.5px;
+              color: var(--ink);
+              font-family: inherit;
+              min-width: 0;
+            "
+          />
+        </label>
+      </div>
+
+      <!-- grid -->
+      <div class="section-head">
+        <h3>Decks</h3>
+        <span class="ct" id="deck-count">0 TOTAL</span>
       </div>
       <div id="deck-container">
         <div class="loading">
           <div class="loading-spinner"></div>
-          Loading decks...
+          Loading decks…
         </div>
       </div>
-    </div>
 
-    <div class="status-bar" id="status-bar">Loading...</div>
+      <div class="empty-hint">— END OF PAGE · ⌘↓ FOR MORE —</div>
+    </main>
 
     <!-- Rename Modal -->
     <div class="deck-modal-overlay" id="rename-modal" hidden>
-      <div class="deck-modal">
-        <h3>Rename Deck</h3>
-        <input class="deck-rename-input" id="rename-input" type="text" autocomplete="off" placeholder="New name...">
-        <div class="deck-rename-error" id="rename-error"></div>
+      <div class="deck-modal" role="dialog" aria-label="Rename deck">
+        <div class="deck-modal-head">
+          <div class="deck-modal-icon" aria-hidden="true">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 20h9" />
+              <path
+                d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
+              />
+            </svg>
+          </div>
+          <div class="deck-modal-head-text">
+            <span class="deck-modal-eyebrow">rename · deck</span>
+            <h3>Rename <em>deck</em></h3>
+          </div>
+        </div>
+        <div class="deck-modal-body">
+          <div class="deck-delete-target">
+            <div
+              class="deck-delete-thumb"
+              id="rename-deck-thumb"
+              aria-hidden="true"
+            ></div>
+            <div class="deck-delete-info">
+              <div class="nm" id="rename-deck-current"></div>
+              <div class="meta" id="rename-deck-meta"></div>
+            </div>
+          </div>
+          <div class="deck-rename-field">
+            <label class="deck-rename-label" for="rename-input">New name</label>
+            <input
+              class="deck-rename-input"
+              id="rename-input"
+              type="text"
+              autocomplete="off"
+              placeholder="New name…"
+            />
+            <div class="deck-rename-error" id="rename-error"></div>
+          </div>
+        </div>
         <div class="deck-modal-actions">
           <button class="btn-modal-cancel" id="rename-cancel">Cancel</button>
           <button class="btn-modal-confirm" id="rename-confirm">Rename</button>
@@ -49,316 +268,673 @@
       </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
+    <!-- Delete Modal -->
     <div class="deck-modal-overlay" id="delete-modal" hidden>
-      <div class="deck-modal">
-        <h3>Delete Deck</h3>
-        <p>Are you sure you want to delete <strong id="delete-deck-name"></strong>? This action cannot be undone.</p>
+      <div class="deck-modal" role="dialog" aria-label="Delete deck">
+        <div class="deck-modal-head">
+          <div class="deck-modal-icon is-danger" aria-hidden="true">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 6h18" />
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              <path d="M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14" />
+            </svg>
+          </div>
+          <div class="deck-modal-head-text">
+            <span class="deck-modal-eyebrow">danger · permanent action</span>
+            <h3>Delete <em class="danger-em">deck</em></h3>
+          </div>
+        </div>
+        <div class="deck-modal-body">
+          <div class="deck-delete-target">
+            <div
+              class="deck-delete-thumb"
+              id="delete-deck-thumb"
+              aria-hidden="true"
+            ></div>
+            <div class="deck-delete-info">
+              <div class="nm" id="delete-deck-name"></div>
+              <div class="meta" id="delete-deck-meta"></div>
+            </div>
+          </div>
+          <div class="deck-delete-warn">
+            <b>주의:</b> 이 덱과 모든 버전 히스토리·코멘트·내보낸 파일이 영구히
+            삭제됩니다.
+          </div>
+        </div>
         <div class="deck-modal-actions">
           <button class="btn-modal-cancel" id="delete-cancel">Cancel</button>
           <button class="btn-modal-danger" id="delete-confirm">Delete</button>
         </div>
       </div>
     </div>
-  </div>
 
-  <script type="module">
-    const deckContainer = document.getElementById('deck-container');
-    const searchInput = document.getElementById('search-input');
-    const statusBar = document.getElementById('status-bar');
-    const btnNewDeck = document.getElementById('btn-new-deck');
+    <script type="module">
+      import { openPackPicker } from "/js/pack-picker.js";
 
-    let allDecks = [];
-    let renamingDeck = null;
-    let deletingDeck = null;
+      /* ─────── state ─────── */
+      const state = {
+        decks: [],
+        packs: [],
+        filter: "all",
+        query: "",
+        sort: "recent",
+      };
+      const SORT_LABELS = {
+        recent: "최근 편집순",
+        name: "이름순 (가나다/A–Z)",
+        created: "등록순 (오래된→최신)",
+        slides: "슬라이드 개수순",
+      };
+      const SORT_CMP = {
+        recent: (a, b) => new Date(b.lastModified) - new Date(a.lastModified),
+        name: (a, b) => a.name.localeCompare(b.name, "ko"),
+        created: (a, b) =>
+          new Date(a.createdAt || a.lastModified) -
+          new Date(b.createdAt || b.lastModified),
+        slides: (a, b) => (b.slideCount || 0) - (a.slideCount || 0),
+      };
 
-    function timeAgo(dateStr) {
-      const now = Date.now();
-      const then = new Date(dateStr).getTime();
-      const diffSec = Math.floor((now - then) / 1000);
-      if (diffSec < 60) return 'just now';
-      const diffMin = Math.floor(diffSec / 60);
-      if (diffMin < 60) return `${diffMin}m ago`;
-      const diffHour = Math.floor(diffMin / 60);
-      if (diffHour < 24) return `${diffHour}h ago`;
-      const diffDay = Math.floor(diffHour / 24);
-      if (diffDay < 30) return `${diffDay}d ago`;
-      const diffMonth = Math.floor(diffDay / 30);
-      if (diffMonth < 12) return `${diffMonth}mo ago`;
-      return `${Math.floor(diffMonth / 12)}y ago`;
-    }
+      /* ─────── elements ─────── */
+      const deckContainer = document.getElementById("deck-container");
+      const searchInput = document.getElementById("search-input");
+      const heroForm = document.getElementById("hero-form");
+      const heroPrompt = document.getElementById("hero-prompt");
+      const btnNewDeck = null; // removed top-bar button
+      const chipTabs = document.getElementById("chip-tabs");
+      const statDecks = document.getElementById("stat-decks");
+      const statPacks = document.getElementById("stat-packs");
+      const statSlides = document.getElementById("stat-slides");
+      const deckCount = document.getElementById("deck-count");
+      const heroPackCount = document.getElementById("hero-pack-count");
 
-    function renderDecks(decks) {
-      if (decks.length === 0 && allDecks.length === 0) {
-        deckContainer.innerHTML = `
+      /* ─────── helpers ─────── */
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const timeAgo = (d) => {
+        const diff = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+        if (diff < 60) return "just now";
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        if (diff < 2592000) return `${Math.floor(diff / 86400)}d ago`;
+        if (diff < 31536000) return `${Math.floor(diff / 2592000)}mo ago`;
+        return `${Math.floor(diff / 31536000)}y ago`;
+      };
+
+      /* ─────── render ─────── */
+      function renderDecks() {
+        const { decks, filter, query, sort } = state;
+        let filtered = decks;
+        if (filter === "outline") filtered = decks.filter((d) => d.hasOutline);
+        else if (filter === "recent") {
+          const day = 7 * 86400000;
+          filtered = decks.filter(
+            (d) => Date.now() - new Date(d.lastModified).getTime() < day,
+          );
+        }
+        if (query) {
+          const q = query.toLowerCase();
+          filtered = filtered.filter((d) => d.name.toLowerCase().includes(q));
+        }
+        filtered = [...filtered].sort(SORT_CMP[sort] || SORT_CMP.recent);
+
+        if (decks.length === 0) {
+          deckContainer.innerHTML = `
           <div class="empty-state">
-            <div class="empty-state-icon">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
-            </div>
-            <div class="empty-state-title">No decks yet</div>
-            <div class="empty-state-desc">Create your first presentation to get started.</div>
-            <button class="btn-new-deck" onclick="navigateCreate()">+ New Deck</button>
-          </div>
-        `;
-        return;
-      }
-
-      if (decks.length === 0) {
-        deckContainer.innerHTML = `
+            <div class="empty-state-title">No <em>decks</em> yet</div>
+            <div class="empty-state-desc">Create your first deck to get started.</div>
+            <button class="btn-primary" onclick="document.getElementById('btn-new-deck').click()">
+              <svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg> New deck
+            </button>
+          </div>`;
+          return;
+        }
+        if (filtered.length === 0) {
+          deckContainer.innerHTML = `
           <div class="empty-state">
-            <div class="empty-state-title">No matches</div>
-            <div class="empty-state-desc">No decks match your search.</div>
-          </div>
-        `;
-        return;
-      }
+            <div class="empty-state-title">No <em>matches</em></div>
+            <div class="empty-state-desc">No decks match your filter.</div>
+          </div>`;
+          return;
+        }
 
-      let html = '<div class="deck-grid">';
-
-      for (const deck of decks) {
-        const thumbUrl = `/api/decks/${encodeURIComponent(deck.name)}/thumbnail`;
+        let html = '<div class="grid">';
         html += `
-          <div class="deck-card" data-deck="${deck.name}" role="button" tabindex="0">
-            <div class="deck-card-actions">
-              <button class="deck-kebab-btn" data-deck="${deck.name}" title="More actions" aria-label="More actions">&#8942;</button>
-            </div>
+        <div class="deck-card new-tile" id="card-new-deck" role="button" tabindex="0">
+          <div class="inner">
+            <div class="plus">+</div>
+            <div class="lbl">새 덱 만들기</div>
+            <div class="sub">주제 입력 · 업로드 · 템플릿에서 시작</div>
+          </div>
+        </div>`;
+        for (const d of filtered) {
+          const thumb = `/api/decks/${encodeURIComponent(d.name)}/thumbnail`;
+          const fresh =
+            Date.now() - new Date(d.lastModified).getTime() < 86400000;
+          html += `
+          <div class="deck-card" data-deck="${esc(d.name)}" role="button" tabindex="0">
             <div class="deck-thumb">
-              <img src="${thumbUrl}" loading="lazy" alt="${deck.name}"
-                   onerror="this.style.display='none'; this.nextElementSibling.style.display='';">
-              <span class="deck-thumb-placeholder" style="display:none;">No preview</span>
-            </div>
-            <div class="deck-info">
-              <div class="deck-name" title="${deck.name}">${deck.name}</div>
-              <div class="deck-meta">
-                <span class="deck-meta-item">${deck.slideCount} slides</span>
-                <span class="deck-meta-item">${timeAgo(deck.lastModified)}</span>
-                ${deck.hasOutline ? '<span class="deck-badge">outline</span>' : ''}
+              <div class="badge-row">
+                <span class="badge">${d.slideCount} SLIDES</span>
+                ${fresh ? '<span class="badge new">NEW</span>' : d.hasOutline ? '<span class="badge outline">OUTLINE</span>' : ""}
+              </div>
+              <img src="${thumb}" loading="lazy" alt="${esc(d.name)}"
+                   onerror="this.style.display='none';this.nextElementSibling.style.display='grid'" />
+              <div class="placeholder" style="display:none">No preview</div>
+              <div class="hover-overlay">
+                <div class="quick">
+                  <button data-action="open">편집</button>
+                  <button data-action="present"><svg class="ico" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> Present</button>
+                  <button class="p" data-action="export">Export</button>
+                </div>
               </div>
             </div>
+            <button class="deck-kebab" data-deck="${esc(d.name)}" title="More actions" aria-label="More actions">⋯</button>
+            <div class="deck-body">
+              <div class="deck-name" title="${esc(d.name)}"><span class="name-txt">${esc(d.name)}</span></div>
+              <div class="deck-meta">
+                <span>${d.slideCount} SLIDES</span>
+                <span class="dot"></span>
+                <span>${timeAgo(d.lastModified)}</span>
+              </div>
+            </div>
+          </div>`;
+        }
+        html += "</div>";
+        deckContainer.innerHTML = html;
+
+        deckContainer
+          .querySelectorAll(".deck-card[data-deck]")
+          .forEach((card) => {
+            card.addEventListener("click", (e) => {
+              if (
+                e.target.closest(".deck-kebab") ||
+                e.target.closest("[data-action]")
+              )
+                return;
+              navigateToDeck(card.dataset.deck);
+            });
+            card.addEventListener("keydown", (e) => {
+              if (e.key === "Enter") navigateToDeck(card.dataset.deck);
+            });
+          });
+        deckContainer.querySelectorAll(".deck-kebab").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openKebabMenu(e, btn.dataset.deck);
+          });
+        });
+        deckContainer
+          .querySelectorAll('[data-action="open"]')
+          .forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              navigateToDeck(btn.closest(".deck-card").dataset.deck);
+            });
+          });
+        deckContainer
+          .querySelectorAll('[data-action="present"]')
+          .forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const name = btn.closest(".deck-card").dataset.deck;
+              window.location.href = `/editor?deck=${encodeURIComponent(name)}&present=1`;
+            });
+          });
+        deckContainer
+          .querySelectorAll('[data-action="export"]')
+          .forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const name = btn.closest(".deck-card").dataset.deck;
+              window.location.href = `/editor?deck=${encodeURIComponent(name)}&export=pptx`;
+            });
+          });
+        const newCard = document.getElementById("card-new-deck");
+        if (newCard) {
+          newCard.addEventListener("click", () => navigateCreate());
+          newCard.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") navigateCreate();
+          });
+        }
+      }
+
+      /* ─────── navigation ─────── */
+      function navigateToDeck(name) {
+        window.location.href = `/editor?deck=${encodeURIComponent(name)}`;
+      }
+      function navigateCreate(seedPrompt) {
+        const url = seedPrompt
+          ? `/generate?prompt=${encodeURIComponent(seedPrompt)}`
+          : "/generate";
+        window.location.href = url;
+      }
+      window.navigateCreate = navigateCreate;
+
+      /* ─────── loaders ─────── */
+      async function loadDecks() {
+        try {
+          const res = await fetch("/api/decks");
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          state.decks = await res.json();
+          // stats
+          statDecks.textContent = state.decks.length;
+          deckCount.textContent = `${state.decks.length} TOTAL`;
+          const totalSlides = state.decks.reduce(
+            (s, d) => s + (d.slideCount || 0),
+            0,
+          );
+          statSlides.textContent = totalSlides.toLocaleString();
+          const recentCount = state.decks.filter(
+            (d) =>
+              Date.now() - new Date(d.lastModified).getTime() < 7 * 86400000,
+          ).length;
+          const outlineCount = state.decks.filter((d) => d.hasOutline).length;
+          document.getElementById("ct-all").textContent = state.decks.length;
+          document.getElementById("ct-recent").textContent = recentCount;
+          document.getElementById("ct-outline").textContent = outlineCount;
+          renderDecks();
+        } catch (err) {
+          deckContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-title">Failed to load</div>
+            <div class="empty-state-desc">${esc(err.message)}</div>
+          </div>`;
+        }
+      }
+
+      async function loadPacks() {
+        try {
+          const res = await fetch("/api/packs");
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          state.packs = await res.json();
+          statPacks.textContent = state.packs.length;
+          heroPackCount.textContent = state.packs.length;
+          renderHeroMini(state.packs);
+        } catch {
+          /* pack stat stays 0 — non-fatal */
+        }
+      }
+
+      /* ─────── hero mini (random pack previews) ─────── */
+      function pickRandom(arr, n) {
+        const pool = [...arr];
+        for (let i = pool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        return pool.slice(0, Math.min(n, pool.length));
+      }
+      async function renderHeroMini(packs) {
+        const host = document.getElementById("hero-mini");
+        if (!host || !packs || packs.length === 0) return;
+        const picks = pickRandom(packs, 3);
+        const cssTexts = await Promise.all(
+          picks.map((p) =>
+            fetch(`/api/packs/${encodeURIComponent(p.id)}/preview.css`)
+              .then((r) => (r.ok ? r.text() : ""))
+              .catch(() => ""),
+          ),
+        );
+        let style = document.getElementById("hero-mini-style");
+        if (!style) {
+          style = document.createElement("style");
+          style.id = "hero-mini-style";
+          document.head.appendChild(style);
+        }
+        style.textContent = cssTexts.filter(Boolean).join("\n");
+        host.innerHTML = picks
+          .map(
+            (p) => `
+        <div class="mcard" role="button" tabindex="0" title="${esc(p.name || p.id)}" data-pack="${esc(p.id)}">
+          <div class="preview-inner preview-${esc(p.id)}">
+            <div class="el el-1"></div><div class="el el-2"></div><div class="el el-3"></div>
           </div>
-        `;
+        </div>`,
+          )
+          .join("");
+        host.querySelectorAll(".mcard").forEach((card) => {
+          const openModal = () =>
+            openPackPicker({
+              packs: state.packs,
+              initialPackId: card.dataset.pack,
+              hideApply: true,
+              eyebrow: `${state.packs.length} packs available`,
+              titleHtml: "Pick a <em>design pack</em>",
+              hint: "",
+            });
+          card.addEventListener("click", openModal);
+          card.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openModal();
+            }
+          });
+        });
       }
 
-      html += `
-        <div class="deck-card new-deck-card" id="card-new-deck" role="button" tabindex="0">
-          <div class="new-deck-inner">
-            <div class="new-deck-icon">+</div>
-            <div class="new-deck-label">New Deck</div>
-          </div>
-        </div>
-      `;
+      /* ─────── search / filter ─────── */
+      searchInput.addEventListener("input", () => {
+        state.query = searchInput.value.trim();
+        renderDecks();
+      });
+      chipTabs.addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-filter]");
+        if (!btn) return;
+        chipTabs
+          .querySelectorAll("button")
+          .forEach((b) => b.classList.toggle("on", b === btn));
+        state.filter = btn.dataset.filter;
+        renderDecks();
+      });
 
-      html += '</div>';
-      deckContainer.innerHTML = html;
-
-      // Event listeners
-      for (const card of deckContainer.querySelectorAll('.deck-card:not(.new-deck-card)')) {
-        card.addEventListener('click', () => navigateToDeck(card.dataset.deck));
-        card.addEventListener('keydown', (e) => { if (e.key === 'Enter') navigateToDeck(card.dataset.deck); });
-        const kebab = card.querySelector('.deck-kebab-btn');
-        if (kebab) kebab.addEventListener('click', (e) => { e.stopPropagation(); openKebabMenu(e, card.dataset.deck); });
+      /* ─────── sort dropdown ─────── */
+      const sortBtn = document.getElementById("sort-btn");
+      const sortMenu = document.getElementById("sort-menu");
+      const sortLabel = document.getElementById("sort-label");
+      function closeSortMenu() {
+        sortMenu.hidden = true;
+        sortBtn.setAttribute("aria-expanded", "false");
       }
-
-      const newDeckCard = document.getElementById('card-new-deck');
-      if (newDeckCard) {
-        newDeckCard.addEventListener('click', navigateCreate);
-        newDeckCard.addEventListener('keydown', (e) => { if (e.key === 'Enter') navigateCreate(); });
+      function openSortMenu() {
+        sortMenu.hidden = false;
+        sortBtn.setAttribute("aria-expanded", "true");
       }
-    }
+      sortBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (sortMenu.hidden) openSortMenu();
+        else closeSortMenu();
+      });
+      sortMenu.addEventListener("click", (e) => {
+        const opt = e.target.closest("button[data-sort]");
+        if (!opt) return;
+        const key = opt.dataset.sort;
+        state.sort = key;
+        sortLabel.textContent = SORT_LABELS[key] || SORT_LABELS.recent;
+        sortMenu
+          .querySelectorAll("button[data-sort]")
+          .forEach((b) => b.classList.toggle("on", b === opt));
+        closeSortMenu();
+        renderDecks();
+      });
+      document.addEventListener("click", (e) => {
+        if (sortMenu.hidden) return;
+        if (!sortMenu.contains(e.target) && e.target !== sortBtn)
+          closeSortMenu();
+      });
 
-    function navigateToDeck(deckName) {
-      window.location.href = `/editor?deck=${encodeURIComponent(deckName)}`;
-    }
+      /* ─────── hero generate ─────── */
+      heroForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const prompt = heroPrompt.value.trim();
+        navigateCreate(prompt);
+      });
+      document.querySelectorAll(".hero-suggestions .sugg").forEach((el) => {
+        el.addEventListener("click", () => {
+          heroPrompt.value = el.dataset.prompt || "";
+          heroPrompt.focus();
+        });
+      });
+      // btnNewDeck removed
 
-    window.navigateCreate = function navigateCreate() {
-      window.location.href = '/editor?create=1';
-    };
-
-    // Search
-    searchInput.addEventListener('input', () => {
-      const query = searchInput.value.toLowerCase().trim();
-      const filtered = query
-        ? allDecks.filter((d) => d.name.toLowerCase().includes(query))
-        : allDecks;
-      renderDecks(filtered);
-      statusBar.textContent = query
-        ? `${filtered.length} of ${allDecks.length} decks`
-        : `${allDecks.length} decks`;
-    });
-
-    // New Deck button (nav bar)
-    btnNewDeck.addEventListener('click', navigateCreate);
-
-    // ── Kebab menu ──
-    function closeKebabMenu() {
-      const existing = document.querySelector('.deck-action-menu');
-      if (existing) existing.remove();
-    }
-
-    function openKebabMenu(e, deckName) {
-      closeKebabMenu();
-      const btn = e.currentTarget;
-      const rect = btn.getBoundingClientRect();
-      const menu = document.createElement('div');
-      menu.className = 'deck-action-menu';
-      menu.innerHTML = `
+      /* ─────── kebab menu ─────── */
+      function closeKebab() {
+        document.querySelector(".deck-action-menu")?.remove();
+      }
+      function openKebabMenu(e, name) {
+        closeKebab();
+        const rect = e.currentTarget.getBoundingClientRect();
+        const menu = document.createElement("div");
+        menu.className = "deck-action-menu";
+        menu.innerHTML = `
+        <button class="deck-action-item" data-action="open">Open</button>
         <button class="deck-action-item" data-action="rename">Rename</button>
         <button class="deck-action-item" data-action="duplicate">Duplicate</button>
         <button class="deck-action-item danger" data-action="delete">Delete</button>
       `;
-      menu.style.top = `${rect.bottom + 4}px`;
-      menu.style.left = `${rect.right - 140}px`;
-      document.body.appendChild(menu);
+        menu.style.top = `${rect.bottom + 4}px`;
+        menu.style.left = `${Math.max(12, rect.right - 160)}px`;
+        document.body.appendChild(menu);
+        menu
+          .querySelector('[data-action="open"]')
+          .addEventListener("click", () => {
+            closeKebab();
+            navigateToDeck(name);
+          });
+        menu
+          .querySelector('[data-action="rename"]')
+          .addEventListener("click", () => {
+            closeKebab();
+            const deck = state.decks.find((x) => x.name === name) || { name };
+            openRenameModal(deck);
+          });
+        menu
+          .querySelector('[data-action="duplicate"]')
+          .addEventListener("click", () => {
+            closeKebab();
+            duplicateDeck(name);
+          });
+        menu
+          .querySelector('[data-action="delete"]')
+          .addEventListener("click", () => {
+            closeKebab();
+            const deck = state.decks.find((x) => x.name === name) || { name };
+            openDeleteModal(deck);
+          });
+        const outside = (ev) => {
+          if (!menu.contains(ev.target)) {
+            closeKebab();
+            document.removeEventListener("click", outside, true);
+          }
+        };
+        setTimeout(() => document.addEventListener("click", outside, true), 0);
+      }
 
-      menu.querySelector('[data-action="rename"]').addEventListener('click', () => { closeKebabMenu(); openRenameModal(deckName); });
-      menu.querySelector('[data-action="duplicate"]').addEventListener('click', () => { closeKebabMenu(); duplicateDeck(deckName); });
-      menu.querySelector('[data-action="delete"]').addEventListener('click', () => { closeKebabMenu(); openDeleteModal(deckName); });
-
-      const onClickOutside = (ev) => {
-        if (!menu.contains(ev.target) && ev.target !== btn) {
-          closeKebabMenu();
-          document.removeEventListener('click', onClickOutside, true);
+      /* ─────── duplicate ─────── */
+      async function duplicateDeck(name) {
+        try {
+          const res = await fetch(
+            `/api/decks/${encodeURIComponent(name)}/duplicate`,
+            { method: "POST" },
+          );
+          const data = await res.json();
+          if (!res.ok) return alert(data.error || "Duplicate failed.");
+          await loadDecks();
+        } catch (err) {
+          alert(err.message);
         }
+      }
+
+      /* ─────── rename modal ─────── */
+      const renameModal = document.getElementById("rename-modal");
+      const renameInput = document.getElementById("rename-input");
+      const renameError = document.getElementById("rename-error");
+      const renameConfirm = document.getElementById("rename-confirm");
+      const renameCurrent = document.getElementById("rename-deck-current");
+      const renameMeta = document.getElementById("rename-deck-meta");
+      const renameThumb = document.getElementById("rename-deck-thumb");
+      let renamingDeck = null;
+      function openRenameModal(deck) {
+        const d = typeof deck === "string" ? { name: deck } : deck || {};
+        renamingDeck = d.name;
+        renameInput.value = d.name;
+        renameError.textContent = "";
+        renameConfirm.disabled = false;
+        if (renameCurrent) renameCurrent.textContent = d.name;
+        const count = Number.isFinite(d.slideCount) ? d.slideCount : null;
+        const edited = d.lastModified ? timeAgo(d.lastModified) : null;
+        const parts = [];
+        if (count !== null) parts.push(`${count} slides`);
+        if (edited) parts.push(`last edited ${edited}`);
+        if (renameMeta) renameMeta.textContent = parts.join(" · ");
+        if (renameThumb) {
+          renameThumb.style.backgroundImage = d.name
+            ? `url("/api/decks/${encodeURIComponent(d.name)}/thumbnail")`
+            : "";
+        }
+        renameModal.hidden = false;
+        setTimeout(() => {
+          renameInput.focus();
+          renameInput.select();
+        }, 50);
+      }
+      function closeRenameModal() {
+        renameModal.hidden = true;
+        renamingDeck = null;
+      }
+      async function submitRename() {
+        const newName = renameInput.value.trim();
+        if (!newName) {
+          renameError.textContent = "Name cannot be empty.";
+          return;
+        }
+        if (newName === renamingDeck) {
+          closeRenameModal();
+          return;
+        }
+        renameError.textContent = "";
+        renameConfirm.disabled = true;
+        try {
+          const res = await fetch(
+            `/api/decks/${encodeURIComponent(renamingDeck)}/rename`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ newName }),
+            },
+          );
+          const data = await res.json();
+          if (!res.ok) {
+            renameError.textContent = data.error || "Rename failed.";
+            renameConfirm.disabled = false;
+            return;
+          }
+          closeRenameModal();
+          await loadDecks();
+        } catch (err) {
+          renameError.textContent = err.message;
+          renameConfirm.disabled = false;
+        }
+      }
+      document
+        .getElementById("rename-cancel")
+        .addEventListener("click", closeRenameModal);
+      renameConfirm.addEventListener("click", submitRename);
+      renameInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") submitRename();
+      });
+      renameModal.addEventListener("click", (e) => {
+        if (e.target === renameModal) closeRenameModal();
+      });
+
+      /* ─────── delete modal ─────── */
+      const deleteModal = document.getElementById("delete-modal");
+      const deleteName = document.getElementById("delete-deck-name");
+      const deleteMeta = document.getElementById("delete-deck-meta");
+      const deleteThumb = document.getElementById("delete-deck-thumb");
+      const deleteConfirm = document.getElementById("delete-confirm");
+      let deletingDeck = null;
+      function openDeleteModal(deck) {
+        const d = typeof deck === "string" ? { name: deck } : deck || {};
+        deletingDeck = d.name;
+        deleteName.textContent = d.name;
+        const count = Number.isFinite(d.slideCount) ? d.slideCount : null;
+        const edited = d.lastModified ? timeAgo(d.lastModified) : null;
+        const parts = [];
+        if (count !== null) parts.push(`${count} slides`);
+        if (edited) parts.push(`last edited ${edited}`);
+        deleteMeta.textContent = parts.join(" · ");
+        if (deleteThumb) {
+          deleteThumb.style.backgroundImage = d.name
+            ? `url("/api/decks/${encodeURIComponent(d.name)}/thumbnail")`
+            : "";
+        }
+        deleteConfirm.disabled = false;
+        deleteModal.hidden = false;
+      }
+      function closeDeleteModal() {
+        deleteModal.hidden = true;
+        deletingDeck = null;
+      }
+      async function submitDelete() {
+        deleteConfirm.disabled = true;
+        try {
+          const res = await fetch(
+            `/api/decks/${encodeURIComponent(deletingDeck)}`,
+            { method: "DELETE" },
+          );
+          const data = await res.json();
+          if (!res.ok) {
+            alert(data.error || "Delete failed.");
+            deleteConfirm.disabled = false;
+            return;
+          }
+          closeDeleteModal();
+          await loadDecks();
+        } catch (err) {
+          alert(err.message);
+          deleteConfirm.disabled = false;
+        }
+      }
+      document
+        .getElementById("delete-cancel")
+        .addEventListener("click", closeDeleteModal);
+      deleteConfirm.addEventListener("click", submitDelete);
+      deleteModal.addEventListener("click", (e) => {
+        if (e.target === deleteModal) closeDeleteModal();
+      });
+
+      /* ─────── keyboard ─────── */
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeKebab();
+          if (!sortMenu.hidden) closeSortMenu();
+          if (!renameModal.hidden) closeRenameModal();
+          if (!deleteModal.hidden) closeDeleteModal();
+        }
+      });
+
+      /* ─────── theme ─────── */
+      const themeBtn = document.getElementById("themeBtn");
+      const themeThumb = document.getElementById("themeThumb");
+      const applyTheme = (t) => {
+        document.documentElement.setAttribute("data-theme", t);
+        document.body.setAttribute("data-theme", t);
+        themeThumb.textContent = t === "dark" ? "☾" : "☀";
       };
-      setTimeout(() => document.addEventListener('click', onClickOutside, true), 0);
-    }
+      applyTheme(
+        document.documentElement.getAttribute("data-theme") || "light",
+      );
+      themeBtn.addEventListener("click", () => {
+        const next =
+          document.documentElement.getAttribute("data-theme") === "dark"
+            ? "light"
+            : "dark";
+        applyTheme(next);
+        localStorage.setItem("sgs-theme", next);
+      });
 
-    // ── Duplicate ──
-    async function duplicateDeck(deckName) {
-      statusBar.textContent = 'Duplicating...';
-      try {
-        const res = await fetch(`/api/decks/${encodeURIComponent(deckName)}/duplicate`, { method: 'POST' });
-        const data = await res.json();
-        if (!res.ok) { alert(data.error || 'Duplicate failed.'); return; }
-        await loadDecks();
-      } catch (err) {
-        alert(err.message);
-      }
-    }
-
-    // ── Rename modal ──
-    const renameModal = document.getElementById('rename-modal');
-    const renameInput = document.getElementById('rename-input');
-    const renameError = document.getElementById('rename-error');
-    const renameConfirmBtn = document.getElementById('rename-confirm');
-
-    function openRenameModal(deckName) {
-      renamingDeck = deckName;
-      renameInput.value = deckName;
-      renameError.textContent = '';
-      renameConfirmBtn.disabled = false;
-      renameModal.hidden = false;
-      setTimeout(() => { renameInput.focus(); renameInput.select(); }, 50);
-    }
-
-    function closeRenameModal() {
-      renameModal.hidden = true;
-      renamingDeck = null;
-    }
-
-    async function submitRename() {
-      const newName = renameInput.value.trim();
-      if (!newName) { renameError.textContent = 'Name cannot be empty.'; return; }
-      if (newName === renamingDeck) { closeRenameModal(); return; }
-      renameError.textContent = '';
-      renameConfirmBtn.disabled = true;
-      try {
-        const res = await fetch(`/api/decks/${encodeURIComponent(renamingDeck)}/rename`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ newName }),
-        });
-        const data = await res.json();
-        if (!res.ok) { renameError.textContent = data.error || 'Rename failed.'; renameConfirmBtn.disabled = false; return; }
-        closeRenameModal();
-        await loadDecks();
-      } catch (err) {
-        renameError.textContent = err.message;
-        renameConfirmBtn.disabled = false;
-      }
-    }
-
-    document.getElementById('rename-cancel').addEventListener('click', closeRenameModal);
-    renameConfirmBtn.addEventListener('click', submitRename);
-    renameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitRename(); });
-    renameModal.addEventListener('click', (e) => { if (e.target === renameModal) closeRenameModal(); });
-
-    // ── Delete modal ──
-    const deleteModal = document.getElementById('delete-modal');
-    const deleteDeckNameEl = document.getElementById('delete-deck-name');
-    const deleteConfirmBtn = document.getElementById('delete-confirm');
-
-    function openDeleteModal(deckName) {
-      deletingDeck = deckName;
-      deleteDeckNameEl.textContent = deckName;
-      deleteConfirmBtn.disabled = false;
-      deleteModal.hidden = false;
-    }
-
-    function closeDeleteModal() {
-      deleteModal.hidden = true;
-      deletingDeck = null;
-    }
-
-    async function submitDelete() {
-      deleteConfirmBtn.disabled = true;
-      try {
-        const res = await fetch(`/api/decks/${encodeURIComponent(deletingDeck)}`, { method: 'DELETE' });
-        const data = await res.json();
-        if (!res.ok) { alert(data.error || 'Delete failed.'); deleteConfirmBtn.disabled = false; return; }
-        closeDeleteModal();
-        await loadDecks();
-      } catch (err) {
-        alert(err.message);
-        deleteConfirmBtn.disabled = false;
-      }
-    }
-
-    document.getElementById('delete-cancel').addEventListener('click', closeDeleteModal);
-    deleteConfirmBtn.addEventListener('click', submitDelete);
-    deleteModal.addEventListener('click', (e) => { if (e.target === deleteModal) closeDeleteModal(); });
-
-    // ── Global keyboard ──
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        closeKebabMenu();
-        if (!renameModal.hidden) closeRenameModal();
-        if (!deleteModal.hidden) closeDeleteModal();
-      }
-    });
-
-    // Load decks
-    async function loadDecks() {
-      try {
-        const res = await fetch('/api/decks');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        allDecks = await res.json();
-        renderDecks(allDecks);
-        statusBar.textContent = `${allDecks.length} decks`;
-      } catch (err) {
-        deckContainer.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-title">Failed to load decks</div>
-            <div class="empty-state-desc">${err.message}</div>
-          </div>
-        `;
-        statusBar.textContent = 'Error loading decks';
-      }
-    }
-
-    loadDecks();
-
-    // ── Theme toggle ──
-    document.getElementById('theme-toggle').addEventListener('click', () => {
-      const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('sg-theme', next);
-    });
-    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
-      if (!localStorage.getItem('sg-theme')) {
-        document.documentElement.setAttribute('data-theme', e.matches ? 'light' : 'dark');
-      }
-    });
-  </script>
-</body>
+      /* ─────── init ─────── */
+      loadDecks();
+      loadPacks();
+    </script>
+  </body>
 </html>
