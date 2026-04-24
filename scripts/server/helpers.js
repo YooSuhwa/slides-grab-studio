@@ -158,6 +158,16 @@ export function randomRunId() {
   return `run-${ts}-${rand}`;
 }
 
+export function formatSlideCountGuidance(countLabel) {
+  const n = Number.parseInt(String(countLabel ?? '').trim(), 10);
+  if (!Number.isFinite(n) || n <= 0) {
+    return '슬라이드 수: 주제에 적합한 분량으로 자유롭게 결정하세요 (보통 8~12장)';
+  }
+  const minC = Math.max(3, n - 2);
+  const maxC = Math.min(30, n + 2);
+  return `권장 슬라이드 수: 약 ${n}장 (${minC}~${maxC}장 범위 내에서 주제와 내용에 맞게 유연하게 결정하세요 — 정확히 ${n}장일 필요는 없습니다)`;
+}
+
 export function slugify(text) {
   return text
     .toLowerCase()
