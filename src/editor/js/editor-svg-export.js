@@ -1,188 +1,183 @@
-// editor-svg-export.js — SVG/PNG export modal logic
+// editor-svg-export.js — SVG/PNG export pane logic (coordinator-driven)
 
-import { currentSlideFile } from './editor-utils.js';
+import { currentSlideFile, parsePagesInput } from './editor-utils.js';
 import { state } from './editor-state.js';
 
-const modal = document.querySelector('#svg-export-modal');
-const presetSelect = document.querySelector('#svg-export-preset');
-const customSizeDiv = document.querySelector('#svg-export-custom-size');
-const widthInput = document.querySelector('#svg-export-width');
-const heightInput = document.querySelector('#svg-export-height');
-const scaleInput = document.querySelector('#svg-export-scale');
-const formatSelect = document.querySelector('#svg-export-format');
-const progressDiv = document.querySelector('#svg-export-progress');
-const progressFill = document.querySelector('#svg-export-progress-fill');
-const progressText = document.querySelector('#svg-export-progress-text');
-const btnStart = document.querySelector('#svg-export-start');
-const btnCancel = document.querySelector('#svg-export-cancel');
+const $ = (sel) => document.querySelector(sel);
+
+// All DOM refs are lazy because the coordinator owns the modal shell;
+// these fields live inside the unified #export-modal.
+const get = {
+  get preset() { return $('#svg-export-preset'); },
+  get customSizeDiv() { return $('#svg-export-custom-size'); },
+  get width() { return $('#svg-export-width'); },
+  get height() { return $('#svg-export-height'); },
+  get scale() { return $('#svg-export-scale'); },
+  get format() { return $('#svg-export-format'); },
+  get progressDiv() { return $('#svg-export-progress'); },
+  get progressFill() { return $('#svg-export-progress-fill'); },
+  get progressText() { return $('#svg-export-progress-text'); },
+};
 
 let activeExportId = null;
+let onBusyChange = null; // coordinator sets this to reflect submit button state
 
-// Sync custom size inputs from preset
+export function registerSvgExportBusy(cb) { onBusyChange = cb; }
+
 function syncSizeFromPreset() {
-  const isCustom = presetSelect.value === 'custom';
-  customSizeDiv.hidden = !isCustom;
-  if (!isCustom) {
-    const [w, h] = presetSelect.value.split('x').map(Number);
-    widthInput.value = w;
-    heightInput.value = h;
-  }
+  const preset = get.preset;
+  if (!preset) return;
+  if (preset.value === 'custom') return;
+  const [w, h] = preset.value.split('x').map(Number);
+  if (get.width) get.width.value = w;
+  if (get.height) get.height.value = h;
 }
 
-// Preset changes
-presetSelect.addEventListener('change', syncSizeFromPreset);
-
-// Sync on init
-syncSizeFromPreset();
+// Wire preset sync once the DOM has the node
+document.addEventListener('DOMContentLoaded', () => {
+  const preset = get.preset;
+  if (preset) preset.addEventListener('change', syncSizeFromPreset);
+  syncSizeFromPreset();
+});
+// Also run immediately (module may load after DOMContentLoaded)
+if (document.readyState !== 'loading') {
+  const preset = get.preset;
+  if (preset) preset.addEventListener('change', syncSizeFromPreset);
+  syncSizeFromPreset();
+}
 
 function getExportParams() {
-  const scopeRadio = modal.querySelector('input[name="svg-export-scope"]:checked');
-  const scope = scopeRadio ? scopeRadio.value : 'current';
+  const scopeRadio = document.querySelector('input[name="svg-export-scope"]:checked');
+  const scope = scopeRadio ? scopeRadio.value : 'all';
 
+  const preset = get.preset;
   let width, height;
-  if (presetSelect.value === 'custom') {
-    width = Number(widthInput.value) || 1280;
-    height = Number(heightInput.value) || 720;
+  if (preset && preset.value === 'custom') {
+    width = Number(get.width?.value) || 1280;
+    height = Number(get.height?.value) || 720;
+  } else if (preset) {
+    const [w, h] = preset.value.split('x').map(Number);
+    width = w; height = h;
   } else {
-    const [w, h] = presetSelect.value.split('x').map(Number);
-    width = w;
-    height = h;
+    width = 1920; height = 1080;
   }
 
-  const rawFormat = formatSelect.value;
+  // Prefer new ex-seg radio, fall back to legacy hidden select for safety
+  const segChoice = document.querySelector('input[name="svg-format-choice"]:checked')?.value;
+  const rawFormat = segChoice || get.format?.value || 'svg';
   const outline = rawFormat === 'svg-outline';
   const format = outline ? 'svg' : rawFormat;
 
-  return {
-    scope,
-    slide: currentSlideFile(),
-    format,
-    outline,
-    scale: Number(scaleInput.value) || 1,
-    width,
-    height,
+  const params = {
+    scope, slide: currentSlideFile(), format, outline,
+    scale: Number(get.scale?.value) || 1, width, height,
   };
+  if (scope === 'specific') {
+    const pagesInput = document.querySelector('.ex-pages-input[data-pages-for="svg"]');
+    params.slides = parsePagesInput(pagesInput?.value || '');
+  }
+  return params;
 }
 
-function resetProgress() {
-  progressDiv.classList.remove('active');
-  progressFill.style.width = '0%';
-  progressText.textContent = '';
-  btnStart.disabled = false;
+export function resetSvgExport() {
+  get.progressDiv?.classList.remove('active');
+  if (get.progressFill) get.progressFill.style.width = '0%';
+  if (get.progressText) get.progressText.textContent = '';
+  if (onBusyChange) onBusyChange(false);
   activeExportId = null;
 }
 
-export function openExportModal() {
-  resetProgress();
-  modal.hidden = false;
-}
+export function openSvgExportPane() { resetSvgExport(); }
 
-export function closeExportModal() {
-  modal.hidden = true;
-  resetProgress();
-  document.getElementById('export-dropdown')?.classList.remove('open');
+// Kept for backwards compat with editor-init.js import (now opens unified modal).
+export function openExportModal() {
+  import('./editor-export-modal.js').then((m) => m.openExportModal('svg'));
 }
 
 function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-    a.remove();
-  }, 100);
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
 }
 
-export async function startExport() {
+export async function runSvgExport(closeFn) {
   const params = getExportParams();
-  btnStart.disabled = true;
+  if (onBusyChange) onBusyChange(true);
 
   try {
     if (params.scope === 'current') {
-      progressDiv.classList.add('active');
-      progressText.textContent = 'Exporting...';
-      progressFill.style.width = '50%';
+      get.progressDiv?.classList.add('active');
+      if (get.progressText) get.progressText.textContent = 'Exporting...';
+      if (get.progressFill) get.progressFill.style.width = '50%';
 
       const res = await fetch('/api/svg-export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(params),
       });
-
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: res.statusText }));
         throw new Error(err.error || 'Export failed');
       }
-
       const disposition = res.headers.get('Content-Disposition') || '';
       const filenameMatch = disposition.match(/filename="(.+?)"/);
-      const filename = filenameMatch ? filenameMatch[1] : `${state.deckName || 'slide'}.${params.format}`;
-
+      const filename = filenameMatch ? filenameMatch[1]
+        : `${state.deckName || 'slide'}.${params.format}`;
       const blob = await res.blob();
       triggerDownload(blob, filename);
 
-      progressFill.style.width = '100%';
-      progressText.textContent = `Downloaded: ${filename}`;
-      setTimeout(closeExportModal, 1500);
+      if (get.progressFill) get.progressFill.style.width = '100%';
+      if (get.progressText) get.progressText.textContent = `Downloaded: ${filename}`;
+      setTimeout(() => closeFn?.(), 1500);
     } else {
-      // scope === 'all'
-      progressDiv.classList.add('active');
-      progressText.textContent = 'Starting export...';
-      progressFill.style.width = '0%';
+      get.progressDiv?.classList.add('active');
+      if (get.progressText) get.progressText.textContent = 'Starting export...';
+      if (get.progressFill) get.progressFill.style.width = '0%';
 
       const res = await fetch('/api/svg-export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(params),
       });
-
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: res.statusText }));
         throw new Error(err.error || 'Export failed');
       }
-
       const { exportId, total } = await res.json();
       activeExportId = exportId;
-      progressText.textContent = `0 / ${total}`;
+      if (get.progressText) get.progressText.textContent = `0 / ${total}`;
     }
   } catch (err) {
-    progressText.textContent = `Error: ${err.message}`;
-    btnStart.disabled = false;
+    if (get.progressText) get.progressText.textContent = `Error: ${err.message}`;
+    if (onBusyChange) onBusyChange(false);
   }
 }
 
 export function onSvgExportProgress(data) {
   if (data.exportId !== activeExportId) return;
   const pct = Math.round((data.current / data.total) * 100);
-  progressFill.style.width = `${pct}%`;
-  progressText.textContent = `${data.current} / ${data.total} — ${data.file}`;
+  if (get.progressFill) get.progressFill.style.width = `${pct}%`;
+  if (get.progressText) get.progressText.textContent =
+    `${data.current} / ${data.total} — ${data.file}`;
 }
 
 export async function onSvgExportFinished(data) {
-  console.log('[svg-export] onSvgExportFinished:', data);
-  if (data.exportId !== activeExportId) {
-    console.warn('[svg-export] exportId mismatch:', data.exportId, '!==', activeExportId);
-    return;
-  }
+  if (data.exportId !== activeExportId) return;
 
   if (data.success && data.files && data.files.length > 0) {
-    progressFill.style.width = '100%';
-
+    if (get.progressFill) get.progressFill.style.width = '100%';
     if (data.zipUrl) {
-      // Download as a single ZIP — use direct link click (most reliable)
-      progressText.textContent = `Downloading ZIP (${data.files.length} files)...`;
+      if (get.progressText) get.progressText.textContent =
+        `Downloading ZIP (${data.files.length} files)...`;
       const a = document.createElement('a');
       a.href = data.zipUrl;
       a.download = `${state.deckName || 'slides'}-export.zip`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      document.body.appendChild(a); a.click(); a.remove();
     } else {
-      // Fallback: individual file downloads
-      progressText.textContent = `Downloading ${data.files.length} files...`;
+      if (get.progressText) get.progressText.textContent =
+        `Downloading ${data.files.length} files...`;
       for (const file of data.files) {
         try {
           const res = await fetch(`/api/svg-export/${data.exportId}/${file}`);
@@ -196,30 +191,13 @@ export async function onSvgExportFinished(data) {
         }
       }
     }
-
-    progressText.textContent = data.message || 'Export complete.';
-    setTimeout(closeExportModal, 1500);
+    if (get.progressText) get.progressText.textContent = data.message || 'Export complete.';
+    setTimeout(() => {
+      import('./editor-export-modal.js').then((m) => m.closeExportModal());
+    }, 1500);
   } else {
-    progressText.textContent = data.message || 'Export failed.';
-    console.error('[svg-export] Export failed:', data.message);
-    btnStart.disabled = false;
+    if (get.progressText) get.progressText.textContent = data.message || 'Export failed.';
+    if (onBusyChange) onBusyChange(false);
   }
-
   activeExportId = null;
 }
-
-// Event bindings
-btnCancel.addEventListener('click', closeExportModal);
-btnStart.addEventListener('click', startExport);
-
-// Close on overlay click
-modal.addEventListener('click', (e) => {
-  if (e.target === modal) closeExportModal();
-});
-
-// Close on Escape
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !modal.hidden) {
-    closeExportModal();
-  }
-});

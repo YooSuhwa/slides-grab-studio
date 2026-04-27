@@ -11,7 +11,7 @@ const progressText = document.getElementById('progress-text')!;
 const logDiv = document.getElementById('log')!;
 
 let ws: WebSocket | null = null;
-let pendingSlides: Array<{ name: string; svg: string }> = [];
+let pendingSlides: Array<{ name: string; svg: string; notes: string }> = [];
 
 serverUrlInput.value = 'localhost:3456';
 
@@ -72,7 +72,7 @@ function connect() {
       const msg = JSON.parse(event.data);
 
       if (msg.type === 'slide') {
-        pendingSlides.push({ name: msg.name, svg: msg.svg });
+        pendingSlides.push({ name: msg.name, svg: msg.svg, notes: msg.notes ?? '' });
         const pct = Math.round((msg.current / msg.total) * 100);
         progressDiv.classList.add('active');
         progressFill.style.width = `${pct}%`;
@@ -138,6 +138,13 @@ window.onmessage = (event) => {
 
   if (msg.type === 'figma-error') {
     log(msg.message, 'error');
+  }
+
+  if (msg.type === 'figma-notes') {
+    // Plugin API cannot write presenter notes directly — log so the user can
+    // paste them into Figma's native notes field.
+    const preview = String(msg.notes).replace(/\s+/g, ' ').slice(0, 120);
+    log(`Notes for ${msg.name}: ${preview}${String(msg.notes).length > 120 ? '…' : ''}`);
   }
 };
 

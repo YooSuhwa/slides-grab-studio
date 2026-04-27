@@ -1,58 +1,51 @@
-// editor-pdf-export.js — PDF export modal logic
+// editor-pdf-export.js — PDF export pane (coordinator-driven)
 
 import { currentSlideFile } from './editor-utils.js';
 import { state } from './editor-state.js';
 
-const modal = document.querySelector('#pdf-export-modal');
-const progressDiv = document.querySelector('#pdf-export-progress');
-const progressFill = document.querySelector('#pdf-export-progress-fill');
-const progressText = document.querySelector('#pdf-export-progress-text');
-const btnStart = document.querySelector('#pdf-export-start');
-const btnCancel = document.querySelector('#pdf-export-cancel');
+const $ = (sel) => document.querySelector(sel);
+const get = {
+  get progressDiv() { return $('#pdf-export-progress'); },
+  get progressFill() { return $('#pdf-export-progress-fill'); },
+  get progressText() { return $('#pdf-export-progress-text'); },
+};
 
 let activeExportId = null;
+let onBusyChange = null;
+export function registerPdfExportBusy(cb) { onBusyChange = cb; }
 
-function resetProgress() {
-  progressDiv.classList.remove('active');
-  progressFill.style.width = '0%';
-  progressText.textContent = '';
-  btnStart.disabled = false;
+export function resetPdfExport() {
+  get.progressDiv?.classList.remove('active');
+  if (get.progressFill) get.progressFill.style.width = '0%';
+  if (get.progressText) get.progressText.textContent = '';
+  if (onBusyChange) onBusyChange(false);
   activeExportId = null;
 }
 
-export function openPdfExportModal() {
-  resetProgress();
-  modal.hidden = false;
-}
+export function openPdfExportPane() { resetPdfExport(); }
 
-export function closePdfExportModal() {
-  modal.hidden = true;
-  resetProgress();
-  document.getElementById('export-dropdown')?.classList.remove('open');
+// Backwards-compat for editor-init.js import.
+export function openPdfExportModal() {
+  import('./editor-export-modal.js').then((m) => m.openExportModal('pdf'));
 }
 
 function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-    a.remove();
-  }, 100);
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
 }
 
-export async function startPdfExport() {
-  const scopeRadio = modal.querySelector('input[name="pdf-export-scope"]:checked');
-  const scope = scopeRadio ? scopeRadio.value : 'all';
+export async function runPdfExport(closeFn) {
+  const { readScope } = await import('./editor-export-modal.js');
+  const { scope, slides } = readScope('pdf');
   const slide = currentSlideFile();
 
-  btnStart.disabled = true;
-  progressDiv.classList.add('active');
-  progressText.textContent = 'Generating PDF...';
-  progressFill.style.width = '10%';
+  if (onBusyChange) onBusyChange(true);
+  get.progressDiv?.classList.add('active');
+  if (get.progressText) get.progressText.textContent = 'Generating PDF...';
+  if (get.progressFill) get.progressFill.style.width = '10%';
 
   try {
     if (scope === 'current') {
@@ -61,84 +54,63 @@ export async function startPdfExport() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scope, slide }),
       });
-
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: res.statusText }));
         throw new Error(err.error || 'PDF export failed');
       }
-
       const blob = await res.blob();
-      const deckLabel = state.deckName || 'slide';
-      const filename = `${deckLabel}.pdf`;
+      const filename = `${state.deckName || 'slide'}.pdf`;
       triggerDownload(blob, filename);
-
-      progressFill.style.width = '100%';
-      progressText.textContent = `Downloaded: ${filename}`;
-      setTimeout(closePdfExportModal, 1500);
+      if (get.progressFill) get.progressFill.style.width = '100%';
+      if (get.progressText) get.progressText.textContent = `Downloaded: ${filename}`;
+      setTimeout(() => closeFn?.(), 1500);
     } else {
-      // scope === 'all' — async with SSE progress
+      const body = { scope };
+      if (scope === 'specific') body.slides = slides;
       const res = await fetch('/api/pdf-export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scope }),
+        body: JSON.stringify(body),
       });
-
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: res.statusText }));
         throw new Error(err.error || 'PDF export failed');
       }
-
       const { exportId, total } = await res.json();
       activeExportId = exportId;
-      progressText.textContent = `0 / ${total}`;
+      if (get.progressText) get.progressText.textContent = `0 / ${total}`;
     }
   } catch (err) {
-    progressText.textContent = `Error: ${err.message}`;
-    btnStart.disabled = false;
+    if (get.progressText) get.progressText.textContent = `Error: ${err.message}`;
+    if (onBusyChange) onBusyChange(false);
   }
 }
 
 export function onPdfExportProgress(data) {
   if (data.exportId !== activeExportId) return;
   const pct = Math.round((data.current / data.total) * 100);
-  progressFill.style.width = `${pct}%`;
-  progressText.textContent = `${data.current} / ${data.total} — ${data.file}`;
+  if (get.progressFill) get.progressFill.style.width = `${pct}%`;
+  if (get.progressText) get.progressText.textContent =
+    `${data.current} / ${data.total} — ${data.file}`;
 }
 
 export async function onPdfExportFinished(data) {
   if (data.exportId !== activeExportId) return;
 
   if (data.success && data.downloadUrl) {
-    progressFill.style.width = '100%';
-    progressText.textContent = 'Downloading PDF...';
-
+    if (get.progressFill) get.progressFill.style.width = '100%';
+    if (get.progressText) get.progressText.textContent = 'Downloading PDF...';
     const a = document.createElement('a');
     a.href = data.downloadUrl;
     a.download = `${state.deckName || 'slides'}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-
-    progressText.textContent = data.message || 'PDF export complete.';
-    setTimeout(closePdfExportModal, 1500);
+    document.body.appendChild(a); a.click(); a.remove();
+    if (get.progressText) get.progressText.textContent = data.message || 'PDF export complete.';
+    setTimeout(() => {
+      import('./editor-export-modal.js').then((m) => m.closeExportModal());
+    }, 1500);
   } else {
-    progressText.textContent = data.message || 'PDF export failed.';
-    btnStart.disabled = false;
+    if (get.progressText) get.progressText.textContent = data.message || 'PDF export failed.';
+    if (onBusyChange) onBusyChange(false);
   }
-
   activeExportId = null;
 }
-
-// Event bindings
-btnCancel.addEventListener('click', closePdfExportModal);
-btnStart.addEventListener('click', startPdfExport);
-
-modal.addEventListener('click', (e) => {
-  if (e.target === modal) closePdfExportModal();
-});
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !modal.hidden) {
-    closePdfExportModal();
-  }
-});

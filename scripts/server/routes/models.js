@@ -1,5 +1,6 @@
 import { basename, relative } from 'node:path';
 
+import { loadDeckConfig } from '../../../src/logo.js';
 import { listSlideFiles, toPosixPath } from '../helpers.js';
 
 /**
@@ -19,11 +20,19 @@ export function createModelsRouter(ctx) {
         if (existing.length > 0) effectiveCreateMode = false;
       } catch { /* directory may not exist yet */ }
     }
+    let packId = null;
+    if (slidesDirectory) {
+      try {
+        const deckCfg = await loadDeckConfig(slidesDirectory);
+        packId = deckCfg?.packId || deckCfg?.pack || null;
+      } catch { /* deck.json may be missing or corrupt */ }
+    }
     res.json({
       createMode: effectiveCreateMode,
       browseMode: opts.browseMode || false,
       deckName: opts.deckName || (slidesDirectory ? basename(slidesDirectory) : ''),
       slidesDir: slidesDirectory ? toPosixPath(relative(process.cwd(), slidesDirectory) || slidesDirectory) : '',
+      packId,
       importFile: opts.importFile || null,
       importDocSource: opts.importDocSource || null,
       importDocSourceType: opts.importDocSourceType || null,

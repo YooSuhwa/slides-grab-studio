@@ -12,6 +12,7 @@ import {
   spawnAIEdit,
   setupFileWatcher,
   listExistingDeckNames,
+  formatSlideCountGuidance,
 } from '../helpers.js';
 
 const ALL_MODELS = [...CLAUDE_MODELS, ...CODEX_MODELS];
@@ -97,11 +98,7 @@ export function createPlanRouter(ctx) {
         if (typeof requirements === 'string' && requirements.trim()) {
           promptLines.push(`요구사항: ${requirements.trim()}`);
         }
-        if (countLabel) {
-          promptLines.push(`슬라이드 수: ${countLabel}장`);
-        } else {
-          promptLines.push('슬라이드 수: 주제에 적합한 분량으로 자유롭게 결정하세요 (보통 8~12장)');
-        }
+        promptLines.push(formatSlideCountGuidance(countLabel));
         if (useImages) {
           promptLines.push('이미지 사용: ON — 전체 슬라이드의 약 50~70%에 이미지를 포함하세요.');
           promptLines.push('');
@@ -141,15 +138,62 @@ export function createPlanRouter(ctx) {
 
         broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'plan', step: 'Generating outline with AI' });
 
-        const result = await spawnAIEdit({
-          prompt: fullPrompt,
-          imagePath: null,
-          model: selectedModel,
-          cwd: process.cwd(),
-          onLog: (stream, chunk) => {
-            broadcastSSE(ctx.sseClients, 'planLog', { runId, stream, chunk });
-          },
-        }, { tracker: ctx.usageTracker, operation: 'outline' });
+        // Partial outline poller — while the AI writes slide-outline.md, tail the
+        // newest deck dir (any folder not in the existing set) and broadcast parsed
+        // snapshots so the client can settle its skeleton rows with real titles/types.
+        const decksRootPoll = resolve(process.cwd(), 'decks');
+        const existingNameSet = new Set(existingDeckNames);
+        let lastSnapshot = '';
+        let lastSlideCount = -1;
+        const pollPartialOutline = async () => {
+          try {
+            const dirs = await readdir(decksRootPoll, { withFileTypes: true });
+            let bestDir = '';
+            let bestMtime = 0;
+            for (const d of dirs) {
+              if (!d.isDirectory() || existingNameSet.has(d.name)) continue;
+              if (d.name.startsWith('.') || d.name.startsWith('_')) continue;
+              const outlinePath = join(decksRootPoll, d.name, 'slide-outline.md');
+              try {
+                const s = await stat(outlinePath);
+                if (s.mtimeMs > bestMtime) { bestMtime = s.mtimeMs; bestDir = d.name; }
+              } catch { /* file not yet */ }
+            }
+            if (!bestDir) return;
+            const outlinePath = join(decksRootPoll, bestDir, 'slide-outline.md');
+            const content = await readFile(outlinePath, 'utf-8');
+            if (content === lastSnapshot) return;
+            lastSnapshot = content;
+            const partial = parseOutline(content, bestDir);
+            const slideCount = partial.slides?.length || 0;
+            if (slideCount !== lastSlideCount) {
+              lastSlideCount = slideCount;
+              broadcastSSE(ctx.sseClients, 'progress', {
+                runId, phase: 'plan',
+                step: slideCount === 0 ? 'Drafting outline structure' : `Draft ${slideCount} slide title${slideCount === 1 ? '' : 's'}`,
+              });
+            }
+            broadcastSSE(ctx.sseClients, 'planPartial', { runId, outline: partial, deckName: bestDir });
+          } catch { /* swallow */ }
+        };
+        const partialPollTimer = setInterval(pollPartialOutline, 800);
+
+        let result;
+        try {
+          result = await spawnAIEdit({
+            prompt: fullPrompt,
+            imagePath: null,
+            model: selectedModel,
+            cwd: process.cwd(),
+            onLog: (stream, chunk) => {
+              broadcastSSE(ctx.sseClients, 'planLog', { runId, stream, chunk });
+            },
+          }, { tracker: ctx.usageTracker, operation: 'outline' });
+        } finally {
+          clearInterval(partialPollTimer);
+          // One final snapshot so the client sees the complete outline before planFinished.
+          await pollPartialOutline();
+        }
 
         const success = result.code === 0;
         let outline = null;

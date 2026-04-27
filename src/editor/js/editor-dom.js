@@ -58,15 +58,10 @@ export const btnSvgExport = $('#btn-svg-export');
 
 export const btnFigmaExport = $('#btn-figma-export');
 export const figmaConnDot = $('#figma-conn-dot');
-export const figmaConfirmModal = $('#figma-confirm-modal');
 export const figmaConfirmDesc = $('#figma-confirm-desc');
-export const figmaConfirmActions = $('#figma-confirm-actions');
 export const figmaProgress = $('#figma-progress');
 export const figmaProgressFill = $('#figma-progress-fill');
 export const figmaProgressText = $('#figma-progress-text');
-export const figmaSendCurrent = $('#figma-send-current');
-export const figmaSendAll = $('#figma-send-all');
-export const figmaCancel = $('#figma-cancel');
 export const figmaToast = $('#figma-toast');
 
 export const creationPanel = $('#creation-panel');

@@ -5,7 +5,7 @@ import { CLAUDE_MODELS, CODEX_MODELS, isClaudeModel } from '../../../src/editor/
 import { normalizePackId } from '../../../src/resolve.js';
 
 import { broadcastSSE } from '../sse.js';
-import { randomRunId, toPosixPath, listSlideFiles, spawnAIEdit, setupFileWatcher, backupSlides, uniqueDeckName, listExistingDeckNames, syncPackInOutline } from '../helpers.js';
+import { randomRunId, toPosixPath, listSlideFiles, spawnAIEdit, setupFileWatcher, backupSlides, uniqueDeckName, listExistingDeckNames, syncPackInOutline, formatSlideCountGuidance } from '../helpers.js';
 import { parseOutline } from '../outline.js';
 import { parallelGenerate } from '../parallel-generate.js';
 import { extractImageMarkers, prepareImages } from '../image-prep.js';
@@ -135,6 +135,9 @@ export function createGenerateRouter(ctx) {
                 broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step });
               },
               onBatchLog: (_idx, stream, chunk) => onLog(stream, chunk),
+              onSlideReady: (slideIndex, completed) => {
+                broadcastSSE(ctx.sseClients, 'generated', { runId, slideIndex, completed });
+              },
             });
           } else {
             const fullPrompt = buildFromOutlinePromptFull(outlineContent, genPackId, slidesDir, { useImages: !!useImages, availableAssets });
@@ -323,11 +326,7 @@ function buildFromScratchPrompt(topic, requirements, slideCountRange, slidesDir,
 
   const promptLines = [`주제: ${(topic || '').trim()}`];
   if (typeof requirements === 'string' && requirements.trim()) promptLines.push(`요구사항: ${requirements.trim()}`);
-  if (countLabel) {
-    promptLines.push(`슬라이드 수: ${countLabel}장`);
-  } else {
-    promptLines.push('슬라이드 수: 주제에 적합한 분량으로 자유롭게 결정하세요 (보통 8~12장)');
-  }
+  promptLines.push(formatSlideCountGuidance(countLabel));
   if (hasDeckDir) promptLines.push(`작업 디렉토리: ${slidesDir}`);
 
   appendPackInstructions(promptLines, genPackId);
@@ -356,7 +355,7 @@ function buildFromScratchPrompt(topic, requirements, slideCountRange, slidesDir,
   promptLines.push(`${stepNum}. ${dirRef}/slide-outline.md 아웃라인을 생성하세요.`);
   stepNum += 1;
   promptLines.push(
-    `${stepNum}. design.md 기반으로 slide-01.html ~ slide-NN.html을 ${countLabel}장 생성하세요.`,
+    `${stepNum}. design.md 기반으로 slide-01.html ~ slide-NN.html을 생성하세요. (아웃라인에서 결정된 실제 슬라이드 수만큼)`,
     '   - 크기: 720pt x 405pt (body width/height)',
     '   - 폰트: Pretendard CDN (link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css")',
     '   - 텍스트는 p, h1-h6, ul, ol, li 태그만 사용',
