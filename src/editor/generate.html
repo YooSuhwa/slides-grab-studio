@@ -2716,7 +2716,7 @@
         const grid = $("gen-thumbs");
         let html = "";
         for (let i = 1; i <= S.slideCount; i += 1) {
-          html += `<div class="thumb-slot pending" data-slot="${i}"><div class="idx">${String(i).padStart(2, "0")}</div><div class="skel"><div class="l w1"></div><div class="l w2"></div><div class="l w3"></div></div></div>`;
+          html += `<div class="thumb-slot pending" data-slot="${i}"><div class="idx">${String(i).padStart(2, "0")}</div><div class="skel"><div class="l w1"></div><div class="l w2"></div><div class="l w3"></div></div><div class="ok-badge" aria-hidden="true"><svg viewBox="0 0 20 20" width="10" height="10"><path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>OK</span></div></div>`;
         }
         grid.innerHTML = html;
       }

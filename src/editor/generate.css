@@ -356,7 +356,11 @@ body:not(.review-only) #view-review.on ~ .revdock:not(.hidden){}
   background:color-mix(in srgb, var(--panel) 88%, transparent);backdrop-filter:blur(6px);
   border-radius:4px;color:var(--muted);z-index:2;
 }
-.thumb-slot.done{border-color:color-mix(in srgb, var(--lime) 30%, var(--line));animation:thumb-pop .4s ease-out}
+.thumb-slot.done{
+  border-color:color-mix(in srgb, var(--lime) 50%, var(--line));
+  background:color-mix(in srgb, var(--lime) 6%, var(--panel-2));
+  animation:thumb-pop .4s ease-out;
+}
 @keyframes thumb-pop{0%{transform:scale(.92);opacity:.5}100%{transform:scale(1);opacity:1}}
 .thumb-slot.active{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
 .thumb-slot.active .skel{background:linear-gradient(90deg,var(--panel-2) 0%,var(--panel) 50%,var(--panel-2) 100%);background-size:200% 100%;animation:gen-skel 1.3s ease-in-out infinite}
@@ -368,6 +372,22 @@ body:not(.review-only) #view-review.on ~ .revdock:not(.hidden){}
 .thumb-slot .skel .l{height:4px;background:var(--line);border-radius:2px}
 .thumb-slot .skel .l.w1{width:60%}.thumb-slot .skel .l.w2{width:80%}.thumb-slot .skel .l.w3{width:40%}
 .thumb-slot.pending .skel{opacity:.3}
+
+.thumb-slot .ok-badge{
+  position:absolute;top:6px;right:6px;z-index:3;
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px 3px 6px;border-radius:999px;
+  background:color-mix(in srgb, var(--lime) 18%, var(--panel));
+  color:var(--lime);
+  border:1px solid color-mix(in srgb, var(--lime) 45%, transparent);
+  font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:0.14em;
+  opacity:0;transform:scale(.7) translateY(-2px);
+  transition:opacity .18s ease-out, transform .32s cubic-bezier(.34,1.56,.64,1);
+  pointer-events:none;
+  box-shadow:0 2px 8px color-mix(in srgb, var(--lime) 22%, transparent);
+}
+.thumb-slot .ok-badge svg{flex-shrink:0}
+.thumb-slot.done .ok-badge{opacity:1;transform:scale(1) translateY(0)}
 
 .gen-footer{display:flex;align-items:center;gap:12px;margin-top:18px;flex-wrap:wrap}
 .gen-footer .cancel-btn{
