@@ -1,4 +1,6 @@
 import { execFile } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 import { spawnClaudeEdit, inlineDesignMdRefs } from './spawn.js';
 import { appendPackInstructions, appendImageInstructions, appendImageAssetsInstructions } from './routes/generate.js';
@@ -73,6 +75,27 @@ export function buildBatchPrompt({ batchSlides, outlineContent, genPackId, slide
 }
 
 /**
+ * Count how many of a batch's assigned slide files exist on disk and are
+ * valid HTML (>100 bytes, contains <body or <html). Same criteria as
+ * routes/generate.js. File presence is the authoritative success signal —
+ * agentic CLI subprocesses may exit non-zero (timeout, post-write
+ * verification) despite having written all assigned slides correctly.
+ */
+async function countValidBatchSlides(batchSlides, slidesDirectoryAbs) {
+  let valid = 0;
+  for (const slide of batchSlides) {
+    const fileName = `slide-${String(slide.slideIndex + 1).padStart(2, '0')}.html`;
+    try {
+      const content = await readFile(join(slidesDirectoryAbs, fileName), 'utf-8');
+      if (content.length > 100 && (/<body[\s>]/i.test(content) || /<html[\s>]/i.test(content))) {
+        valid++;
+      }
+    } catch { /* missing or unreadable file → not valid */ }
+  }
+  return valid;
+}
+
+/**
  * Run build-viewer.js after all slides are generated.
  */
 function runBuildViewer(slidesDir) {
@@ -91,9 +114,9 @@ function runBuildViewer(slidesDir) {
  * Generate slides in parallel batches using multiple Claude subprocesses.
  */
 export async function parallelGenerate({
-  outline, outlineContent, genPackId, slidesDir, model, cwd,
+  outline, outlineContent, genPackId, slidesDir, slidesDirectory, model, cwd,
   onBatchProgress, onBatchLog, onSlideReady, useImages = false, availableAssets = [],
-  tracker,
+  tracker, signal,
 }) {
   const concurrency = Math.min(
     Number(process.env.SLIDES_GRAB_PARALLEL) || DEFAULT_CONCURRENCY,
@@ -128,6 +151,7 @@ export async function parallelGenerate({
         model,
         cwd,
         timeout: BATCH_TIMEOUT,
+        signal,
         onLog: (stream, chunk) => onBatchLog?.(idx, stream, chunk),
       }).then(result => {
         tracker?.finishCall(callId, {
@@ -139,12 +163,6 @@ export async function parallelGenerate({
           outputChars: (result.stdout || '').length,
           success: result.code === 0,
         });
-        if (result.code === 0 && onSlideReady) {
-          for (const slide of batches[idx]) {
-            completedSlides++;
-            onSlideReady(slide.slideIndex + 1, completedSlides);
-          }
-        }
         return result;
       }, err => {
         tracker?.finishCall(callId, { success: false });
@@ -153,24 +171,43 @@ export async function parallelGenerate({
     }),
   );
 
-  // Aggregate results
+  // Aggregate results based on actual files on disk. Subprocess exit code is
+  // unreliable for agentic CLI workflows — the process may be killed by
+  // BATCH_TIMEOUT or exit non-zero after successfully writing all assigned
+  // slides via tool calls. File presence is the authoritative signal.
   let successCount = 0;
   let failCount = 0;
+  let totalValidSlides = 0;
+  const validationDir = slidesDirectory || slidesDir;
+
   for (let i = 0; i < results.length; i++) {
     const r = results[i];
-    if (r.status === 'fulfilled' && r.value.code === 0) {
+    const exitInfo = r.status === 'rejected'
+      ? `error: ${r.reason?.message}`
+      : `exit code ${r.value?.code}`;
+
+    const validInBatch = await countValidBatchSlides(batches[i], validationDir);
+    totalValidSlides += validInBatch;
+    const expected = batches[i].length;
+
+    if (validInBatch === expected) {
       successCount++;
-      onBatchProgress?.(i, totalBatches, `Batch ${i + 1} complete`);
+      onBatchProgress?.(i, totalBatches, `Batch ${i + 1} complete (${validInBatch}/${expected} slides)`);
+      if (onSlideReady) {
+        for (const slide of batches[i]) {
+          completedSlides++;
+          onSlideReady(slide.slideIndex + 1, completedSlides);
+        }
+      }
     } else {
       failCount++;
-      const reason = r.status === 'rejected' ? r.reason?.message : `exit code ${r.value?.code}`;
-      onBatchProgress?.(i, totalBatches, `Batch ${i + 1} failed: ${reason}`);
-      onBatchLog?.(i, 'stderr', `\n[Batch ${i + 1} FAILED] ${reason}\n`);
+      onBatchProgress?.(i, totalBatches, `Batch ${i + 1} partial: ${validInBatch}/${expected} valid (${exitInfo})`);
+      onBatchLog?.(i, 'stderr', `\n[Batch ${i + 1}] ${validInBatch}/${expected} slides valid; subprocess ${exitInfo}\n`);
     }
   }
 
-  // Run build-viewer if any slides succeeded
-  if (successCount > 0) {
+  // Run build-viewer if any valid slides were written
+  if (totalValidSlides > 0) {
     try {
       await runBuildViewer(slidesDir);
     } catch (err) {
@@ -179,9 +216,11 @@ export async function parallelGenerate({
   }
 
   return {
-    code: successCount > 0 ? 0 : 1,
+    code: totalValidSlides > 0 ? 0 : 1,
     successCount,
     failCount,
     totalBatches,
+    validSlideCount: totalValidSlides,
+    totalSlideCount: outline.slides.length,
   };
 }

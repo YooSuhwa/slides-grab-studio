@@ -139,6 +139,8 @@ export function createServerState(opts, { PACKAGE_ROOT, express, screenshotMod }
     ? ''
     : resolve(process.cwd(), opts.slidesDir);
 
+  let activeAIRun = null;
+
   return {
     opts,
     PACKAGE_ROOT,
@@ -148,6 +150,18 @@ export function createServerState(opts, { PACKAGE_ROOT, express, screenshotMod }
     // Mutable slides directory
     getSlidesDir() { return slidesDirectory; },
     setSlidesDir(dir) { slidesDirectory = dir; },
+
+    // Active AI run tracking — used by /api/generate/cancel to abort
+    // the spawned subprocess (or fetch) for the in-flight plan/generate run.
+    get activeAIRun() { return activeAIRun; },
+    setActiveAIRun(runId, type) {
+      const ac = new AbortController();
+      activeAIRun = { runId, abortController: ac, type };
+      return ac.signal;
+    },
+    clearActiveAIRun(runId) {
+      if (activeAIRun?.runId === runId) activeAIRun = null;
+    },
 
     // Run stores
     runStore: createRunStore(),

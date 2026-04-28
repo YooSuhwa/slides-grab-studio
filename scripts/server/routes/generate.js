@@ -67,6 +67,7 @@ export function createGenerateRouter(ctx) {
       : CLAUDE_MODELS[0];
 
     const runId = randomRunId();
+    const signal = ctx.setActiveAIRun(runId, 'generate');
 
     ctx.generateRunStore.startRun({
       runId,
@@ -128,9 +129,9 @@ export function createGenerateRouter(ctx) {
             broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: `Building ${outline.slides.length} slides in parallel` });
 
             result = await parallelGenerate({
-              outline, outlineContent, genPackId, slidesDir,
+              outline, outlineContent, genPackId, slidesDir, slidesDirectory,
               model: selectedModel, cwd: process.cwd(), useImages: !!useImages, availableAssets,
-              tracker: ctx.usageTracker,
+              tracker: ctx.usageTracker, signal,
               onBatchProgress: (_idx, _total, step) => {
                 broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step });
               },
@@ -142,7 +143,7 @@ export function createGenerateRouter(ctx) {
           } else {
             const fullPrompt = buildFromOutlinePromptFull(outlineContent, genPackId, slidesDir, { useImages: !!useImages, availableAssets });
             broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: 'Building slides with AI' });
-            result = await spawnAIEdit({ prompt: fullPrompt, imagePath: null, model: selectedModel, cwd: process.cwd(), onLog }, { tracker: ctx.usageTracker, operation: 'generate' });
+            result = await spawnAIEdit({ prompt: fullPrompt, imagePath: null, model: selectedModel, cwd: process.cwd(), onLog, signal }, { tracker: ctx.usageTracker, operation: 'generate' });
           }
         } else if (fromOutline && slidesDirectory) {
           const { outlineContent: ncOutlineContent, genPackId: ncGenPackId } = await prepareOutlineContext(ctx, slidesDirectory, slidesDir, reqGenPackId, runId);
@@ -158,12 +159,12 @@ export function createGenerateRouter(ctx) {
           }
           const fullPrompt = buildFromOutlinePromptFull(ncOutlineContent, ncGenPackId, slidesDir, { useImages: !!useImages, availableAssets: nonClaudeAssets });
           broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: 'Building slides with AI' });
-          result = await spawnAIEdit({ prompt: fullPrompt, imagePath: null, model: selectedModel, cwd: process.cwd(), onLog }, { tracker: ctx.usageTracker, operation: 'generate' });
+          result = await spawnAIEdit({ prompt: fullPrompt, imagePath: null, model: selectedModel, cwd: process.cwd(), onLog, signal }, { tracker: ctx.usageTracker, operation: 'generate' });
         } else {
           const existingNames = slidesDir ? [] : await listExistingDeckNames();
           const fullPrompt = buildFromScratchPrompt(topic, requirements, slideCountRange, slidesDir, reqGenPackId, existingNames);
           broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'generate', step: 'Building slides with AI' });
-          result = await spawnAIEdit({ prompt: fullPrompt, imagePath: null, model: selectedModel, cwd: process.cwd(), onLog }, { tracker: ctx.usageTracker, operation: 'generate' });
+          result = await spawnAIEdit({ prompt: fullPrompt, imagePath: null, model: selectedModel, cwd: process.cwd(), onLog, signal }, { tracker: ctx.usageTracker, operation: 'generate' });
         }
 
         const success = result.code === 0;
@@ -198,48 +199,57 @@ export function createGenerateRouter(ctx) {
           }
         } catch { /* ignore */ }
 
-        // Determine final status: success only if Claude exited 0 AND valid slides exist
-        const finalSuccess = success && validSlideCount > 0;
+        // For the parallel path, file presence is the authoritative success
+        // signal: agentic CLI subprocesses may exit non-zero (timeout-kill
+        // after successful writes is common) despite having written every
+        // assigned slide via tool calls. For non-parallel paths we keep the
+        // original signal (exit 0 + at least one valid slide).
+        const expectedSlideCount = result.totalSlideCount ?? null;
+        const cancelled = signal.aborted || result.code === -2;
+        const finalSuccess = !cancelled && (expectedSlideCount != null
+          ? validSlideCount >= expectedSlideCount
+          : success && validSlideCount > 0);
 
         const resolvedPath = slidesDirectory
           ? toPosixPath(relative(process.cwd(), slidesDirectory) || slidesDirectory)
           : '';
 
+        const targetCount = expectedSlideCount ?? slideCount;
         let message;
-        if (finalSuccess) {
-          message = validSlideCount < slideCount
-            ? `${validSlideCount}/${slideCount} valid slides generated (${slideCount - validSlideCount} malformed).`
-            : `${slideCount} slides generated.`;
-        } else if (success && validSlideCount === 0) {
-          message = slideCount > 0
-            ? `Generation completed but ${slideCount} slides are malformed.`
-            : 'Generation completed but no slides were created.';
+        if (cancelled) {
+          message = `취소됨 (${validSlideCount}/${targetCount}개 생성됨).`;
+        } else if (finalSuccess) {
+          message = `${targetCount}개 슬라이드가 생성되었습니다.`;
+        } else if (validSlideCount > 0) {
+          message = `부분 생성: ${validSlideCount}/${targetCount}개 슬라이드 유효 (${targetCount - validSlideCount}개 누락 또는 손상).`;
+        } else if (slideCount > 0) {
+          message = `생성은 완료됐으나 ${slideCount}개 슬라이드가 손상된 상태입니다.`;
         } else {
-          message = slideCount > 0
-            ? `Generation failed (exit code ${result.code}). ${slideCount} partial slides on disk.`
-            : `Generation failed (exit code ${result.code}).`;
+          message = `슬라이드 생성에 실패했습니다 (exit code ${result.code}).`;
         }
 
         ctx.generateRunStore.finishRun(runId, {
-          status: finalSuccess ? 'success' : 'failed',
+          status: cancelled ? 'cancelled' : (finalSuccess ? 'success' : 'failed'),
           code: result.code,
           message,
         });
 
         broadcastSSE(ctx.sseClients, 'generateFinished', {
-          runId, success: finalSuccess, message, slideCount: validSlideCount,
+          runId, success: finalSuccess, cancelled, message, slideCount: validSlideCount,
           partialSlideCount: !finalSuccess && slideCount > 0 ? slideCount : undefined,
           deckPath: resolvedPath,
         });
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+        const cancelled = signal.aborted;
+        const message = cancelled ? '취소됨' : (err instanceof Error ? err.message : String(err));
         ctx.generateRunStore.finishRun(runId, {
-          status: 'failed',
-          code: -1,
+          status: cancelled ? 'cancelled' : 'failed',
+          code: cancelled ? -2 : -1,
           message,
         });
-        broadcastSSE(ctx.sseClients, 'generateFinished', { runId, success: false, message, slideCount: 0 });
+        broadcastSSE(ctx.sseClients, 'generateFinished', { runId, success: false, cancelled, message, slideCount: 0 });
       } finally {
+        ctx.clearActiveAIRun(runId);
         ctx.generateMutex.release();
       }
     })().catch((err) => {

@@ -79,6 +79,7 @@ export function createPlanRouter(ctx) {
       : CLAUDE_MODELS[0];
 
     const runId = randomRunId();
+    const signal = ctx.setActiveAIRun(runId, 'plan');
 
     broadcastSSE(ctx.sseClients, 'planStarted', { runId, topic: topic.trim() });
     broadcastSSE(ctx.sseClients, 'progress', { runId, phase: 'plan', step: 'Analyzing topic and structuring outline' });
@@ -185,6 +186,7 @@ export function createPlanRouter(ctx) {
             imagePath: null,
             model: selectedModel,
             cwd: process.cwd(),
+            signal,
             onLog: (stream, chunk) => {
               broadcastSSE(ctx.sseClients, 'planLog', { runId, stream, chunk });
             },
@@ -195,7 +197,8 @@ export function createPlanRouter(ctx) {
           await pollPartialOutline();
         }
 
-        const success = result.code === 0;
+        const cancelled = signal.aborted || result.code === -2;
+        const success = !cancelled && result.code === 0;
         let outline = null;
         let detectedDeckName = '';
 
@@ -239,14 +242,17 @@ export function createPlanRouter(ctx) {
         broadcastSSE(ctx.sseClients, 'planFinished', {
           runId,
           success,
-          message: success ? 'Outline ready.' : `Plan failed (exit code ${result.code}).`,
+          cancelled,
+          message: cancelled ? '취소됨' : (success ? 'Outline ready.' : `Plan failed (exit code ${result.code}).`),
           outline,
           deckName: detectedDeckName,
         });
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        broadcastSSE(ctx.sseClients, 'planFinished', { runId, success: false, message, outline: null });
+        const cancelled = signal.aborted;
+        const message = cancelled ? '취소됨' : (err instanceof Error ? err.message : String(err));
+        broadcastSSE(ctx.sseClients, 'planFinished', { runId, success: false, cancelled, message, outline: null });
       } finally {
+        ctx.clearActiveAIRun(runId);
         ctx.generateMutex.release();
       }
     })().catch((err) => {
@@ -274,6 +280,7 @@ export function createPlanRouter(ctx) {
 
     const selectedModel = CLAUDE_MODELS[0];
     const runId = randomRunId();
+    const signal = ctx.setActiveAIRun(runId, 'revise');
 
     const targetLabel = typeof targetSlide === 'number'
       ? `Revise Slide ${targetSlide}: ${feedback.trim().slice(0, 40)}`
@@ -313,12 +320,14 @@ export function createPlanRouter(ctx) {
           imagePath: null,
           model: selectedModel,
           cwd: process.cwd(),
+          signal,
           onLog: (stream, chunk) => {
             broadcastSSE(ctx.sseClients, 'planLog', { runId, stream, chunk });
           },
         }, { tracker: ctx.usageTracker, operation: 'revise' });
 
-        const success = result.code === 0;
+        const cancelled = signal.aborted || result.code === -2;
+        const success = !cancelled && result.code === 0;
 
         let outline = null;
         if (success) {
@@ -333,14 +342,17 @@ export function createPlanRouter(ctx) {
         broadcastSSE(ctx.sseClients, 'planFinished', {
           runId,
           success,
-          message: success ? 'Outline revised.' : `Revision failed (exit code ${result.code}).`,
+          cancelled,
+          message: cancelled ? '취소됨' : (success ? 'Outline revised.' : `Revision failed (exit code ${result.code}).`),
           outline,
           deckName: deckName || basename(slidesDirectory),
         });
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        broadcastSSE(ctx.sseClients, 'planFinished', { runId, success: false, message, outline: null });
+        const cancelled = signal.aborted;
+        const message = cancelled ? '취소됨' : (err instanceof Error ? err.message : String(err));
+        broadcastSSE(ctx.sseClients, 'planFinished', { runId, success: false, cancelled, message, outline: null });
       } finally {
+        ctx.clearActiveAIRun(runId);
         ctx.generateMutex.release();
       }
     })().catch((err) => {

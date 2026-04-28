@@ -54,7 +54,7 @@ export function parseClaudeUsage(stderr) {
 /**
  * Spawn a Codex subprocess for slide editing.
  */
-export function spawnCodexEdit({ prompt, imagePath, model, cwd, onLog, timeout = 300_000 }) {
+export function spawnCodexEdit({ prompt, imagePath, model, cwd, onLog, timeout = 300_000, signal }) {
   const codexBin = process.env.PPT_AGENT_CODEX_BIN || 'codex';
   const args = buildCodexExecArgs({ prompt, imagePath, model });
 
@@ -64,12 +64,23 @@ export function spawnCodexEdit({ prompt, imagePath, model, cwd, onLog, timeout =
     let stdout = '';
     let stderr = '';
     let killed = false;
+    let killReason = 'timeout';
 
-    const timer = setTimeout(() => {
+    const killChild = (reason) => {
+      if (killed) return;
       killed = true;
-      child.kill('SIGTERM');
+      killReason = reason;
+      try { child.kill('SIGTERM'); } catch { /* already exited */ }
       setTimeout(() => { try { child.kill('SIGKILL'); } catch { /* already exited */ } }, 5000);
-    }, timeout);
+    };
+
+    const timer = setTimeout(() => killChild('timeout'), timeout);
+
+    const onAbort = () => killChild('cancelled');
+    if (signal) {
+      if (signal.aborted) onAbort();
+      else signal.addEventListener('abort', onAbort, { once: true });
+    }
 
     child.stdout.on('data', (chunk) => {
       const text = chunk.toString();
@@ -87,15 +98,23 @@ export function spawnCodexEdit({ prompt, imagePath, model, cwd, onLog, timeout =
 
     child.on('close', (code) => {
       clearTimeout(timer);
+      if (signal) signal.removeEventListener('abort', onAbort);
+      const exitCode = killed
+        ? (killReason === 'cancelled' ? -2 : -1)
+        : (code ?? 1);
+      const suffix = killed
+        ? (killReason === 'cancelled' ? '\n[CANCELLED]' : `\n[TIMEOUT after ${timeout}ms]`)
+        : '';
       resolvePromise({
-        code: killed ? -1 : (code ?? 1),
+        code: exitCode,
         stdout,
-        stderr: killed ? stderr + `\n[TIMEOUT after ${timeout}ms]` : stderr,
+        stderr: stderr + suffix,
       });
     });
 
     child.on('error', (error) => {
       clearTimeout(timer);
+      if (signal) signal.removeEventListener('abort', onAbort);
       rejectPromise(error);
     });
   });
@@ -104,7 +123,7 @@ export function spawnCodexEdit({ prompt, imagePath, model, cwd, onLog, timeout =
 /**
  * Spawn a Claude subprocess for slide editing.
  */
-export function spawnClaudeEdit({ prompt, imagePath, imagePaths, model, cwd, onLog, timeout = 600_000 }) {
+export function spawnClaudeEdit({ prompt, imagePath, imagePaths, model, cwd, onLog, timeout = 600_000, signal }) {
   const claudeBin = process.env.PPT_AGENT_CLAUDE_BIN || 'claude';
 
   const args = [
@@ -142,12 +161,23 @@ export function spawnClaudeEdit({ prompt, imagePath, imagePaths, model, cwd, onL
     let stdout = '';
     let stderr = '';
     let killed = false;
+    let killReason = 'timeout';
 
-    const timer = setTimeout(() => {
+    const killChild = (reason) => {
+      if (killed) return;
       killed = true;
-      child.kill('SIGTERM');
+      killReason = reason;
+      try { child.kill('SIGTERM'); } catch { /* already exited */ }
       setTimeout(() => { try { child.kill('SIGKILL'); } catch { /* already exited */ } }, 5000);
-    }, timeout);
+    };
+
+    const timer = setTimeout(() => killChild('timeout'), timeout);
+
+    const onAbort = () => killChild('cancelled');
+    if (signal) {
+      if (signal.aborted) onAbort();
+      else signal.addEventListener('abort', onAbort, { once: true });
+    }
 
     child.stdout.on('data', (chunk) => {
       const text = chunk.toString();
@@ -165,11 +195,18 @@ export function spawnClaudeEdit({ prompt, imagePath, imagePaths, model, cwd, onL
 
     child.on('close', (code) => {
       clearTimeout(timer);
-      const finalStderr = killed ? stderr + `\n[TIMEOUT after ${timeout}ms]` : stderr;
+      if (signal) signal.removeEventListener('abort', onAbort);
+      const exitCode = killed
+        ? (killReason === 'cancelled' ? -2 : -1)
+        : (code ?? 1);
+      const suffix = killed
+        ? (killReason === 'cancelled' ? '\n[CANCELLED]' : `\n[TIMEOUT after ${timeout}ms]`)
+        : '';
+      const finalStderr = stderr + suffix;
       let usage = null;
       try { usage = parseClaudeUsage(finalStderr); } catch { /* ignore */ }
       resolvePromise({
-        code: killed ? -1 : (code ?? 1),
+        code: exitCode,
         stdout,
         stderr: finalStderr,
         usage,
@@ -178,6 +215,7 @@ export function spawnClaudeEdit({ prompt, imagePath, imagePaths, model, cwd, onL
 
     child.on('error', (error) => {
       clearTimeout(timer);
+      if (signal) signal.removeEventListener('abort', onAbort);
       rejectPromise(error);
     });
   });
@@ -317,7 +355,7 @@ function parseFileBlocks(text) {
  * Call OpenAI Chat Completions API directly for slide generation.
  * Replaces spawnCodexEdit — same interface as spawnClaudeEdit.
  */
-export async function spawnOpenAIEdit({ prompt, model, cwd, onLog, timeout = 300_000 }) {
+export async function spawnOpenAIEdit({ prompt, model, cwd, onLog, timeout = 300_000, signal }) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     const msg = 'OPENAI_API_KEY is not set. Add it to .env file.';
@@ -349,7 +387,7 @@ export async function spawnOpenAIEdit({ prompt, model, cwd, onLog, timeout = 300
       ...(isReasoning
         ? { max_completion_tokens: 65536 }
         : { temperature: 0.3, max_tokens: 16384 }),
-    });
+    }, { signal });
 
     const text = response.choices[0]?.message?.content || '';
     const usage = response.usage
@@ -380,9 +418,10 @@ export async function spawnOpenAIEdit({ prompt, model, cwd, onLog, timeout = 300
 
     return { code: written.length > 0 ? 0 : 1, stdout: text, stderr: '', usage };
   } catch (err) {
-    const msg = `[OpenAI API] Error: ${err.message}\n`;
+    const cancelled = signal?.aborted || err?.name === 'AbortError' || err?.name === 'APIUserAbortError';
+    const msg = `[OpenAI API] ${cancelled ? 'Cancelled' : 'Error'}: ${err.message}\n`;
     onLog?.('stderr', msg);
-    console.error(msg);
-    return { code: 1, stdout: '', stderr: msg, usage: null };
+    if (!cancelled) console.error(msg);
+    return { code: cancelled ? -2 : 1, stdout: '', stderr: msg, usage: null };
   }
 }

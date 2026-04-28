@@ -17,6 +17,7 @@ import { createApplyRouter } from './server/routes/apply.js';
 import { createPlanRouter } from './server/routes/plan.js';
 import { createImportRouter } from './server/routes/import.js';
 import { createGenerateRouter } from './server/routes/generate.js';
+import { createCancelRouter } from './server/routes/cancel.js';
 import { createNotesGenerateRouter } from './server/routes/notes-generate.js';
 import { createExportRouter } from './server/routes/export.js';
 import { createPdfFigmaRouter, setupFigmaWebSocket } from './server/routes/pdf-figma.js';
@@ -245,6 +246,7 @@ async function startServer(opts) {
   app.use(createPlanRouter(ctx));
   app.use(createImportRouter(ctx));
   app.use(createGenerateRouter(ctx));
+  app.use(createCancelRouter(ctx));
   app.use(createNotesGenerateRouter(ctx));
   app.use(createExportRouter(ctx));
   app.use(createPdfFigmaRouter(ctx));
