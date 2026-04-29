@@ -240,7 +240,7 @@ export async function analyzeDeck(deckDir, context = {}) {
       if (ci.severity === 'warn') scores.visual -= 5;
     }
     if (consistency.summary.consistent) {
-      strengths.push('Cross-slide style consistency is maintained.');
+      strengths.push('슬라이드 간 스타일 일관성이 잘 유지됩니다.');
     }
   } catch { /* consistency check is non-blocking */ }
 

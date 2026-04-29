@@ -173,7 +173,7 @@ export async function checkConsistency(slidesDir, options = {}) {
       issues.push({
         type: 'title-font-size',
         severity: 'warn',
-        message: `Title font size varies by ${(maxTitle - minTitle).toFixed(1)}pt across slides (range: ${minTitle.toFixed(1)}pt - ${maxTitle.toFixed(1)}pt). Keep title sizes within 2pt for consistency.`,
+        message: `제목 크기가 슬라이드 간 ${(maxTitle - minTitle).toFixed(1)}pt 차이로 들쭉날쭉합니다 (${minTitle.toFixed(1)}pt~${maxTitle.toFixed(1)}pt). 2pt 이내로 맞추면 더 일관됩니다.`,
         details: { min: minTitle, max: maxTitle, slides: varying },
       });
     }
@@ -194,7 +194,7 @@ export async function checkConsistency(slidesDir, options = {}) {
       issues.push({
         type: 'body-font-size',
         severity: 'warn',
-        message: `Body font size varies by ${(maxBody - minBody).toFixed(1)}pt across slides (range: ${minBody.toFixed(1)}pt - ${maxBody.toFixed(1)}pt). Keep body sizes within 1pt for consistency.`,
+        message: `본문 크기가 슬라이드 간 ${(maxBody - minBody).toFixed(1)}pt 차이입니다 (${minBody.toFixed(1)}pt~${maxBody.toFixed(1)}pt). 1pt 이내가 이상적입니다.`,
         details: { min: minBody, max: maxBody, slides: varying },
       });
     }
@@ -212,7 +212,7 @@ export async function checkConsistency(slidesDir, options = {}) {
     issues.push({
       type: 'color-count',
       severity: 'warn',
-      message: `${allColors.size} distinct non-theme colors detected across the deck. Consider limiting to 4 or fewer for visual coherence.`,
+      message: `테마 외 색이 ${allColors.size}가지 사용됐습니다. 4가지 이하로 줄이면 더 깔끔해 보입니다.`,
       details: { count: allColors.size, colors: [...allColors].slice(0, 10) },
     });
   }
@@ -234,7 +234,7 @@ export async function checkConsistency(slidesDir, options = {}) {
     issues.push({
       type: 'spacing',
       severity: 'info',
-      message: `${paddingValues.size} different padding patterns detected. Standardize padding values for a more uniform layout.`,
+      message: `여백 패턴이 ${paddingValues.size}가지로 흩어져 있습니다. 3~5종으로 정리하면 더 정돈된 느낌이 됩니다.`,
       details: { patterns: Object.fromEntries(paddingValues) },
     });
   }
