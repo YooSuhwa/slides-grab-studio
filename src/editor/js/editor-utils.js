@@ -11,6 +11,22 @@ export function currentSlideFile() {
   return state.slides[state.currentIndex] || null;
 }
 
+/**
+ * Parse a comma/whitespace separated list of 1-indexed page numbers (e.g.
+ * "1, 2, 5, 10") into the corresponding slide filenames, preserving deck
+ * order and de-duplicating. Invalid numbers are silently dropped.
+ */
+export function parsePagesInput(text) {
+  const slides = Array.isArray(state.slides) ? state.slides : [];
+  if (!text || !slides.length) return [];
+  const nums = String(text)
+    .split(/[,\s]+/)
+    .map((s) => parseInt(s, 10))
+    .filter((n) => Number.isFinite(n) && n >= 1 && n <= slides.length);
+  const unique = [...new Set(nums)].sort((a, b) => a - b);
+  return unique.map((n) => slides[n - 1]);
+}
+
 export function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }

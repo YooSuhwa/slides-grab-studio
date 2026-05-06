@@ -19,6 +19,7 @@ function hideSlideRunning() {
 }
 
 export function updateSlideStatusChip() {
+  if (!slideStatusChip) return;
   const slide = currentSlideFile();
   if (!slide) {
     slideStatusChip.textContent = 'idle';

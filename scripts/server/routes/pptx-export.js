@@ -4,9 +4,19 @@ import { readFile } from 'node:fs/promises';
 import PptxGenJS from 'pptxgenjs';
 
 import { SLIDE_PX, SLIDE_IN, SCREENSHOT_SCALE } from '../../../src/slide-dimensions.js';
+import { notesPathFor } from '../../../src/notes-paths.js';
 import { broadcastSSE } from '../sse.js';
 import { listSlideFiles, getScreenshotBrowser, getDeckLabel } from '../helpers.js';
 import { callOpenAIForPptx } from '../spawn.js';
+
+async function loadSlideNotes(slidesDirectory, slideFile) {
+  try {
+    const text = await readFile(notesPathFor(slidesDirectory, slideFile), 'utf8');
+    return text.trim();
+  } catch {
+    return '';
+  }
+}
 
 const PPTX_AI_PROMPT = `You are a PptxGenJS code generator. Recreate this slide as PptxGenJS code.
 Slide size: 10" wide × 5.625" tall (16:9).
@@ -237,7 +247,7 @@ export function createPptxExportRouter(ctx) {
 
   // ── Image-based export (default) ───────────────────────────────────
 
-  async function exportAsImage(slideFiles, slidesDirectory, exportId) {
+  async function exportAsImage(slideFiles, slidesDirectory, exportId, includeNotes) {
     const pres = new PptxGenJS();
     pres.defineLayout({ name: 'SLIDE', width: SLIDE_IN.width, height: SLIDE_IN.height });
     pres.layout = 'SLIDE';
@@ -270,9 +280,17 @@ export function createPptxExportRouter(ctx) {
           data: `image/png;base64,${base64}`,
           x: 0, y: 0, w: '100%', h: '100%',
         });
+        if (includeNotes) {
+          const notes = await loadSlideNotes(slidesDirectory, slideFile);
+          if (notes) slide.addNotes(notes);
+        }
       } catch (err) {
         console.warn(`[pptx-export] Screenshot failed for ${slideFile}: ${err.message}`);
-        pres.addSlide(); // blank placeholder
+        const placeholder = pres.addSlide();
+        if (includeNotes) {
+          const notes = await loadSlideNotes(slidesDirectory, slideFile);
+          if (notes) placeholder.addNotes(notes);
+        }
       }
 
       broadcastSSE(ctx.sseClients, 'pptxExportProgress', {
@@ -370,7 +388,7 @@ export function createPptxExportRouter(ctx) {
     }
   }
 
-  async function exportAsStructured(slideFiles, slidesDirectory, exportId) {
+  async function exportAsStructured(slideFiles, slidesDirectory, exportId, includeNotes) {
     const pres = new PptxGenJS();
     pres.defineLayout({ name: 'SLIDE', width: SLIDE_IN.width, height: SLIDE_IN.height });
     pres.layout = 'SLIDE';
@@ -413,6 +431,11 @@ export function createPptxExportRouter(ctx) {
         }
       }
 
+      if (includeNotes) {
+        const notes = await loadSlideNotes(slidesDirectory, slideFile);
+        if (notes) slide.addNotes(notes);
+      }
+
       broadcastSSE(ctx.sseClients, 'pptxExportProgress', {
         exportId, current: i + 1, total: slideFiles.length, file: slideFile, method,
       });
@@ -433,10 +456,37 @@ export function createPptxExportRouter(ctx) {
     if (!['image', 'structured'].includes(mode)) {
       return res.status(400).json({ error: 'mode must be "image" or "structured".' });
     }
+    const includeNotes = req.body?.includeNotes !== false;
+
+    const rawScope = req.body?.scope;
+    const scope = rawScope === 'current' ? 'current'
+      : rawScope === 'specific' ? 'specific'
+      : 'all';
+    const requestedSlide = typeof req.body?.slide === 'string' ? req.body.slide : null;
+    const requestedSlides = Array.isArray(req.body?.slides) ? req.body.slides : null;
 
     let slideFiles;
     try { slideFiles = await listSlideFiles(slidesDirectory); } catch (err) { return res.status(500).json({ error: err.message }); }
     if (slideFiles.length === 0) return res.status(400).json({ error: 'No slide files found.' });
+
+    if (scope === 'current') {
+      if (!requestedSlide) return res.status(400).json({ error: 'scope=current requires a slide filename.' });
+      if (!slideFiles.includes(requestedSlide)) {
+        return res.status(400).json({ error: `Slide "${requestedSlide}" not found in deck.` });
+      }
+      slideFiles = [requestedSlide];
+    } else if (scope === 'specific') {
+      if (!requestedSlides || requestedSlides.length === 0) {
+        return res.status(400).json({ error: 'scope=specific requires a non-empty slides array.' });
+      }
+      const set = new Set(slideFiles);
+      const missing = requestedSlides.filter((s) => !set.has(s));
+      if (missing.length > 0) {
+        return res.status(400).json({ error: `Slides not found: ${missing.join(', ')}` });
+      }
+      // Preserve deck order for the subset
+      slideFiles = slideFiles.filter((s) => requestedSlides.includes(s));
+    }
 
     const exportId = `pptx-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
     activeExport = true;
@@ -448,10 +498,10 @@ export function createPptxExportRouter(ctx) {
         let resultMsg;
 
         if (mode === 'image') {
-          pres = await exportAsImage(slideFiles, slidesDirectory, exportId);
+          pres = await exportAsImage(slideFiles, slidesDirectory, exportId, includeNotes);
           resultMsg = `Exported ${slideFiles.length} slides to PPTX (image).`;
         } else {
-          const result = await exportAsStructured(slideFiles, slidesDirectory, exportId);
+          const result = await exportAsStructured(slideFiles, slidesDirectory, exportId, includeNotes);
           pres = result.pres;
           const converted = slideFiles.length - result.warnings.length;
           if (converted === 0) {

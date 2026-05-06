@@ -92,7 +92,7 @@ function runBuildViewer(slidesDir) {
  */
 export async function parallelGenerate({
   outline, outlineContent, genPackId, slidesDir, model, cwd,
-  onBatchProgress, onBatchLog, useImages = false, availableAssets = [],
+  onBatchProgress, onBatchLog, onSlideReady, useImages = false, availableAssets = [],
   tracker,
 }) {
   const concurrency = Math.min(
@@ -101,6 +101,7 @@ export async function parallelGenerate({
   );
   const batches = splitIntoBatches(outline.slides, concurrency);
   const totalBatches = batches.length;
+  let completedSlides = 0;
 
   onBatchProgress?.(0, totalBatches, `Splitting ${outline.slides.length} slides into ${totalBatches} batches`);
 
@@ -138,6 +139,12 @@ export async function parallelGenerate({
           outputChars: (result.stdout || '').length,
           success: result.code === 0,
         });
+        if (result.code === 0 && onSlideReady) {
+          for (const slide of batches[idx]) {
+            completedSlides++;
+            onSlideReady(slide.slideIndex + 1, completedSlides);
+          }
+        }
         return result;
       }, err => {
         tracker?.finishCall(callId, { success: false });

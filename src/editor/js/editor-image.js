@@ -14,11 +14,15 @@ const $ = (sel) => document.querySelector(sel);
 const btnReplace = $('#img-replace-btn');
 const btnRegenerate = $('#img-regenerate-btn');
 const btnDelete = $('#img-delete-btn');
+const btnFlipH = $('#img-flip-h-btn');
+const btnFlipV = $('#img-flip-v-btn');
 const btnInsertImage = $('#btn-insert-image');
 const btnInsertAIImage = $('#btn-insert-ai-image');
 const fileInput = $('#img-replace-input');
 const insertFileInput = $('#img-insert-input');
 const handlesLayer = $('#image-handles');
+const radiusRange = $('#img-radius-range');
+const radiusNumber = $('#img-radius-input');
 
 const promptModal = $('#image-prompt-modal');
 const promptInput = $('#image-prompt-input');
@@ -170,6 +174,26 @@ function syncHandlesFor(img) {
   handlesLayer.style.height = `${rect.h}px`;
 }
 
+function readImageRadiusPx(img) {
+  if (!img) return 0;
+  const inline = (img.style.borderRadius || '').trim();
+  const source = inline || (() => {
+    try {
+      const win = slideIframe?.contentWindow;
+      return win?.getComputedStyle(img).borderRadius || '';
+    } catch { return ''; }
+  })();
+  const first = source.split(/[\s/]+/).find(Boolean) || '0';
+  const num = parseFloat(first);
+  return Number.isFinite(num) ? Math.max(0, Math.round(num)) : 0;
+}
+
+function syncRadiusInputs(value) {
+  const v = String(value);
+  if (radiusRange && document.activeElement !== radiusRange) radiusRange.value = v;
+  if (radiusNumber && document.activeElement !== radiusNumber) radiusNumber.value = v;
+}
+
 /** Called from editor-select.js updateObjectEditorControls */
 export function maybeUpdateImageUI() {
   const img = getSelectedImage();
@@ -177,11 +201,17 @@ export function maybeUpdateImageUI() {
   if (btnReplace) btnReplace.disabled = !hasImage;
   if (btnRegenerate) btnRegenerate.disabled = !hasImage;
   if (btnDelete) btnDelete.disabled = !hasImage;
+  if (btnFlipH) btnFlipH.disabled = !hasImage;
+  if (btnFlipV) btnFlipV.disabled = !hasImage;
+  if (radiusRange) radiusRange.disabled = !hasImage;
+  if (radiusNumber) radiusNumber.disabled = !hasImage;
   if (hasImage) {
     syncHandlesFor(img);
+    syncRadiusInputs(readImageRadiusPx(img));
     setStatus('Drag corners to resize (Shift = free) \u00b7 Drag body to move');
   } else {
     hideHandles();
+    syncRadiusInputs(0);
     setEditorHintForMode();
   }
 }
@@ -377,12 +407,99 @@ function handleInsertAIClick() {
   });
 }
 
+function clampRadius(raw) {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(999, Math.round(n)));
+}
+
+function applyRadiusLive(val) {
+  const img = getSelectedImage();
+  if (!img) return;
+  img.style.borderRadius = `${val}px`;
+  syncHandlesFor(img);
+}
+
+function commitRadius(val) {
+  mutateSelectedObject((el) => {
+    if (!isImageElement(el)) return;
+    el.style.borderRadius = `${val}px`;
+  }, 'Image corner radius updated.');
+}
+
+function handleRadiusRangeInput() {
+  const val = clampRadius(radiusRange.value);
+  if (radiusNumber) radiusNumber.value = String(val);
+  applyRadiusLive(val);
+}
+
+function handleRadiusRangeChange() {
+  commitRadius(clampRadius(radiusRange.value));
+}
+
+function handleRadiusNumberInput() {
+  const val = clampRadius(radiusNumber.value);
+  if (radiusRange) {
+    radiusRange.value = String(Math.min(Number(radiusRange.max) || 200, val));
+  }
+  applyRadiusLive(val);
+}
+
+function handleRadiusNumberChange() {
+  const val = clampRadius(radiusNumber.value);
+  radiusNumber.value = String(val);
+  commitRadius(val);
+}
+
+function parseFlipState(img) {
+  const t = (img.style.transform || '').trim();
+  return {
+    h: /scaleX\(\s*-1\s*\)/.test(t),
+    v: /scaleY\(\s*-1\s*\)/.test(t),
+  };
+}
+
+function buildTransform(flipH, flipV) {
+  const parts = [];
+  if (flipH) parts.push('scaleX(-1)');
+  if (flipV) parts.push('scaleY(-1)');
+  return parts.join(' ');
+}
+
+function handleFlipH() {
+  const img = getSelectedImage();
+  if (!img) return;
+  const state = parseFlipState(img);
+  const next = buildTransform(!state.h, state.v);
+  mutateSelectedObject((el) => {
+    if (!isImageElement(el)) return;
+    el.style.transform = next;
+  }, 'Image flipped horizontally.');
+}
+
+function handleFlipV() {
+  const img = getSelectedImage();
+  if (!img) return;
+  const state = parseFlipState(img);
+  const next = buildTransform(state.h, !state.v);
+  mutateSelectedObject((el) => {
+    if (!isImageElement(el)) return;
+    el.style.transform = next;
+  }, 'Image flipped vertically.');
+}
+
 // Event bindings
 btnReplace?.addEventListener('click', handleReplaceClick);
 btnRegenerate?.addEventListener('click', handleRegenerateClick);
 btnDelete?.addEventListener('click', handleDeleteClick);
 btnInsertImage?.addEventListener('click', handleInsertUploadClick);
 btnInsertAIImage?.addEventListener('click', handleInsertAIClick);
+btnFlipH?.addEventListener('click', handleFlipH);
+btnFlipV?.addEventListener('click', handleFlipV);
+radiusRange?.addEventListener('input', handleRadiusRangeInput);
+radiusRange?.addEventListener('change', handleRadiusRangeChange);
+radiusNumber?.addEventListener('input', handleRadiusNumberInput);
+radiusNumber?.addEventListener('change', handleRadiusNumberChange);
 
 fileInput?.addEventListener('change', (e) => handleFilePicked(e, (path) => replaceSelectedSrc(path)));
 insertFileInput?.addEventListener('change', (e) => handleFilePicked(e, (path) => insertImageElement(path)));

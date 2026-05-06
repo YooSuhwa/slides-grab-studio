@@ -186,13 +186,21 @@ function reconstructRawBlock(slideNum, type, title, contentText) {
 
 // ── Rendering ──
 
+const CIRCLED_NUM_RE = /^[①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮]/;
+
 function cleanDetail(raw) {
   let text = raw.trim();
   text = text.replace(/^[-*]\s*/, '');
   text = text.replace(/<[^>]*>/g, '');
   text = text.replace(/\*\*(.*?)\*\*/g, '$1');
   text = text.replace(FIELD_LABEL_RE, '');
+  text = text.replace(/^["'](.+)["']$/, '$1');
   return text.trim();
+}
+
+function detailClass(item) {
+  if (item.level === 0 && CIRCLED_NUM_RE.test(item.text)) return 'outline-detail-line outline-detail-section';
+  return `outline-detail-line outline-detail-level-${item.level}`;
 }
 
 function renderOutlineCards(slides) {
@@ -249,11 +257,11 @@ function renderOutlineCards(slides) {
           const text = cleanDetail(raw);
           return { text, level };
         })
-        .filter(item => item.text);
+        .filter(item => item.text && item.text.trim().length > 0);
 
       const detailsHtml = details.length > 0
         ? `<div class="outline-card-details">${details.map(d =>
-            `<div class="outline-detail-line" style="margin-left:${d.level * 12}px">${escapeHtml(d.text)}</div>`
+            `<div class="${detailClass(d)}" style="margin-left:${d.level * 12}px">${escapeHtml(d.text)}</div>`
           ).join('')}</div>`
         : '';
 
@@ -556,7 +564,9 @@ export function onPlanFinished(payload) {
   if (payload.phase === 'retheme') {
     if (payload.success) {
       setStatus(`Retheme 완료: ${payload.deckName}`);
-      setTimeout(() => window.location.reload(), 1000);
+      setTimeout(() => {
+        window.location.href = `/editor?slidesDir=decks/${encodeURIComponent(payload.deckName)}`;
+      }, 1000);
     } else {
       setStatus(`Retheme 실패: ${payload.message}`);
     }
@@ -605,5 +615,15 @@ export async function loadAndShowOutline() {
 }
 
 if (btnReviewOutline) {
-  btnReviewOutline.addEventListener('click', loadAndShowOutline);
+  btnReviewOutline.addEventListener('click', () => {
+    const navDeckEl = document.getElementById('nav-deck-name');
+    const deckName = (navDeckEl?.textContent || '').trim();
+    if (!deckName) {
+      window.location.href = '/generate';
+      return;
+    }
+    // view=1 marks review-only entry (distinct from editor's outline-only
+    // redirect at editor-init.js which goes to /generate?deck=X for editing).
+    window.location.href = `/generate?deck=${encodeURIComponent(deckName)}&view=1`;
+  });
 }

@@ -40,15 +40,18 @@ import { undo, redo, pushSnapshot, setRestoring } from './editor-history.js';
 import { updateSendState, applyChanges } from './editor-send.js';
 import { goToSlide } from './editor-navigation.js';
 import { connectSSE, loadRunsInitial } from './editor-sse.js';
-import { openExportModal } from './editor-svg-export.js';
-import { openPdfExportModal } from './editor-pdf-export.js';
-import { openPptxExportModal } from './editor-pptx-export.js';
+import './editor-svg-export.js';
+import './editor-pdf-export.js';
+import './editor-pptx-export.js';
+import { openExportModal } from './editor-export-modal.js';
 import { openLogoSettingsModal } from './editor-logo.js';
-import './editor-figma-export.js';
-import { showCreationMode, hideCreationMode, loadCreationModelOptions, checkCreateMode, loadImportModelOptions, switchToImportTab, submitImport, submitDocImport, showPlanLoading } from './editor-create.js';
+import { openFigmaModal } from './editor-figma-export.js';
+import { openCommandPalette } from './editor-command-palette.js';
+import { showCreationMode, hideCreationMode, loadCreationModelOptions, checkCreateMode, loadImportModelOptions, switchToImportTab, submitImport, submitDocImport, showPlanLoading, updatePlanLoadingStep } from './editor-create.js';
 import { showOutlinePhase } from './editor-outline.js';
 import { renderThumbnailStrip, updateActiveThumbnail } from './editor-thumbnails.js';
 import { loadPacks } from './editor-pack.js';
+import { openPackPicker, closePackPicker } from './pack-picker.js';
 import { initNotesPanel, loadNotes, toggleNotesDock } from './editor-notes.js';
 import { enterPresentationMode, exitPresentationMode, isPresenting } from './editor-present.js';
 
@@ -149,26 +152,27 @@ if (deleteSlideModal) {
 toolModeDrawBtn.addEventListener('click', () => setToolMode(TOOL_MODE_DRAW));
 toolModeSelectBtn.addEventListener('click', () => setToolMode(TOOL_MODE_SELECT));
 
-// PDF Export
-btnPdfExport.addEventListener('click', openPdfExportModal);
-
-// SVG Export
-btnSvgExport.addEventListener('click', openExportModal);
-
-// PPTX Export
+// Export dropdown items — all route to unified modal with correct tab.
+btnPdfExport.addEventListener('click', () => openExportModal('pdf'));
+btnSvgExport.addEventListener('click', () => openExportModal('svg'));
 const btnPptxExport = document.querySelector('#btn-pptx-export');
-if (btnPptxExport) btnPptxExport.addEventListener('click', openPptxExportModal);
+if (btnPptxExport) btnPptxExport.addEventListener('click', () => openExportModal('pptx'));
+
+// Figma nav button → unified modal (figma tab); enabled only when plugin connected.
+const btnFigma = document.querySelector('#btn-figma-export');
+if (btnFigma) btnFigma.addEventListener('click', () => openFigmaModal());
 
 // Presentation mode
 if (btnPresent) {
   btnPresent.addEventListener('click', () => { void enterPresentationMode(); });
 }
 
-// New Deck — switch to creation mode
+// New Deck — route to the dedicated /generate page (the legacy in-editor
+// creation UI via showCreationMode() is preserved as a fallback for CLI /
+// auto-create flows, but explicit user clicks always go to /generate).
 if (btnNewDeck) {
-  btnNewDeck.addEventListener('click', async () => {
-    showCreationMode();
-    await loadCreationModelOptions();
+  btnNewDeck.addEventListener('click', () => {
+    window.location.href = '/generate';
   });
 }
 
@@ -261,6 +265,16 @@ popoverSizeInput.addEventListener('keydown', (event) => {
     event.stopPropagation();
     popoverApplySize.click();
   }
+});
+
+popoverSizeInput.addEventListener('blur', () => {
+  if (popoverSizeInput.disabled) return;
+  popoverApplySize.click();
+});
+
+popoverSizeInput.addEventListener('change', () => {
+  if (popoverSizeInput.disabled) return;
+  popoverApplySize.click();
 });
 
 popoverTextColorInput.addEventListener('input', () => {
@@ -359,6 +373,20 @@ document.addEventListener('keydown', (event) => {
     if (codeIs(event, 'KeyB')) { event.preventDefault(); if (!toggleBold.disabled) toggleBold.click(); return; }
     if (codeIs(event, 'KeyI')) { event.preventDefault(); if (!toggleItalic.disabled) toggleItalic.click(); return; }
     if (codeIs(event, 'KeyU')) { event.preventDefault(); if (!toggleUnderline.disabled) toggleUnderline.click(); return; }
+  }
+
+  // ⌘K / Ctrl+K — command palette (works even inside text fields)
+  if (ctrl && codeIs(event, 'KeyK')) {
+    event.preventDefault();
+    openCommandPalette();
+    return;
+  }
+
+  // ⌘⇧D / Ctrl+Shift+D — duplicate current slide (advertised in button title)
+  if (ctrl && event.shiftKey && codeIs(event, 'KeyD') && !inTextField) {
+    event.preventDefault();
+    document.querySelector('#btn-duplicate-slide')?.click();
+    return;
   }
 
   if (ctrl && event.key === 'Enter') {
@@ -474,17 +502,12 @@ if (slideStrip) {
   });
 }
 
-// Export dropdown toggle
-if (btnExportToggle && exportDropdown) {
+// Export nav button — open unified tabbed modal directly (PPTX default tab).
+// Format choice is made via tabs inside the modal, so a dropdown would be redundant.
+if (btnExportToggle) {
   btnExportToggle.addEventListener('click', (event) => {
     event.stopPropagation();
-    const isOpen = exportDropdown.classList.toggle('open');
-    btnExportToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-  });
-  document.addEventListener('click', (event) => {
-    if (event.target.closest('.export-dropdown-wrapper')) return;
-    exportDropdown.classList.remove('open');
-    btnExportToggle.setAttribute('aria-expanded', 'false');
+    openExportModal('pptx');
   });
 }
 
@@ -532,16 +555,23 @@ if (sidebarToggle && editorSidebar) {
   }
 }
 
-// Theme toggle
+// Theme toggle — persists under 'sgs-theme' so all pages share
 if (themeToggle) {
+  const themeThumb = document.getElementById('themeThumb');
+  const syncThumb = (t) => {
+    if (themeThumb) themeThumb.textContent = t === 'dark' ? '☾' : '☀';
+  };
+  syncThumb(document.documentElement.getAttribute('data-theme') || 'light');
   themeToggle.addEventListener('click', () => {
     const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('sgs-theme', next);
     localStorage.setItem('sg-theme', next);
+    syncThumb(next);
   });
 }
 window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
-  if (!localStorage.getItem('sg-theme')) {
+  if (!localStorage.getItem('sgs-theme') && !localStorage.getItem('sg-theme')) {
     document.documentElement.setAttribute('data-theme', e.matches ? 'light' : 'dark');
   }
 });
@@ -550,163 +580,52 @@ window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e
 const logoBtn = document.getElementById('btn-logo-settings');
 if (logoBtn) logoBtn.addEventListener('click', () => openLogoSettingsModal());
 
-// ── Retheme modal ──
+// ── Retheme (shared pack-picker modal) ──
 const rethemeBtn = document.getElementById('btn-retheme');
-const rethemeModal = document.getElementById('retheme-modal');
-const rethemePackSelect = document.getElementById('retheme-pack-select');
-const rethemeSaveAs = document.getElementById('retheme-save-as');
-const rethemeCancel = document.getElementById('retheme-cancel');
-const rethemeConfirm = document.getElementById('retheme-confirm');
-
-const rethemeBackupsSection = document.getElementById('retheme-backups-section');
-const rethemeBackupSelect = document.getElementById('retheme-backup-select');
-const rethemeRestoreBtn = document.getElementById('retheme-restore-btn');
-
-if (rethemeBtn && rethemeModal) {
-  let _rethemeDeckName = '';
-
-  const updateRethemePlaceholder = () => {
-    if (_rethemeDeckName && rethemePackSelect.value) {
-      rethemeSaveAs.placeholder = `${_rethemeDeckName}-${rethemePackSelect.value}`;
-    }
-  };
-
-  rethemePackSelect.addEventListener('change', updateRethemePlaceholder);
-
+if (rethemeBtn) {
   rethemeBtn.addEventListener('click', async () => {
-    rethemeSaveAs.value = '';
-
-    // Fetch config, packs, and backups in parallel
-    const [cfgRes, packsRes, backupsRes] = await Promise.all([
+    const [cfgRes, packsRes] = await Promise.all([
       fetch('/api/editor-config').catch(() => null),
       fetch('/api/packs').catch(() => null),
-      rethemeBackupsSection ? fetch('/api/backups').catch(() => null) : null,
     ]);
+    const cfg = cfgRes?.ok ? await cfgRes.json() : {};
+    const packs = packsRes?.ok ? await packsRes.json() : [];
+    const deckName = cfg.deckName;
+    const currentPackId = cfg.packId || null;
 
-    if (cfgRes?.ok) {
-      const cfg = await cfgRes.json();
-      _rethemeDeckName = cfg.deckName || '';
-    }
-
-    // Populate pack options
-    if (packsRes?.ok) {
-      const packs = await packsRes.json();
-      rethemePackSelect.innerHTML = packs
-        .map(p => `<option value="${p.id}">${p.name}</option>`)
-        .join('');
-    }
-
-    updateRethemePlaceholder();
-
-    // Load backups for "Previous versions"
-    if (rethemeBackupsSection) {
-      if (backupsRes?.ok) {
-        const backups = await backupsRes.json();
-        if (backups.length > 0) {
-          rethemeBackupSelect.innerHTML = backups
-            .map(b => `<option value="${b.timestamp}">${b.label} (${b.slideCount} slides)</option>`)
-            .join('');
-          rethemeBackupsSection.hidden = false;
-        } else {
-          rethemeBackupsSection.hidden = true;
+    openPackPicker({
+      packs,
+      initialPackId: currentPackId,
+      defaultHighlightId: currentPackId,
+      eyebrow: deckName ? `retheme · ${deckName}` : 'retheme',
+      titleHtml: 'Retheme <em>deck</em>',
+      hint: '선택한 팩의 디자인으로 전체 덱이 리디자인됩니다.',
+      applyLabel: 'Retheme',
+      onApply: async (packId) => {
+        if (!deckName) { setStatus('덱 이름을 확인할 수 없습니다.'); return; }
+        closePackPicker();
+        showPlanLoading(true, 'Retheme...');
+        try {
+          const res = await fetch('/api/retheme', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deckName, packId }),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+            showPlanLoading(false);
+            setStatus(`Retheme 실패: ${err.error}`);
+            return;
+          }
+          const data = await res.json();
+          updatePlanLoadingStep(`→ ${data.targetPack}`);
+        } catch (err) {
+          showPlanLoading(false);
+          setStatus(`Retheme 실패: ${err.message}`);
         }
-      } else {
-        rethemeBackupsSection.hidden = true;
-      }
-    }
-
-    rethemeModal.hidden = false;
-  });
-
-  rethemeCancel.addEventListener('click', () => {
-    rethemeModal.hidden = true;
-  });
-
-  rethemeModal.addEventListener('click', (e) => {
-    if (e.target === rethemeModal) rethemeModal.hidden = true;
-  });
-
-  rethemeConfirm.addEventListener('click', async () => {
-    const packId = rethemePackSelect.value;
-    if (!packId) return;
-
-    const deckName = _rethemeDeckName;
-    if (!deckName) {
-      setStatus('덱 이름을 확인할 수 없습니다.');
-      return;
-    }
-
-    rethemeModal.hidden = true;
-
-    try {
-      const res = await fetch('/api/retheme', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          deckName,
-          packId,
-          saveAs: rethemeSaveAs.value.trim() || undefined,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        setStatus(`Retheme 실패: ${err.error}`);
-        return;
-      }
-
-      const data = await res.json();
-      showPlanLoading(true, `Retheme → ${data.targetPack}`);
-    } catch (err) {
-      setStatus(`Retheme 실패: ${err.message}`);
-    }
-  });
-
-  // Restore from backup
-  if (rethemeRestoreBtn) {
-    rethemeRestoreBtn.addEventListener('click', async () => {
-      const timestamp = rethemeBackupSelect?.value;
-      if (!timestamp) return;
-
-      let deckName = '';
-      try {
-        const cfgRes = await fetch('/api/editor-config');
-        if (cfgRes.ok) {
-          const cfg = await cfgRes.json();
-          deckName = cfg.deckName;
-        }
-      } catch { /* */ }
-
-      if (!deckName) {
-        setStatus('덱 이름을 확인할 수 없습니다.');
-        return;
-      }
-
-      rethemeModal.hidden = true;
-      setStatus(`복원 중: ${timestamp}...`);
-
-      try {
-        const res = await fetch('/api/restore', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ deckName, timestamp }),
-        });
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-          setStatus(`복원 실패: ${err.error}`);
-          return;
-        }
-
-        const data = await res.json();
-        setStatus(`복원 완료: ${data.restored}개 슬라이드 (${timestamp})`);
-        // Reload slides
-        window.location.reload();
-      } catch (err) {
-        setStatus(`복원 실패: ${err.message}`);
-      }
+      },
     });
-  }
+  });
 }
 
 // ── Review panel ──
@@ -994,82 +913,68 @@ async function init() {
     }
 
     state.slides = await res.json();
-    // Enter creation mode if: server is in create mode, or no slides exist, or ?create=1
+    // Creation / empty-deck / ?create=1 all route to the unified /generate page.
+    // CLI --import-doc / --import-file flows still run in-editor because they
+    // depend on server-side CLI config that only this page is wired up for.
     const isCreateMode = await checkCreateMode();
     if (forceCreate || isCreateMode || state.slides.length === 0) {
-      showCreationMode();
-      await Promise.all([loadCreationModelOptions(), loadImportModelOptions(), loadPacks()]);
-      connectSSE();
-
-      // Auto-load outline if one exists in the deck (skip for explicit new deck)
-      if (!forceCreate) {
-        try {
-          const outlineRes = await fetch('/api/outline');
-          if (outlineRes.ok) {
-            const outline = await outlineRes.json();
-            showOutlinePhase(outline, { isExistingDeck: state.slides.length > 0 });
-            setStatus('Outline loaded. Review and provide feedback.');
-            return;
-          }
-        } catch { /* no outline */ }
-      }
-
-      // Check if CLI --import mode: auto-switch to import tab and trigger
+      // CLI import flows: keep in-editor (import tab), auto-submit, return.
       try {
         const cfgRes = await fetch('/api/editor-config');
         if (cfgRes.ok) {
           const cfg = await cfgRes.json();
-          // CLI --import-doc mode: PDF or URL
-          if (cfg.importDocSource) {
-            switchToImportTab();
-            const importSlideCountEl = document.getElementById('import-slide-count');
-            if (cfg.importSlideCount && importSlideCountEl) {
-              importSlideCountEl.value = cfg.importSlideCount;
-            }
-            // Show source info in dropzone area
-            const dropzone = document.getElementById('import-dropzone');
-            const fileInfo = document.getElementById('import-file-info');
-            const fileNameEl = document.getElementById('import-file-name');
-            if (dropzone) dropzone.hidden = true;
-            if (fileInfo) fileInfo.hidden = false;
-            if (fileNameEl) fileNameEl.textContent = cfg.importDocSource;
-            // Auto-submit document import
-            submitDocImport({
-              source: cfg.importDocSource,
-              sourceType: cfg.importDocSourceType,
-              slideCount: cfg.importSlideCount,
-              packId: cfg.importPack,
-            });
-            return;
-          }
+          if (cfg.importDocSource || cfg.importFile) {
+            showCreationMode();
+            await Promise.all([loadCreationModelOptions(), loadImportModelOptions(), loadPacks()]);
+            connectSSE();
 
-          if (cfg.importFile) {
-            switchToImportTab();
-            // Fetch import file content from server
-            const fileRes = await fetch('/api/import-file');
-            if (fileRes.ok) {
-              const { content: importContent, fileName } = await fileRes.json();
-              // Set slide count from CLI flags
+            if (cfg.importDocSource) {
+              switchToImportTab();
               const importSlideCountEl = document.getElementById('import-slide-count');
               if (cfg.importSlideCount && importSlideCountEl) {
                 importSlideCountEl.value = cfg.importSlideCount;
               }
-              // Show file info
               const dropzone = document.getElementById('import-dropzone');
               const fileInfo = document.getElementById('import-file-info');
               const fileNameEl = document.getElementById('import-file-name');
               if (dropzone) dropzone.hidden = true;
               if (fileInfo) fileInfo.hidden = false;
-              if (fileNameEl) fileNameEl.textContent = fileName;
-              // Auto-submit
-              submitImport(importContent);
+              if (fileNameEl) fileNameEl.textContent = cfg.importDocSource;
+              submitDocImport({
+                source: cfg.importDocSource,
+                sourceType: cfg.importDocSourceType,
+                slideCount: cfg.importSlideCount,
+                packId: cfg.importPack,
+              });
               return;
+            }
+
+            if (cfg.importFile) {
+              switchToImportTab();
+              const fileRes = await fetch('/api/import-file');
+              if (fileRes.ok) {
+                const { content: importContent, fileName } = await fileRes.json();
+                const importSlideCountEl = document.getElementById('import-slide-count');
+                if (cfg.importSlideCount && importSlideCountEl) {
+                  importSlideCountEl.value = cfg.importSlideCount;
+                }
+                const dropzone = document.getElementById('import-dropzone');
+                const fileInfo = document.getElementById('import-file-info');
+                const fileNameEl = document.getElementById('import-file-name');
+                if (dropzone) dropzone.hidden = true;
+                if (fileInfo) fileInfo.hidden = false;
+                if (fileNameEl) fileNameEl.textContent = fileName;
+                submitImport(importContent);
+                return;
+              }
             }
           }
         }
-      } catch { /* no import mode */ }
+      } catch { /* no import mode — fall through to /generate */ }
 
-      setStatus('Enter a topic to generate slides.');
+      // All other creation / outline-only flows → /generate.
+      const deckParam = state.deckName ? `?deck=${encodeURIComponent(state.deckName)}` : '';
+      window.location.replace(`/generate${deckParam}`);
       return;
     }
 
@@ -1100,6 +1005,21 @@ async function init() {
     if (btnPresent) btnPresent.style.display = '';
 
     setStatus(`Ready. Model: ${state.selectedModel}. Draw red pending bboxes, run Codex, then review green bboxes.`);
+
+    // Auto-actions from workspace deck card hover overlay (?present=1 | ?export=pptx)
+    const autoPresent = urlParams.get('present') === '1';
+    const autoExport = urlParams.get('export');
+    if (autoPresent) {
+      void enterPresentationMode();
+    } else if (autoExport === 'pptx') {
+      openExportModal('pptx');
+    } else if (autoExport === 'pdf') {
+      openExportModal('pdf');
+    } else if (autoExport === 'svg') {
+      openExportModal('svg');
+    } else if (autoExport === 'figma') {
+      openExportModal('figma');
+    }
   } catch (error) {
     setStatus(`Error loading slides: ${error.message}`);
     console.error('Init error:', error);

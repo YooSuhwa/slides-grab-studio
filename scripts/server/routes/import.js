@@ -13,6 +13,7 @@ import { normalizePackId } from "../../../src/resolve.js";
 
 import {
   appendOutlinePrompt,
+  formatSlideCountGuidance,
   listExistingDeckNames,
   parseOutline,
   randomRunId,
@@ -556,7 +557,7 @@ function runImportPlan(
       const promptLines = [...preambleLines];
 
       promptLines.push("6. 원본 문서의 내용만 사용하세요.");
-      if (slideCount) promptLines.push(`7. 목표 슬라이드 수: ${slideCount}장`);
+      if (slideCount) promptLines.push(`7. ${formatSlideCountGuidance(slideCount)}`);
       if (useImages) {
         promptLines.push("8. 이미지 사용: ON — 각 슬라이드에 적합한 이미지를 포함하세요.");
         promptLines.push("   - 실제 사진: image-search: <영문 키워드> (인물, 장소, 제품, 실제 장면)");

@@ -31,10 +31,12 @@ export function createExportRouter(ctx) {
   const MAX_EXPORT_ENTRIES = 10;
 
   router.post('/api/svg-export', async (req, res) => {
-    const { scope, slide, format = 'svg', scale = 1, width = SLIDE_PX.width, height = SLIDE_PX.height, outline = false } = req.body ?? {};
+    const { scope, slide, slides, format = 'svg', scale = 1, width = SLIDE_PX.width, height = SLIDE_PX.height, outline = false } = req.body ?? {};
 
     if (!['svg', 'png'].includes(format)) return res.status(400).json({ error: 'format must be svg or png' });
-    if (!['current', 'all'].includes(scope)) return res.status(400).json({ error: 'scope must be current or all' });
+    if (!['current', 'all', 'specific'].includes(scope)) {
+      return res.status(400).json({ error: 'scope must be current, all, or specific' });
+    }
 
     const numScale = Number(scale) || 1;
     const numW = Math.max(320, Math.min(7680, Math.round(Number(width) || SLIDE_PX.width)));
@@ -72,12 +74,22 @@ export function createExportRouter(ctx) {
       }
     }
 
-    // scope === 'all'
+    // scope === 'all' or 'specific'
     if (activeSvgExport) return res.status(409).json({ error: 'An export is already in progress.' });
 
     let slideFiles;
     try { slideFiles = await listSlideFiles(slidesDirectory); } catch (err) { return res.status(500).json({ error: err.message }); }
     if (slideFiles.length === 0) return res.status(400).json({ error: 'No slide files found.' });
+
+    if (scope === 'specific') {
+      if (!Array.isArray(slides) || slides.length === 0) {
+        return res.status(400).json({ error: 'scope=specific requires a non-empty slides array.' });
+      }
+      const set = new Set(slideFiles);
+      const missing = slides.filter((s) => !set.has(s));
+      if (missing.length > 0) return res.status(400).json({ error: `Slides not found: ${missing.join(', ')}` });
+      slideFiles = slideFiles.filter((s) => slides.includes(s));
+    }
 
     const exportId = `export-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
     activeSvgExport = true;
